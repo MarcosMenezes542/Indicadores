@@ -1,4 +1,5 @@
--- Cole TODO este conteúdo no SQL Editor do Supabase e clique em RUN.
+-- ⚠️ JÁ APLICADO em 08/11/2026 (migrações geolocalizacao_e_coordenadas, regras_perfil_gestor
+--    e papel_gestor_permitido). NÃO execute novamente. Mantido apenas como referência.
 -- Projeto: Visitas de Vigilancia (llzyklckdbhiyaupyzpo)
 
 -- Perfil "gestor": visualiza todas as visitas e fotos, mas não cria, altera nem exclui nada.
