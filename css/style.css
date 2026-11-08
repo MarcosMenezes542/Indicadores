@@ -475,3 +475,8 @@ a.lateral-item { text-decoration: none; }
   .entrada-hero-texto { padding: .6rem 0 1rem; }
   .entrada-hero-texto::before { inset: -35% 18% -45% -3%; }
 }
+/* Logo ao lado da frase (à direita), cobrindo menos o texto */
+.entrada-hero-texto::before { inset: -18% -14% -18% 46%; background-position: right center; opacity: .34; }
+@media (max-width: 980px) {
+  .entrada-hero-texto::before { inset: -40% -2% -50% 52%; background-position: right center; opacity: .34; }
+}
