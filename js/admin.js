@@ -17,9 +17,10 @@ const Admin = (() => {
     $("#f-ate").value = chaveDia(hoje);
     $("#f-gravidade").innerHTML = `<option value="">Todas</option>` + CFG.GRAVIDADES.map((g) => `<option>${g}</option>`).join("");
     $("#f-categoria").innerHTML = `<option value="">Todas</option>` + CFG.CATEGORIAS.map((c) => `<option>${esc(c)}</option>`).join("");
-    const link = location.origin + location.pathname.replace(/index\.html$/, "");
-    $("#link-publico").value = link;
-    $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent("Acesse o app de Visitas Operacionais VMO: " + link)}`;
+    const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+    $("#link-publico").value = base;
+    $("#link-admin").textContent = base + "admin.html";
+    $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent('Aplicativo VMO para registro das visitas operacionais. Abra o link, toque em "Instalar aplicativo" e entre com o seu usuário e senha: ' + base)}`;
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
     Chart.defaults.color = "#5f6b7a";
     trocarAba("painel");
@@ -28,9 +29,6 @@ const Admin = (() => {
   }
 
   function trocarAba(aba) {
-    if (aba === "nova") { Main.abrirVmo(); return; }
-    mostrar("#tela-vmo", false);
-    mostrar("#tela-admin", true);
     $$("#nav-admin button").forEach((b) => b.classList.toggle("ativo", b.dataset.aba === aba));
     ["painel", "visitas", "usuarios", "unidades"].forEach((a) => mostrar(`#aba-${a}`, a === aba));
     mostrar("#filtros", aba === "painel" || aba === "visitas");
@@ -369,25 +367,72 @@ const Admin = (() => {
 
   /* ---------- Usuários ---------- */
   async function carregarPerfis() {
-    const { data, error } = await sb.from("perfis").select("*").order("nome");
-    if (error) return aviso("Erro ao carregar usuários: " + error.message, true);
-    perfis = data;
+    try {
+      perfis = (await chamarFuncao({ acao: "listar" })).usuarios;
+    } catch (e) {
+      // reserva: lê direto da tabela (sem a data do último acesso)
+      const { data, error } = await sb.from("perfis").select("*").order("nome");
+      if (error) return aviso("Erro ao carregar usuários: " + error.message, true);
+      perfis = data;
+    }
     renderUsuarios();
   }
 
   function renderUsuarios() {
     const n = contar(visitas, (v) => v.vigilante);
+    const busca = ($("#u-busca").value || "").trim().toLowerCase();
+    const papel = $("#u-papel").value, status = $("#u-status").value;
+    const lista = perfis.filter((p) =>
+      (!busca || `${p.nome} ${p.login}`.toLowerCase().includes(busca)) &&
+      (!papel || p.papel === papel) &&
+      (!status || (status === "ativo") === !!p.ativo));
+    const vmos = perfis.filter((p) => p.papel === "vigilante");
+    $("#resumo-usuarios").innerHTML = [
+      ["Usuários", perfis.length, ""], ["VMOs ativos", vmos.filter((p) => p.ativo).length, "ok"],
+      ["Administradores", perfis.filter((p) => p.papel === "admin").length, ""], ["Inativos", perfis.filter((p) => !p.ativo).length, "alerta"],
+    ].map(([t, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${t}</div></div>`).join("");
+    const eu = Estado.usuario?.id;
     $("#tabela-usuarios").innerHTML = `
-      <thead><tr><th>Nome</th><th>Usuário (login)</th><th>Perfil</th><th>Status</th><th>Visitas no período</th><th>Criado em</th><th>Ações</th></tr></thead>
-      <tbody>${perfis.map((p) => `<tr>
-        <td>${esc(p.nome)}</td><td><code>${esc(p.login)}</code></td>
+      <thead><tr><th>Nome</th><th>Usuário (login)</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th>Visitas no período</th><th>Criado em</th><th>Ações</th></tr></thead>
+      <tbody>${lista.map((p) => `<tr>
+        <td>${esc(p.nome)}${p.id === eu ? " <small>(você)</small>" : ""}</td><td><code>${esc(p.login)}</code></td>
         <td>${p.papel === "admin" ? "Administrador" : "VMO"}</td>
         <td><span class="selo ${p.ativo ? "ativo" : "inativo"}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
+        <td>${"ultimo_acesso" in p ? (p.ultimo_acesso ? fmtDataHora(p.ultimo_acesso) : "Nunca entrou") : "—"}</td>
         <td>${n[p.nome] || 0}</td><td>${fmtData(p.criado_em)}</td>
-        <td class="acoes"><button class="btn peq" data-editar="${p.id}">Editar</button> <button class="btn peq" data-senha="${p.id}">Nova senha</button></td>
-      </tr>`).join("")}</tbody>`;
-    $$("#tabela-usuarios [data-editar]").forEach((b) => b.onclick = () => editarUsuario(perfis.find((p) => p.id === b.dataset.editar)));
-    $$("#tabela-usuarios [data-senha]").forEach((b) => b.onclick = () => trocarSenha(perfis.find((p) => p.id === b.dataset.senha)));
+        <td class="acoes">
+          <button class="btn peq" data-editar="${p.id}">✏️ Editar</button>
+          <button class="btn peq" data-senha="${p.id}">🔑 Senha</button>
+          ${p.id === eu ? "" : `<button class="btn peq" data-alternar="${p.id}">${p.ativo ? "⛔ Desativar" : "✅ Ativar"}</button>
+          <button class="btn peq perigo" data-excluir="${p.id}" title="Excluir">🗑️</button>`}
+        </td>
+      </tr>`).join("") || `<tr><td colspan="8" class="dica">Nenhum usuário encontrado.</td></tr>`}</tbody>`;
+    const achar = (id) => perfis.find((p) => p.id === id);
+    $$("#tabela-usuarios [data-editar]").forEach((b) => b.onclick = () => editarUsuario(achar(b.dataset.editar)));
+    $$("#tabela-usuarios [data-senha]").forEach((b) => b.onclick = () => b.dataset.senha === eu ? abrirMinhaConta() : trocarSenha(achar(b.dataset.senha)));
+    $$("#tabela-usuarios [data-alternar]").forEach((b) => b.onclick = () => alternarAtivo(achar(b.dataset.alternar)));
+    $$("#tabela-usuarios [data-excluir]").forEach((b) => b.onclick = () => excluirUsuario(achar(b.dataset.excluir)));
+  }
+
+  async function alternarAtivo(p) {
+    const verbo = p.ativo ? "desativar" : "ativar";
+    if (!confirm(`Deseja ${verbo} o usuário ${p.nome}?${p.ativo ? "\nEle não conseguirá mais entrar no aplicativo." : ""}`)) return;
+    carregando(true, "Salvando...");
+    try {
+      await chamarFuncao({ acao: "atualizar", id: p.id, nome: p.nome, papel: p.papel, ativo: !p.ativo });
+      aviso(`Usuário ${p.ativo ? "desativado" : "ativado"}.`);
+      await carregarPerfis();
+    } catch (e) { aviso(e.message, true); } finally { carregando(false); }
+  }
+
+  async function excluirUsuario(p) {
+    if (!confirm(`Excluir definitivamente o usuário ${p.nome} (${p.login})?\n\nAs visitas registradas por ele serão mantidas.\nSe quiser apenas bloquear o acesso, use "Desativar".`)) return;
+    carregando(true, "Excluindo...");
+    try {
+      await chamarFuncao({ acao: "excluir", id: p.id });
+      aviso("Usuário excluído.");
+      await carregarPerfis();
+    } catch (e) { aviso(e.message, true); } finally { carregando(false); }
   }
 
   async function chamarFuncao(corpo) {
@@ -448,7 +493,8 @@ const Admin = (() => {
       e.preventDefault();
       try {
         await chamarFuncao({ acao: "senha", id: p.id, senha: e.target.senha.value });
-        fecharModal(); aviso("Senha alterada. Informe a nova senha ao usuário.");
+        const nova = e.target.senha.value;
+        abrirModal(`<h2>✅ Senha alterada</h2><p>Repasse ao usuário:</p><div class="detalhe-grid"><div><b>Usuário</b>${esc(p.login)}</div><div><b>Nova senha</b>${esc(nova)}</div></div>`);
       } catch (er) { $("#senha-erro").textContent = er.message; }
     };
   }
@@ -491,6 +537,7 @@ const Admin = (() => {
     $("#btn-excel").onclick = exportarExcel;
     $("#btn-imprimir").onclick = imprimirRelatorio;
     $("#form-usuario").onsubmit = criarUsuario;
+    ["#u-busca", "#u-papel", "#u-status"].forEach((sel) => $(sel).oninput = renderUsuarios);
     $("#form-unidade").onsubmit = adicionarUnidade;
     $("#btn-copiar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-publico").value); } catch { $("#link-publico").select(); document.execCommand("copy"); }
@@ -500,3 +547,61 @@ const Admin = (() => {
 
   return { iniciar, ligarEventos, excluirVisita, trocarAba };
 })();
+
+/* Detalhe de uma visita */
+async function abrirDetalheVisita(v, { admin = false } = {}) {
+  const fotos = (v.anomalias || []).flatMap((a) => a.fotos || []);
+  abrirModal(`<p class="dica">Carregando...</p>`);
+  const urls = await urlsAssinadas(fotos);
+  const min = minutosEntre(v.chegada, v.saida);
+  abrirModal(`
+    <h2>${esc(v.unidade)}</h2>
+    <div class="detalhe-grid">
+      <div><b>VMO</b>${esc(v.vigilante)}</div>
+      <div><b>Chegada</b>${fmtDataHora(v.chegada)}</div>
+      <div><b>Saída</b>${fmtDataHora(v.saida)}</div>
+      <div><b>Permanência</b>${fmtDuracao(min)}</div>
+      <div><b>Situação</b>${v.tem_anormalidade ? `<span class="selo anormal">Com anormalidade</span>` : `<span class="selo normal">Normal</span>`}</div>
+      <div><b>Enviado em</b>${fmtDataHora(v.enviado_em || v.criado_em)}</div>
+    </div>
+    ${(v.anomalias || []).map((a, i) => `
+      <div class="ocorrencia">
+        <div class="ocorrencia-topo"><strong>Anormalidade ${i + 1}: ${esc(a.categoria)}</strong><span class="selo g-${esc(a.gravidade)}">${esc(a.gravidade)}</span></div>
+        <p>${esc(a.descricao)}</p>
+        <div class="fotos-grid">${(a.fotos || []).map((p) => urls[p] ? `<img src="${esc(urls[p])}" alt="Foto da anormalidade" data-ampliar />` : `<span class="dica">Foto indisponível</span>`).join("")}</div>
+      </div>`).join("")}
+    <h3>Resumo / observações</h3>
+    <p>${esc(v.observacoes || "—").replace(/\n/g, "<br>")}</p>
+    <div class="filtros-acoes" style="margin-top:1rem">
+      <button class="btn primario" id="btn-imprimir-visita">🖨️ Imprimir esta visita</button>
+      ${admin ? `<button class="btn perigo" id="btn-excluir-visita">🗑️ Excluir visita</button>` : ""}
+    </div>`);
+  $$("#modal-conteudo [data-ampliar]").forEach((img) => img.onclick = () => window.open(img.src, "_blank"));
+  $("#btn-imprimir-visita").onclick = () => imprimirVisitas([v], urls, `Visita — ${v.unidade}`);
+  if (admin) $("#btn-excluir-visita").onclick = () => Admin.excluirVisita(v);
+}
+
+/* Relatório detalhado de visitas (com fotos) para impressão */
+function imprimirVisitas(lista, urls, titulo) {
+  $("#relatorio").innerHTML = `
+    <div class="rel-cab"><div><h1>${esc(titulo)}</h1><div>Relatório de visitas operacionais — VMO</div></div>
+    <div>Emitido em ${fmtDataHora(new Date())}<br>por ${esc(Estado.perfil?.nome || "")}</div></div>
+    ${lista.map((v) => `
+      <div class="rel-visita">
+        <strong>${esc(v.unidade)}</strong> — VMO: ${esc(v.vigilante)}<br>
+        Chegada: ${fmtDataHora(v.chegada)} · Saída: ${fmtDataHora(v.saida)} · Permanência: ${fmtDuracao(minutosEntre(v.chegada, v.saida))}
+        · Situação: <b>${v.tem_anormalidade ? "COM ANORMALIDADE" : "Normal"}</b>
+        ${(v.anomalias || []).map((a, i) => `
+          <div style="margin-top:4px"><b>${i + 1}. ${esc(a.categoria)}</b> (${esc(a.gravidade)}): ${esc(a.descricao)}
+          <div class="rel-fotos">${(a.fotos || []).filter((p) => urls[p]).map((p) => `<img src="${esc(urls[p])}">`).join("")}</div></div>`).join("")}
+        <div style="margin-top:4px"><b>Resumo:</b> ${esc(v.observacoes || "—")}</div>
+      </div>`).join("")}
+    <div class="rel-assinaturas"><div>Vigilante (VMO)</div><div>Supervisão / Gestor</div></div>`;
+  esperarImagensEImprimir();
+}
+
+function esperarImagensEImprimir() {
+  const imgs = $$("#relatorio img");
+  Promise.all(imgs.map((i) => i.complete ? 1 : new Promise((ok) => { i.onload = i.onerror = ok; })))
+    .then(() => setTimeout(() => window.print(), 100));
+}

@@ -1,10 +1,19 @@
-/* Controle de login e navegação entre as telas */
+/* Controle de login e de acesso por perfil.
+   - index.html (app do VMO): somente a tela de registro de visitas.
+   - admin.html (painel): somente administradores. */
 const Main = (() => {
-  let adminIniciado = false;
+  const MODO = document.body.dataset.modo; // "vmo" | "admin"
+  let iniciado = false;
 
   function telas(qual) {
-    ["login", "vmo", "admin"].forEach((t) => mostrar(`#tela-${t}`, t === qual));
+    ["login", "vmo", "admin"].forEach((t) => { const el = $(`#tela-${t}`); if (el) mostrar(el, t === qual); });
     mostrar("#topo", qual !== "login");
+  }
+
+  async function negar(msg) {
+    await sb.auth.signOut();
+    telas("login");
+    $("#login-erro").innerHTML = msg;
   }
 
   async function entrarNoApp() {
@@ -12,20 +21,17 @@ const Main = (() => {
     try {
       const perfil = await carregarPerfil();
       if (!perfil) { telas("login"); return; }
-      if (!perfil.ativo) {
-        await sb.auth.signOut();
-        telas("login");
-        $("#login-erro").textContent = "Seu usuário está desativado. Procure o administrador.";
-        return;
-      }
+      if (!perfil.ativo) return await negar("Seu usuário está desativado. Procure o administrador.");
+      if (MODO === "admin" && perfil.papel !== "admin")
+        return await negar('Acesso restrito ao administrador.<br>VMO: use o <a href="./">aplicativo do VMO</a>.');
+
       $("#nome-usuario").textContent = `${perfil.nome} · ${perfil.papel === "admin" ? "Administrador" : "VMO"}`;
       await carregarUnidades();
-      if (perfil.papel === "admin") {
-        mostrar("#nav-admin", true);
+      if (MODO === "admin") {
         telas("admin");
-        if (!adminIniciado) { adminIniciado = true; await Admin.iniciar(); }
+        if (!iniciado) { iniciado = true; await Admin.iniciar(); }
       } else {
-        mostrar("#nav-admin", false);
+        mostrar("#link-painel", perfil.papel === "admin");
         telas("vmo");
         await VMO.iniciar();
       }
@@ -37,12 +43,6 @@ const Main = (() => {
     }
   }
 
-  function abrirVmo() {
-    $$("#nav-admin button").forEach((b) => b.classList.toggle("ativo", b.dataset.aba === "nova"));
-    telas("vmo");
-    VMO.iniciar();
-  }
-
   async function login(ev) {
     ev.preventDefault();
     const f = ev.target, erro = $("#login-erro");
@@ -52,7 +52,9 @@ const Main = (() => {
     const { error } = await sb.auth.signInWithPassword({ email: loginParaEmail(f.login.value), password: f.senha.value });
     btn.disabled = false;
     if (error) {
-      erro.textContent = /invalid/i.test(error.message) ? "Usuário ou senha incorretos." : /banned/i.test(error.message) ? "Usuário desativado. Procure o administrador." : error.message;
+      erro.textContent = /invalid/i.test(error.message) ? "Usuário ou senha incorretos."
+        : /banned/i.test(error.message) ? "Usuário desativado. Procure o administrador."
+        : /fetch|network/i.test(error.message) ? "Sem conexão com a internet." : error.message;
       return;
     }
     f.senha.value = "";
@@ -62,23 +64,23 @@ const Main = (() => {
   async function sair() {
     if (!confirm("Deseja sair?")) return;
     await sb.auth.signOut();
-    adminIniciado = false;
-    Estado.usuario = Estado.perfil = null;
     location.reload();
   }
 
   function iniciar() {
     $("#form-login").onsubmit = login;
     $("#btn-sair").onclick = sair;
+    $("#btn-conta").onclick = abrirMinhaConta;
     $("#modal-fechar").onclick = fecharModal;
     $("#modal").onclick = (e) => { if (e.target.id === "modal") fecharModal(); };
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharModal(); });
-    VMO.ligarEventos();
-    Admin.ligarEventos();
+    if (MODO === "vmo") { VMO.ligarEventos(); Instalacao.iniciar(); }
+    else Admin.ligarEventos();
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
     entrarNoApp();
   }
 
-  return { iniciar, abrirVmo };
+  return { iniciar };
 })();
 
 Main.iniciar();

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b4f8a" />
+  <title>Painel do Administrador — VMO</title>
+  <link rel="manifest" href="manifest-admin.json" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="vendor/supabase.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/xlsx.mini.min.js" defer></script>
+</head>
+<body data-modo="admin">
+  <!-- Topo -->
+  <header id="topo" class="topo oculto">
+    <div class="marca"><img src="img/icon.svg" alt="" /> <span>VMO <small>Visitas Operacionais</small></span></div>
+    <nav id="nav-admin" class="nav-admin">
+      <button data-aba="painel" class="ativo">📊 Painel</button>
+      <button data-aba="visitas">📋 Visitas</button>
+      <button data-aba="usuarios">👥 Usuários</button>
+      <button data-aba="unidades">🏢 Unidades</button>
+    </nav>
+    <div class="usuario"><span id="nome-usuario"></span> <button id="btn-conta" class="btn-link">🔑 Minha conta</button> <button id="btn-sair" class="btn-link">Sair</button></div>
+  </header>
+
+  <main id="app">
+    <!-- LOGIN -->
+    <section id="tela-login" class="tela login">
+      <div class="cartao login-cartao">
+        <img src="img/icon.svg" alt="" class="login-logo" />
+        <h1>Painel do Administrador</h1>
+        <p class="sub">VMO — Visitas Operacionais · Unidades CPFL</p>
+        <form id="form-login">
+          <label>Usuário (e-mail ou login) <input name="login" autocomplete="username" autocapitalize="none" required /></label>
+          <label>Senha <input name="senha" type="password" autocomplete="current-password" required /></label>
+          <button class="btn primario grande" type="submit">Entrar</button>
+          <p id="login-erro" class="erro"></p>
+        </form>
+        <p class="dica">Acesso restrito a administradores. VMO: use o <a href="./">aplicativo do VMO</a>.</p>
+      </div>
+    </section>
+
+    <!-- PAINEL DO ADMINISTRADOR -->
+    <section id="tela-admin" class="tela oculto">
+      <!-- Filtros comuns -->
+      <div id="filtros" class="cartao filtros">
+        <label>De <input type="date" id="f-de" /></label>
+        <label>Até <input type="date" id="f-ate" /></label>
+        <label>VMO <select id="f-vmo"><option value="">Todos</option></select></label>
+        <label>Unidade <select id="f-unidade"><option value="">Todas</option></select></label>
+        <label>Situação
+          <select id="f-situacao"><option value="">Todas</option><option value="anormal">Com anormalidade</option><option value="normal">Normal</option></select>
+        </label>
+        <label>Gravidade <select id="f-gravidade"><option value="">Todas</option></select></label>
+        <label>Categoria <select id="f-categoria"><option value="">Todas</option></select></label>
+        <div class="filtros-acoes direita">
+          <button class="btn" id="btn-limpar-filtros">Limpar filtros</button>
+          <button class="btn" id="btn-atualizar">↻ Atualizar</button>
+          <span style="flex:1"></span>
+          <button class="btn" id="btn-csv">⬇️ CSV</button>
+          <button class="btn" id="btn-excel">⬇️ Excel</button>
+          <button class="btn primario" id="btn-imprimir">🖨️ Relatório p/ impressão</button>
+        </div>
+      </div>
+      <p id="filtro-ativo" class="dica"></p>
+
+      <div id="aba-painel" class="aba">
+        <div id="kpis" class="kpis"></div>
+        <div class="graficos">
+          <div class="cartao grafico largo"><h3>Visitas por dia</h3><div class="area"><canvas id="g-dia"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por VMO <small>clique para filtrar</small></h3><div class="area"><canvas id="g-vmo"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por unidade <small>clique para filtrar</small></h3><div class="area"><canvas id="g-unidade"></canvas></div></div>
+          <div class="cartao grafico"><h3>Anormalidades por categoria</h3><div class="area"><canvas id="g-categoria"></canvas></div></div>
+          <div class="cartao grafico"><h3>Anormalidades por gravidade</h3><div class="area"><canvas id="g-gravidade"></canvas></div></div>
+          <div class="cartao grafico"><h3>Tempo médio de permanência (min) por unidade</h3><div class="area"><canvas id="g-tempo"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por faixa de horário</h3><div class="area"><canvas id="g-hora"></canvas></div></div>
+        </div>
+      </div>
+
+      <div id="aba-visitas" class="aba oculto">
+        <div class="cartao">
+          <input id="busca" class="busca" placeholder="🔎 Buscar por VMO, unidade, descrição..." />
+          <div class="tabela-wrap"><table id="tabela-visitas" class="tabela"></table></div>
+        </div>
+      </div>
+
+      <div id="aba-usuarios" class="aba oculto">
+        <div class="duas-colunas">
+          <div class="cartao">
+            <h3>Criar novo usuário</h3>
+            <form id="form-usuario">
+              <label>Nome completo * <input name="nome" required minlength="2" /></label>
+              <label>Usuário (login) * <input name="login" required pattern="[a-zA-Z0-9._@\-]{3,80}" autocapitalize="none" placeholder="ex.: joao.silva" /></label>
+              <label>Senha inicial * <input name="senha" required minlength="8" placeholder="mínimo 8 caracteres" /></label>
+              <label>Perfil
+                <select name="papel"><option value="vigilante">VMO (vigilante)</option><option value="admin">Administrador</option></select>
+              </label>
+              <button class="btn primario" type="submit">Criar usuário</button>
+              <p id="usuario-msg" class="dica"></p>
+            </form>
+          </div>
+          <div class="cartao">
+            <h3>📲 Aplicativo do VMO</h3>
+            <p>Envie este link aos VMOs. No celular eles tocam em <b>Instalar aplicativo</b> e o app fica na tela inicial.
+              O app mostra <b>apenas o registro de visitas</b>, e tudo o que eles enviam aparece aqui no painel.</p>
+            <div class="link-publico"><input id="link-publico" readonly /><button class="btn" id="btn-copiar">Copiar</button></div>
+            <a id="btn-whats" class="btn sucesso" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+            <p class="dica" style="margin-top:1rem">Link do painel do administrador (não envie aos VMOs):<br><code id="link-admin"></code></p>
+          </div>
+        </div>
+        <div class="cartao">
+          <h3>Gestão de usuários</h3>
+          <div id="resumo-usuarios" class="kpis"></div>
+          <div class="filtros" style="margin-bottom:.8rem">
+            <label>Buscar <input id="u-busca" placeholder="Nome ou login" /></label>
+            <label>Perfil <select id="u-papel"><option value="">Todos</option><option value="vigilante">VMO</option><option value="admin">Administrador</option></select></label>
+            <label>Status <select id="u-status"><option value="">Todos</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>
+          </div>
+          <div class="tabela-wrap"><table id="tabela-usuarios" class="tabela"></table></div>
+          <p class="dica">Desativar bloqueia o acesso na hora e mantém o histórico. Excluir remove o usuário, mas as visitas dele continuam registradas.</p>
+        </div>
+      </div>
+
+      <div id="aba-unidades" class="aba oculto">
+        <div class="cartao">
+          <h3>Unidades CPFL</h3>
+          <form id="form-unidade" class="inline">
+            <input name="nome" required placeholder="Nome da unidade (ex.: SE Campinas 19)" maxlength="160" />
+            <button class="btn primario">Adicionar</button>
+          </form>
+          <div id="lista-unidades-admin" class="chips"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal oculto" role="dialog" aria-modal="true">
+    <div class="modal-caixa">
+      <button class="modal-fechar" id="modal-fechar" aria-label="Fechar">×</button>
+      <div id="modal-conteudo"></div>
+    </div>
+  </div>
+
+  <div id="carregando" class="carregando oculto"><div class="spinner"></div><p id="carregando-texto">Carregando...</p></div>
+  <div id="aviso" class="aviso oculto"></div>
+
+  <!-- Área do relatório de impressão -->
+  <div id="relatorio" class="relatorio"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/comum.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

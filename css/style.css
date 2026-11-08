@@ -211,3 +211,10 @@ textarea { resize: vertical; }
   .nav-admin button { white-space: nowrap; }
   .usuario span { display: none; }
 }
+
+/* Ajustes v2 */
+.centro { text-align: center; }
+.instalar { margin-top: 1rem; text-align: center; }
+.cartao.instalar { border: 2px dashed var(--azul); background: var(--azul-claro); }
+.topo a.btn-link { color: #fff; }
+.tabela .acoes .btn { margin: 1px 0; }

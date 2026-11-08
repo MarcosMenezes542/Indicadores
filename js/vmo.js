@@ -24,7 +24,7 @@ const VMO = (() => {
     mostrar("#vmo-inicio", true);
     mostrar("#form-visita", false);
     mostrar("#btn-continuar", !!lerRascunho());
-    carregarMinhasVisitas();
+    contarEnviadasHoje();
     window.scrollTo(0, 0);
   }
 
@@ -202,18 +202,12 @@ const VMO = (() => {
     }
   }
 
-  async function carregarMinhasVisitas() {
-    const el = $("#minhas-visitas");
-    el.innerHTML = `<p class="dica">Carregando...</p>`;
-    const { data, error } = await sb.from("visitas").select("*").eq("autor", Estado.usuario.id).order("chegada", { ascending: false }).limit(30);
-    if (error) { el.innerHTML = `<p class="erro">${esc(error.message)}</p>`; return; }
-    if (!data.length) { el.innerHTML = `<p class="dica">Nenhuma visita registrada ainda.</p>`; return; }
-    el.innerHTML = data.map((v, i) => `
-      <div class="item-visita" data-i="${i}">
-        <div><strong>${esc(v.unidade)}</strong><small>${fmtDataHora(v.chegada)} → ${fmtHora(v.saida)} · ${fmtDuracao(minutosEntre(v.chegada, v.saida))}</small></div>
-        <div>${v.tem_anormalidade ? `<span class="selo anormal">⚠️ ${v.anomalias.length}</span>` : `<span class="selo normal">Normal</span>`}</div>
-      </div>`).join("");
-    $$(".item-visita", el).forEach((it) => it.onclick = () => abrirDetalheVisita(data[it.dataset.i]));
+  async function contarEnviadasHoje() {
+    const el = $("#enviadas-hoje");
+    const ini = new Date(); ini.setHours(0, 0, 0, 0);
+    const { count, error } = await sb.from("visitas").select("id", { count: "exact", head: true })
+      .eq("autor", Estado.usuario.id).gte("enviado_em", ini.toISOString());
+    el.textContent = error ? "" : count ? `✅ Você enviou ${count} visita(s) hoje.` : "Nenhuma visita enviada hoje.";
   }
 
   function ligarEventos() {
@@ -273,60 +267,3 @@ const VMO = (() => {
   return { iniciar, ligarEventos };
 })();
 
-/* Detalhe de uma visita (usado pelo VMO e pelo administrador) */
-async function abrirDetalheVisita(v, { admin = false } = {}) {
-  const fotos = (v.anomalias || []).flatMap((a) => a.fotos || []);
-  abrirModal(`<p class="dica">Carregando...</p>`);
-  const urls = await urlsAssinadas(fotos);
-  const min = minutosEntre(v.chegada, v.saida);
-  abrirModal(`
-    <h2>${esc(v.unidade)}</h2>
-    <div class="detalhe-grid">
-      <div><b>VMO</b>${esc(v.vigilante)}</div>
-      <div><b>Chegada</b>${fmtDataHora(v.chegada)}</div>
-      <div><b>Saída</b>${fmtDataHora(v.saida)}</div>
-      <div><b>Permanência</b>${fmtDuracao(min)}</div>
-      <div><b>Situação</b>${v.tem_anormalidade ? `<span class="selo anormal">Com anormalidade</span>` : `<span class="selo normal">Normal</span>`}</div>
-      <div><b>Enviado em</b>${fmtDataHora(v.enviado_em || v.criado_em)}</div>
-    </div>
-    ${(v.anomalias || []).map((a, i) => `
-      <div class="ocorrencia">
-        <div class="ocorrencia-topo"><strong>Anormalidade ${i + 1}: ${esc(a.categoria)}</strong><span class="selo g-${esc(a.gravidade)}">${esc(a.gravidade)}</span></div>
-        <p>${esc(a.descricao)}</p>
-        <div class="fotos-grid">${(a.fotos || []).map((p) => urls[p] ? `<img src="${esc(urls[p])}" alt="Foto da anormalidade" data-ampliar />` : `<span class="dica">Foto indisponível</span>`).join("")}</div>
-      </div>`).join("")}
-    <h3>Resumo / observações</h3>
-    <p>${esc(v.observacoes || "—").replace(/\n/g, "<br>")}</p>
-    <div class="filtros-acoes" style="margin-top:1rem">
-      <button class="btn primario" id="btn-imprimir-visita">🖨️ Imprimir esta visita</button>
-      ${admin ? `<button class="btn perigo" id="btn-excluir-visita">🗑️ Excluir visita</button>` : ""}
-    </div>`);
-  $$("#modal-conteudo [data-ampliar]").forEach((img) => img.onclick = () => window.open(img.src, "_blank"));
-  $("#btn-imprimir-visita").onclick = () => imprimirVisitas([v], urls, `Visita — ${v.unidade}`);
-  if (admin) $("#btn-excluir-visita").onclick = () => Admin.excluirVisita(v);
-}
-
-/* Relatório detalhado de visitas (com fotos) para impressão */
-function imprimirVisitas(lista, urls, titulo) {
-  $("#relatorio").innerHTML = `
-    <div class="rel-cab"><div><h1>${esc(titulo)}</h1><div>Relatório de visitas operacionais — VMO</div></div>
-    <div>Emitido em ${fmtDataHora(new Date())}<br>por ${esc(Estado.perfil?.nome || "")}</div></div>
-    ${lista.map((v) => `
-      <div class="rel-visita">
-        <strong>${esc(v.unidade)}</strong> — VMO: ${esc(v.vigilante)}<br>
-        Chegada: ${fmtDataHora(v.chegada)} · Saída: ${fmtDataHora(v.saida)} · Permanência: ${fmtDuracao(minutosEntre(v.chegada, v.saida))}
-        · Situação: <b>${v.tem_anormalidade ? "COM ANORMALIDADE" : "Normal"}</b>
-        ${(v.anomalias || []).map((a, i) => `
-          <div style="margin-top:4px"><b>${i + 1}. ${esc(a.categoria)}</b> (${esc(a.gravidade)}): ${esc(a.descricao)}
-          <div class="rel-fotos">${(a.fotos || []).filter((p) => urls[p]).map((p) => `<img src="${esc(urls[p])}">`).join("")}</div></div>`).join("")}
-        <div style="margin-top:4px"><b>Resumo:</b> ${esc(v.observacoes || "—")}</div>
-      </div>`).join("")}
-    <div class="rel-assinaturas"><div>Vigilante (VMO)</div><div>Supervisão / Gestor</div></div>`;
-  esperarImagensEImprimir();
-}
-
-function esperarImagensEImprimir() {
-  const imgs = $$("#relatorio img");
-  Promise.all(imgs.map((i) => i.complete ? 1 : new Promise((ok) => { i.onload = i.onerror = ok; })))
-    .then(() => setTimeout(() => window.print(), 100));
-}

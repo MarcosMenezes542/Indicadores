@@ -68,7 +68,8 @@ async function carregarUnidades() {
   const { data, error } = await sb.from("unidades").select("nome").order("nome");
   if (error) throw error;
   Estado.unidades = data.map((u) => u.nome);
-  $("#lista-unidades").innerHTML = Estado.unidades.map((n) => `<option value="${esc(n)}">`).join("");
+  const dl = $("#lista-unidades");
+  if (dl) dl.innerHTML = Estado.unidades.map((n) => `<option value="${esc(n)}">`).join("");
   return Estado.unidades;
 }
 
@@ -135,3 +136,78 @@ function baixarArquivo(nome, conteudo, tipo) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+
+/* ---------- Minha conta: dados e troca da própria senha ---------- */
+function abrirMinhaConta() {
+  const p = Estado.perfil;
+  if (!p) return;
+  abrirModal(`
+    <h2>🔑 Minha conta</h2>
+    <div class="detalhe-grid">
+      <div><b>Nome</b>${esc(p.nome)}</div>
+      <div><b>Usuário (login)</b>${esc(p.login)}</div>
+      <div><b>Perfil</b>${p.papel === "admin" ? "Administrador" : "VMO"}</div>
+    </div>
+    <h3>Alterar minha senha</h3>
+    <form id="form-minha-senha">
+      <label>Senha atual <input type="password" name="atual" required autocomplete="current-password" /></label>
+      <label>Nova senha <input type="password" name="nova" required minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></label>
+      <label>Repita a nova senha <input type="password" name="confirma" required minlength="8" autocomplete="new-password" /></label>
+      <label style="font-weight:400"><input type="checkbox" id="mostrar-senhas" style="display:inline;width:auto" /> Mostrar senhas</label>
+      <p class="erro" id="minha-senha-erro"></p>
+      <button class="btn primario">Salvar nova senha</button>
+    </form>`);
+  const f = $("#form-minha-senha");
+  $("#mostrar-senhas").onchange = (e) => [f.atual, f.nova, f.confirma].forEach((i) => i.type = e.target.checked ? "text" : "password");
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const erro = $("#minha-senha-erro");
+    erro.textContent = "";
+    if (f.nova.value.length < 8) return erro.textContent = "A nova senha precisa ter pelo menos 8 caracteres.";
+    if (f.nova.value !== f.confirma.value) return erro.textContent = "As duas senhas novas não são iguais.";
+    if (f.nova.value === f.atual.value) return erro.textContent = "A nova senha deve ser diferente da atual.";
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try {
+      // confirma a senha atual antes de trocar
+      const { error: e1 } = await sb.auth.signInWithPassword({ email: Estado.usuario.email, password: f.atual.value });
+      if (e1) throw new Error(/invalid/i.test(e1.message) ? "Senha atual incorreta." : e1.message);
+      const { error: e2 } = await sb.auth.updateUser({ password: f.nova.value });
+      if (e2) throw new Error(/same|different/i.test(e2.message) ? "A nova senha deve ser diferente da atual."
+        : /weak|least|short/i.test(e2.message) ? "Senha fraca: use pelo menos 8 caracteres." : e2.message);
+      fecharModal();
+      aviso("✅ Senha alterada com sucesso!");
+    } catch (er) {
+      erro.textContent = er.message;
+    } finally {
+      btn.disabled = false;
+    }
+  };
+}
+
+/* ---------- Instalação do aplicativo (PWA) ---------- */
+const Instalacao = (() => {
+  let evento = null;
+  const instalado = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const ios = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  function atualizar() {
+    const mostrarCartao = !instalado() && (!!evento || ios());
+    $$("[data-instalar]").forEach((el) => mostrar(el, mostrarCartao));
+    $$("[data-btn-instalar]").forEach((b) => mostrar(b, !!evento));
+    $$("[data-instrucao-ios]").forEach((el) => mostrar(el, !evento && ios()));
+  }
+
+  function iniciar() {
+    window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evento = e; atualizar(); });
+    window.addEventListener("appinstalled", () => { evento = null; atualizar(); aviso("✅ Aplicativo instalado! Abra pelo ícone VMO Visitas."); });
+    $$("[data-btn-instalar]").forEach((b) => b.onclick = async () => {
+      if (!evento) return;
+      evento.prompt();
+      await evento.userChoice;
+      evento = null;
+      atualizar();
+    });
+    atualizar();
+  }
+  return { iniciar };
+})();
