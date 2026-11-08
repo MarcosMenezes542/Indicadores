@@ -259,10 +259,18 @@ function abrirMinhaConta() {
 /* ---------- Instalação do aplicativo (PWA) ---------- */
 const Instalacao = (() => {
   let evento = null;
-  const instalado = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const ehPainel = () => document.body.dataset.modo === "admin";
+  const telaCheia = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   const ios = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // Navegadores embutidos (WhatsApp, Instagram, Facebook...) não instalam apps
+  const navegadorEmbutido = () => /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)|GSA\//i.test(navigator.userAgent);
+  // O app "Gestão VMO" abre com ?app=gestao (start_url do manifesto); assim sabemos
+  // se estamos no app do painel ou dentro de outro app (ex.: o app do VMO).
+  if (new URLSearchParams(location.search).get("app") === "gestao") sessionStorage.setItem("app-gestao", "1");
+  const instalado = () => telaCheia() && (!ehPainel() || sessionStorage.getItem("app-gestao") === "1" || ios());
 
-  const nomeApp = () => document.body.dataset.modo === "admin" ? "Gestão VMO" : "VMO Visitas";
+  const nomeApp = () => ehPainel() ? "Gestão VMO" : "VMO Visitas";
+  const linkLimpo = () => location.origin + location.pathname;
 
   function atualizar() {
     const mostrarCartao = !instalado() && (!!evento || ios());
@@ -275,8 +283,14 @@ const Instalacao = (() => {
 
   // Sem o convite automático do navegador: mostra o passo a passo
   function instrucoes() {
+    const alerta = telaCheia()
+      ? `<p class="faixa-leitura">⚠️ Você está dentro de outro aplicativo (provavelmente o <b>VMO Visitas</b>). Para instalar o <b>${nomeApp()}</b>, copie o link abaixo e abra no <b>Chrome</b> (Android) ou no <b>Safari</b> (iPhone).</p>`
+      : navegadorEmbutido()
+      ? `<p class="faixa-leitura">⚠️ Este link foi aberto dentro do WhatsApp/Instagram, que não instala aplicativos. Toque no menu <b>⋮</b> e em <b>Abrir no Chrome</b> (ou no navegador), ou copie o link abaixo.</p>`
+      : "";
     abrirModal(`
       <h2>📲 Instalar o app "${nomeApp()}" no celular</h2>
+      ${alerta}
       <div class="passos">
         <div><b>Android (Chrome)</b>
           <ol><li>Abra este endereço no <b>Chrome</b>.</li><li>Toque no menu <b>⋮</b> (três pontinhos, no canto superior direito).</li>
@@ -286,7 +300,8 @@ const Instalacao = (() => {
           <li>Role e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol></div>
       </div>
       <p class="dica">O ícone <b>${nomeApp()}</b> aparece na tela inicial e abre direto, em tela cheia.</p>
-      <div class="link-publico"><input readonly value="${esc(location.href.split("#")[0])}" id="link-instalar" /><button class="btn" id="btn-copiar-instalar">Copiar link</button></div>`);
+      <p class="dica">Se o celular já tiver o app <b>VMO Visitas</b> instalado e o Chrome mostrar "Abrir no app" em vez de "Instalar", desinstale o VMO Visitas desse celular, instale o Gestão VMO e, se precisar, instale o VMO Visitas de novo.</p>
+      <div class="link-publico"><input readonly value="${esc(linkLimpo())}" id="link-instalar" /><button class="btn" id="btn-copiar-instalar">Copiar link</button></div>`);
     $("#btn-copiar-instalar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-instalar").value); } catch { $("#link-instalar").select(); document.execCommand("copy"); }
       aviso("Link copiado! Abra no navegador do celular.");
