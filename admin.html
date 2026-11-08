@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#083a66" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Gestão VMO" />
+  <meta name="apple-mobile-web-app-title" content="Visitas VMO" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Gestão Operacional de Visitas dos VMO</title>
-  <link rel="manifest" href="manifest-admin.json" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="img/icon-admin.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="img/icon-admin-192.png" />
+  <link rel="apple-touch-icon" href="img/icon-192.png" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="vendor/supabase.min.js"></script>
   <script src="vendor/chart.umd.min.js"></script>
@@ -49,23 +49,6 @@
   </header>
 
   <main id="app">
-    <!-- LOGIN -->
-    <section id="tela-login" class="tela login">
-      <div class="cartao login-cartao">
-        <img src="img/icon-admin.svg" alt="" class="login-logo" />
-        <h1>Gestão Operacional de Visitas dos VMO</h1>
-        <p class="sub">Acesso do administrador e do gestor · Unidades CPFL</p>
-        <form id="form-login">
-          <label>Usuário (e-mail ou login) <input name="login" autocomplete="username" autocapitalize="none" required /></label>
-          <label>Senha <input name="senha" type="password" autocomplete="current-password" required /></label>
-          <button class="btn primario grande" type="submit">Entrar</button>
-          <p id="login-erro" class="erro"></p>
-        </form>
-        <p class="dica">Acesso restrito a administradores e gestores. VMO: use o <a href="./">aplicativo do VMO</a>.</p>
-        <button type="button" class="btn sucesso grande oculto" data-instalar-sempre>📲 Instalar o app no celular</button>
-      </div>
-    </section>
-
     <!-- PAINEL DO ADMINISTRADOR -->
     <section id="tela-admin" class="tela oculto">
       <!-- Filtros comuns -->
@@ -131,12 +114,12 @@
             </form>
           </div>
           <div class="cartao">
-            <h3>📲 Aplicativo do VMO</h3>
-            <p>Envie este link aos VMOs. No celular eles tocam em <b>Instalar aplicativo</b> e o app fica na tela inicial.
-              O app mostra <b>apenas o registro de visitas</b>, e tudo o que eles enviam aparece aqui no painel.</p>
+            <h3>📲 Link de acesso (único para todos)</h3>
+            <p>Todos usam <b>o mesmo link e o mesmo aplicativo</b>. Depois do login, o sistema abre a tela conforme o perfil:
+              <b>VMO</b> vê só o registro de visitas, <b>Gestor</b> vê o painel sem poder alterar e <b>Administrador</b> tem acesso total.</p>
             <div class="link-publico"><input id="link-publico" readonly /><button class="btn" id="btn-copiar">Copiar</button></div>
             <a id="btn-whats" class="btn sucesso" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
-            <p class="dica" style="margin-top:1rem">Link do painel do administrador (não envie aos VMOs):<br><code id="link-admin"></code></p>
+
           </div>
         </div>
         <div class="cartao">

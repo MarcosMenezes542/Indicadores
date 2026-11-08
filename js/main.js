@@ -2,7 +2,8 @@
    - index.html (app do VMO): somente a tela de registro de visitas.
    - admin.html (painel): somente administradores. */
 const Main = (() => {
-  const MODO = document.body.dataset.modo; // "vmo" | "admin"
+  const MODO = document.body.dataset.modo; // "vmo" (index.html: login único + app do VMO) | "admin" (admin.html: painel)
+  const PAINEL = ["admin", "gestor"];
   let iniciado = false;
 
   function telas(qual) {
@@ -10,22 +11,30 @@ const Main = (() => {
     mostrar("#topo", qual !== "login");
   }
 
+  // Volta para a tela de login única (index.html), opcionalmente com uma mensagem
+  function irParaLogin(msg) {
+    if (msg) sessionStorage.setItem("msg-login", msg);
+    if (MODO === "admin") { location.replace("index.html"); return; }
+    telas("login");
+    const m = sessionStorage.getItem("msg-login");
+    if (m) { $("#login-erro").innerHTML = m; sessionStorage.removeItem("msg-login"); }
+  }
+
   async function negar(msg) {
     await sb.auth.signOut();
-    telas("login");
-    $("#login-erro").innerHTML = msg;
+    irParaLogin(msg);
   }
 
   async function entrarNoApp() {
     carregando(true);
     try {
       const perfil = await carregarPerfil();
-      if (!perfil) { telas("login"); return; }
+      if (!perfil) return irParaLogin();
       if (!perfil.ativo) return await negar("Seu usuário está desativado. Procure o administrador.");
-      if (MODO === "admin" && !["admin", "gestor"].includes(perfil.papel))
-        return await negar('Acesso restrito ao administrador.<br>VMO: use o <a href="./">aplicativo do VMO</a>.');
-      if (MODO === "vmo" && perfil.papel === "gestor")
-        return await negar('O perfil Gestor é somente de visualização.<br>Acesse o <a href="admin.html">painel</a>.');
+
+      // Cada perfil vai para a sua área
+      if (MODO === "vmo" && PAINEL.includes(perfil.papel)) { location.replace("admin.html"); return; }
+      if (MODO === "admin" && !PAINEL.includes(perfil.papel)) { location.replace("index.html"); return; }
 
       if ($("#papel-usuario")) {
         $("#nome-usuario").textContent = perfil.nome;
@@ -37,13 +46,12 @@ const Main = (() => {
         telas("admin");
         if (!iniciado) { iniciado = true; await Admin.iniciar(); }
       } else {
-        mostrar("#link-painel", perfil.papel === "admin");
         telas("vmo");
         await VMO.iniciar();
       }
     } catch (e) {
       aviso("Erro ao entrar: " + e.message, true);
-      telas("login");
+      if (MODO === "vmo") telas("login");
     } finally {
       carregando(false);
     }
@@ -53,16 +61,22 @@ const Main = (() => {
     ev.preventDefault();
     const f = ev.target, erro = $("#login-erro");
     erro.textContent = "";
-    const btn = f.querySelector("button");
+    const btn = f.querySelector(".btn-entrar");
+    if (!f.login.value.trim() || !f.senha.value) { erro.textContent = "Informe o usuário e a senha."; tremer(); return; }
     btn.disabled = true;
+    btn.classList.add("carregando-btn");
     const { error } = await sb.auth.signInWithPassword({ email: loginParaEmail(f.login.value), password: f.senha.value });
     btn.disabled = false;
+    btn.classList.remove("carregando-btn");
     if (error) {
+      tremer();
       erro.textContent = /invalid/i.test(error.message) ? "Usuário ou senha incorretos."
         : /banned/i.test(error.message) ? "Usuário desativado. Procure o administrador."
         : /fetch|network/i.test(error.message) ? "Sem conexão com a internet." : error.message;
       return;
     }
+    if ($("#lembrar-usuario").checked) localStorage.setItem("vmo-ultimo-login", f.login.value.trim());
+    else localStorage.removeItem("vmo-ultimo-login");
     f.senha.value = "";
     await entrarNoApp();
   }
@@ -70,11 +84,33 @@ const Main = (() => {
   async function sair() {
     if (!confirm("Deseja sair?")) return;
     await sb.auth.signOut();
-    location.reload();
+    location.replace("index.html");
+  }
+
+  function tremer() {
+    const c = $(".entrada-cartao");
+    if (!c) return;
+    c.classList.remove("tremer"); void c.offsetWidth; c.classList.add("tremer");
+  }
+
+  function prepararLogin() {
+    const f = $("#form-login");
+    if (!f) return;
+    f.onsubmit = login;
+    const salvo = localStorage.getItem("vmo-ultimo-login");
+    if (salvo) { f.login.value = salvo; $("#lembrar-usuario").checked = true; }
+    $("#btn-ver-senha").onclick = () => {
+      const ver = f.senha.type === "password";
+      f.senha.type = ver ? "text" : "password";
+      $("#btn-ver-senha").textContent = ver ? "🙈" : "👁️";
+    };
+    const caps = (e) => mostrar("#aviso-caps", !!e.getModifierState?.("CapsLock"));
+    f.senha.addEventListener("keyup", caps);
+    f.senha.addEventListener("keydown", caps);
   }
 
   function iniciar() {
-    $("#form-login").onsubmit = login;
+    prepararLogin();
     $("#btn-sair").onclick = sair;
     $("#btn-conta").onclick = abrirMinhaConta;
     $("#modal-fechar").onclick = fecharModal;

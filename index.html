@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b4f8a" />
-  <title>VMO — Visitas Operacionais</title>
+  <title>Gestão Operacional de Visitas dos VMO</title>
   <script>
     // O app do VMO fica em /index.html (escopo próprio, separado do painel /admin.html)
     if (location.pathname.endsWith("/")) location.replace("index.html" + location.search + location.hash);
@@ -13,7 +13,7 @@
   <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="img/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="VMO Visitas" />
+  <meta name="apple-mobile-web-app-title" content="Visitas VMO" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="vendor/supabase.min.js"></script>
 </head>
@@ -21,26 +21,122 @@
   <!-- Topo -->
   <header id="topo" class="topo oculto">
     <div class="marca"><img src="img/icon.svg" alt="" /> <span>VMO <small>Visitas Operacionais</small></span></div>
-    <div class="usuario"><span id="nome-usuario"></span> <a id="link-painel" class="btn-link oculto" href="admin.html" target="_blank" rel="noopener">📊 Painel</a> <button id="btn-conta" class="btn-link">🔑 Senha</button> <button id="btn-sair" class="btn-link">Sair</button></div>
+    <div class="usuario"><span id="nome-usuario"></span> <button id="btn-conta" class="btn-link">🔑 Senha</button> <button id="btn-sair" class="btn-link">Sair</button></div>
   </header>
 
   <main id="app">
     <!-- LOGIN -->
-    <section id="tela-login" class="tela login">
-      <div class="cartao login-cartao">
-        <img src="img/icon.svg" alt="" class="login-logo" />
-        <h1>VMO — Visitas Operacionais</h1>
-        <p class="sub">Vigilância motorizada · Unidades CPFL</p>
-        <form id="form-login">
-          <label>Usuário <input name="login" autocomplete="username" autocapitalize="none" required /></label>
-          <label>Senha <input name="senha" type="password" autocomplete="current-password" required /></label>
-          <button class="btn primario grande" type="submit">Entrar</button>
-          <p id="login-erro" class="erro"></p>
-        </form>
-        <p class="dica">Não tem acesso? Solicite o seu usuário ao administrador.</p>
-        <div class="instalar oculto" data-instalar>
-          <button class="btn sucesso grande" data-btn-instalar>📲 Instalar aplicativo</button>
-          <p class="dica oculto" data-instrucao-ios>No iPhone: toque em <b>Compartilhar</b> (□↑) e depois em <b>Adicionar à Tela de Início</b>.</p>
+    <section id="tela-login" class="tela entrada">
+      <!-- Lado da apresentação -->
+      <div class="entrada-hero">
+        <div class="entrada-hero-topo">
+          <img src="img/icon.svg" alt="" class="entrada-logo" />
+          <div><b>Gestão Operacional</b><small>de Visitas dos VMO</small></div>
+        </div>
+
+        <div class="entrada-hero-texto">
+          <span class="entrada-selo">🛡️ Vigilância Motorizada · Unidades CPFL</span>
+          <h1>Cada ronda registrada.<br /><span>Cada unidade protegida.</span></h1>
+          <p>Chegada e saída, fotos das anormalidades e conferência por GPS, com tudo chegando na hora para a gestão acompanhar.</p>
+        </div>
+
+        <!-- Ilustração: rota de patrulha ligando as unidades -->
+        <svg class="entrada-mapa" viewBox="0 0 560 300" role="img" aria-label="Rota de patrulha entre unidades">
+          <defs>
+            <linearGradient id="gRota" x1="0" x2="1"><stop offset="0" stop-color="#5ee0c4" /><stop offset="1" stop-color="#ffd166" /></linearGradient>
+            <radialGradient id="gBrilho"><stop offset="0" stop-color="#5ee0c4" stop-opacity=".55" /><stop offset="1" stop-color="#5ee0c4" stop-opacity="0" /></radialGradient>
+            <pattern id="gGrade" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#ffffff" stroke-opacity=".06" /></pattern>
+          </defs>
+          <rect width="560" height="300" rx="22" fill="url(#gGrade)" />
+          <!-- ruas -->
+          <path d="M0 210 C120 200 160 120 260 130 S420 230 560 170" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="18" stroke-linecap="round" />
+          <path d="M90 0 C110 90 70 160 120 300" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="12" />
+          <path d="M420 0 C400 80 460 150 430 300" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="12" />
+          <!-- rota da patrulha -->
+          <path id="rota" d="M60 205 C120 200 150 125 250 128 S400 225 500 160" fill="none" stroke="url(#gRota)" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10" class="rota-animada" />
+          <!-- unidade 1: subestação -->
+          <g transform="translate(60 205)">
+            <circle r="26" fill="url(#gBrilho)" class="pulso" />
+            <circle r="9" fill="#5ee0c4" /><circle r="4" fill="#083a66" />
+          </g>
+          <g transform="translate(36 120)" stroke="#cfe3ff" stroke-width="2" fill="none" opacity=".9">
+            <path d="M24 0 L10 60 M24 0 L38 60 M14 40 H34 M17 26 H31 M20 14 H28 M2 20 H46 M6 34 H42" />
+          </g>
+          <!-- unidade 2 -->
+          <g transform="translate(250 128)">
+            <circle r="26" fill="url(#gBrilho)" class="pulso atraso1" />
+            <circle r="9" fill="#5ee0c4" /><circle r="4" fill="#083a66" />
+          </g>
+          <!-- unidade 3: alerta -->
+          <g transform="translate(500 160)">
+            <circle r="26" fill="#ffd166" opacity=".18" class="pulso atraso2" />
+            <circle r="9" fill="#ffd166" /><circle r="4" fill="#083a66" />
+          </g>
+          <g transform="translate(470 92)">
+            <rect width="62" height="34" rx="8" fill="#ffffff" fill-opacity=".12" stroke="#ffd166" stroke-opacity=".6" />
+            <text x="31" y="22" text-anchor="middle" font-size="13" fill="#ffd166" font-family="system-ui, sans-serif">📷 1 foto</text>
+          </g>
+          <g transform="translate(205 62)">
+            <rect width="92" height="34" rx="8" fill="#ffffff" fill-opacity=".12" stroke="#5ee0c4" stroke-opacity=".6" />
+            <text x="46" y="22" text-anchor="middle" font-size="13" fill="#bff5e8" font-family="system-ui, sans-serif">✅ No local</text>
+          </g>
+          <!-- viatura percorrendo a rota -->
+          <g class="viatura">
+            <animateMotion dur="9s" repeatCount="indefinite" rotate="auto"><mpath href="#rota" /></animateMotion>
+            <g transform="translate(-16 -9)">
+              <rect width="32" height="18" rx="5" fill="#ffffff" />
+              <rect x="6" y="3" width="20" height="6" rx="2" fill="#0b4f8a" />
+              <rect x="12" y="-4" width="8" height="4" rx="1.5" fill="#e63946" class="giroflex" />
+              <circle cx="8" cy="18" r="3.4" fill="#0b2340" /><circle cx="24" cy="18" r="3.4" fill="#0b2340" />
+            </g>
+          </g>
+        </svg>
+
+        <ul class="entrada-recursos">
+          <li><span>📍</span> Conferência por GPS</li>
+          <li><span>📷</span> Fotos e relato do ocorrido</li>
+          <li><span>⏱️</span> Chegada e saída</li>
+          <li><span>📊</span> Indicadores em tempo real</li>
+        </ul>
+      </div>
+
+      <!-- Lado do acesso -->
+      <div class="entrada-acesso">
+        <div class="entrada-cartao">
+          <img src="img/icon.svg" alt="" class="entrada-logo-movel" />
+          <h2>Bem-vindo(a)</h2>
+          <p class="entrada-sub">Entre com o seu usuário. O sistema abre a sua área de acordo com o seu perfil.</p>
+
+          <form id="form-login" novalidate>
+            <label class="campo">
+              <span>Usuário</span>
+              <div class="campo-caixa">
+                <i>👤</i>
+                <input name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="seu.usuario ou e-mail" />
+              </div>
+            </label>
+            <label class="campo">
+              <span>Senha</span>
+              <div class="campo-caixa">
+                <i>🔒</i>
+                <input name="senha" type="password" autocomplete="current-password" required placeholder="••••••••" />
+                <button type="button" class="ver-senha" id="btn-ver-senha" aria-label="Mostrar senha">👁️</button>
+              </div>
+              <small id="aviso-caps" class="caps oculto">⇪ Caps Lock está ativado</small>
+            </label>
+            <label class="lembrar"><input type="checkbox" id="lembrar-usuario" /> Lembrar meu usuário neste aparelho</label>
+            <button class="btn-entrar" type="submit"><span>Entrar</span><b>→</b></button>
+            <p id="login-erro" class="erro" role="alert"></p>
+          </form>
+
+          <div class="perfis">
+            <div><span>👮</span><b>VMO</b><small>Registra as visitas</small></div>
+            <div><span>👁️</span><b>Gestor</b><small>Acompanha os resultados</small></div>
+            <div><span>🧑‍💼</span><b>Administrador</b><small>Gerencia o sistema</small></div>
+          </div>
+
+          <button type="button" class="btn-instalar oculto" data-instalar-sempre>📲 Instalar o aplicativo no celular</button>
+          <p class="entrada-rodape">Esqueceu a senha? Fale com o administrador do sistema.</p>
         </div>
       </div>
     </section>

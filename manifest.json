@@ -1,13 +1,13 @@
 {
   "id": "./",
-  "name": "VMO — Registro de Visitas",
-  "short_name": "VMO Visitas",
-  "description": "Registro de visitas operacionais dos vigilantes motorizados (VMO)",
+  "name": "Gestão Operacional de Visitas dos VMO",
+  "short_name": "Visitas VMO",
+  "description": "Registro e gestão das visitas operacionais dos vigilantes motorizados (VMO)",
   "lang": "pt-BR",
   "start_url": "./index.html",
-  "scope": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#f3f6fa",
   "theme_color": "#0b4f8a",
   "icons": [

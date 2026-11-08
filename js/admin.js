@@ -19,8 +19,7 @@ const Admin = (() => {
     $("#f-categoria").innerHTML = `<option value="">Todas</option>` + CFG.CATEGORIAS.map((c) => `<option>${esc(c)}</option>`).join("");
     const base = location.origin + location.pathname.replace(/[^/]*$/, "");
     $("#link-publico").value = base;
-    $("#link-admin").textContent = base + "admin.html";
-    $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent('Aplicativo VMO para registro das visitas operacionais. Abra o link, toque em "Instalar aplicativo" e entre com o seu usuário e senha: ' + base)}`;
+    $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent('Gestão Operacional de Visitas dos VMO. Abra o link, toque em "Instalar o aplicativo" e entre com o seu usuário e senha: ' + base)}`;
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
     Chart.defaults.color = "#5f6b7a";
     const leitura = somenteLeitura();

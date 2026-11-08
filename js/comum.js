@@ -267,10 +267,10 @@ const Instalacao = (() => {
   // O app "Gestão VMO" abre com ?app=gestao (start_url do manifesto); assim sabemos
   // se estamos no app do painel ou dentro de outro app (ex.: o app do VMO).
   if (new URLSearchParams(location.search).get("app") === "gestao") sessionStorage.setItem("app-gestao", "1");
-  const instalado = () => telaCheia() && (!ehPainel() || sessionStorage.getItem("app-gestao") === "1" || ios());
+  const instalado = () => telaCheia();
 
-  const nomeApp = () => ehPainel() ? "Gestão VMO" : "VMO Visitas";
-  const linkLimpo = () => location.origin + location.pathname;
+  const nomeApp = () => "Visitas VMO";
+  const linkLimpo = () => location.origin + "/";
 
   function atualizar() {
     const mostrarCartao = !instalado() && (!!evento || ios());
@@ -284,7 +284,7 @@ const Instalacao = (() => {
   // Sem o convite automático do navegador: mostra o passo a passo
   function instrucoes() {
     const alerta = telaCheia()
-      ? `<p class="faixa-leitura">⚠️ Você está dentro de outro aplicativo (provavelmente o <b>VMO Visitas</b>). Para instalar o <b>${nomeApp()}</b>, copie o link abaixo e abra no <b>Chrome</b> (Android) ou no <b>Safari</b> (iPhone).</p>`
+      ? `<p class="faixa-leitura">⚠️ Você está dentro de um aplicativo antigo. Copie o link abaixo e abra no <b>Chrome</b> (Android) ou no <b>Safari</b> (iPhone) para instalar a versão nova.</p>`
       : navegadorEmbutido()
       ? `<p class="faixa-leitura">⚠️ Este link foi aberto dentro do WhatsApp/Instagram, que não instala aplicativos. Toque no menu <b>⋮</b> e em <b>Abrir no Chrome</b> (ou no navegador), ou copie o link abaixo.</p>`
       : "";
@@ -300,7 +300,7 @@ const Instalacao = (() => {
           <li>Role e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol></div>
       </div>
       <p class="dica">O ícone <b>${nomeApp()}</b> aparece na tela inicial e abre direto, em tela cheia.</p>
-      <p class="dica">Se o celular já tiver o app <b>VMO Visitas</b> instalado e o Chrome mostrar "Abrir no app" em vez de "Instalar", desinstale o VMO Visitas desse celular, instale o Gestão VMO e, se precisar, instale o VMO Visitas de novo.</p>
+      <p class="dica">É um único aplicativo para todos: VMO, gestor e administrador. Se você tiver instalado uma versão antiga ("VMO Visitas" ou "Gestão VMO"), desinstale e instale de novo por este link.</p>
       <div class="link-publico"><input readonly value="${esc(linkLimpo())}" id="link-instalar" /><button class="btn" id="btn-copiar-instalar">Copiar link</button></div>`);
     $("#btn-copiar-instalar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-instalar").value); } catch { $("#link-instalar").select(); document.execCommand("copy"); }
