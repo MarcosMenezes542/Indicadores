@@ -503,3 +503,6 @@ a.lateral-item { text-decoration: none; }
   .entrada-logo-parceiro { padding: 0; }
   .entrada-logo-parceiro img { height: 52px; }
 }
+/* Logo maior */
+.entrada-logo-parceiro img { height: 130px; }
+@media (max-width: 980px) { .entrada-logo-parceiro img { height: 78px; } }
