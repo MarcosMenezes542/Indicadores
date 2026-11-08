@@ -302,8 +302,8 @@ const Admin = (() => {
       data: {
         labels: meses.map(nomeMes),
         datasets: [
-          { label: "Normal", data: meses.map((m) => porMesN[m] || 0), backgroundColor: "#2a9d8f", stack: "s", maxBarThickness: 90, borderRadius: 4 },
-          { label: "Com anormalidade", data: meses.map((m) => porMesA[m] || 0), backgroundColor: "#e76f51", stack: "s", maxBarThickness: 90, borderRadius: 4 },
+          { label: "Normal", data: meses.map((m) => porMesN[m] || 0), backgroundColor: "#2e9e4f", stack: "s", maxBarThickness: 90, borderRadius: 4 },
+          { label: "Com anormalidade", data: meses.map((m) => porMesA[m] || 0), backgroundColor: "#f28c28", stack: "s", maxBarThickness: 90, borderRadius: 4 },
         ],
       },
       options: { layout: { padding: { top: 24 } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grace: "8%", ticks: { precision: 0 } } } },
