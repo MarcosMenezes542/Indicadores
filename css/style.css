@@ -535,3 +535,6 @@ a.lateral-item { text-decoration: none; }
 .segue-txt { color: var(--suave); font-weight: 600; }
 .personalizada-txt { color: #8a5a00; }
 #cartao-padroes .permissoes-box { margin-bottom: .7rem; }
+
+.perfil-resumo { padding: .7rem .9rem; border-radius: 12px; background: var(--azul-claro); margin-bottom: .9rem; font-size: .9rem; line-height: 1.9; }
+.perfil-resumo small { display: block; color: var(--suave); line-height: 1.35; margin-top: .3rem; }

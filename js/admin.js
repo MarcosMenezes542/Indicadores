@@ -31,8 +31,8 @@ const Admin = (() => {
     mostrar("#btn-imprimir", pode("imprimir"));
     mostrar("#aviso-leitura", !["excluir_visitas", "gerenciar_unidades", "gerenciar_usuarios"].some(pode));
     mostrar("#btn-fixar-auto", pode("gerenciar_unidades"));
-    renderPerfis($("#perfis-novo"), "vigilante", (papel) => renderPermissoes($("#perms-novo"), papel));
-    renderPermissoes($("#perms-novo"), "vigilante");
+    renderPerfis($("#perfis-novo"), "vigilante", resumoPerfilNovo);
+    resumoPerfilNovo("vigilante");
     iniciarPadroes();
     trocarAba(abasPermitidas()[0]);
     await Promise.all([pode("gerenciar_usuarios") ? carregarPerfis() : null, carregarVisitas()]);
@@ -103,6 +103,17 @@ const Admin = (() => {
     return mesmasPermissoes(marcadas, PERMISSOES_PADRAO[papel]) ? null : marcadas;
   };
 
+  /* Cadastro: mostra o que o perfil escolhido libera (o usuário é criado com essas permissões) */
+  function resumoPerfilNovo(papel) {
+    const caixa = $("#perms-novo");
+    const op = OPCOES_PERFIL.find((o) => o.id === papel);
+    const lista = papel === "admin" ? TODAS_PERMISSOES : (PERMISSOES_PADRAO[papel] || []);
+    caixa.innerHTML = `<b>${op ? op.icone + " " + op.nome : nomePapel(papel)}</b> será criado com: ` +
+      (papel === "admin" ? `<span class="chip-perm todas">Acesso total</span>`
+        : PERMISSOES.filter((x) => lista.includes(x.id)).map((x) => `<span class="chip-perm">${esc(x.nome)}</span>`).join(" ") || `<span class="selo inativo">Nenhuma permissão</span>`) +
+      `<small>Para mudar o que cada perfil libera, use "Permissões padrão de cada perfil" abaixo. Para ajustar só uma pessoa, use ✏️ Editar na lista.</small>`;
+  }
+
   /* Permissões padrão de cada perfil (com botão Salvar) */
   let papelPadrao = "vigilante";
   function iniciarPadroes() {
@@ -147,7 +158,7 @@ const Admin = (() => {
     renderUsuarios();
     // o formulário de cadastro passa a usar o novo padrão
     const atual = $("#form-usuario").papel.value;
-    renderPermissoes($("#perms-novo"), atual);
+    resumoPerfilNovo(atual);
   }
 
   function trocarAba(aba) {
@@ -208,7 +219,7 @@ const Admin = (() => {
       situacao: $("#f-situacao").value,
       gravidade: $("#f-gravidade").value || extra.gravidade,
       categoria: $("#f-categoria").value || extra.categoria,
-      geo: $("#f-geo").value || extra.geo,
+      geo: extra.geo,
     };
     const busca = ($("#busca").value || "").trim().toLowerCase();
     return visitas.filter((v) => {
@@ -274,7 +285,6 @@ const Admin = (() => {
       ["Tempo médio na unidade", fmtDuracao(media), ""],
       ["VMOs em atividade", new Set(lista.map((v) => v.vigilante)).size, ""],
       ["Unidades visitadas", new Set(lista.map((v) => v.unidade)).size, ""],
-      ["📍 Confirmadas por GPS", `${geoOk} <small>(${lista.length ? Math.round(geoOk * 100 / lista.length) : 0}%)</small>`, "ok"],
       ["⚠️ Fora da unidade", geoCont.longe || 0, "alerta"],
     ];
     $("#kpis").innerHTML = kpis.map(([n, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${n}</div></div>`).join("");
@@ -603,15 +613,14 @@ const Admin = (() => {
     ev.preventDefault();
     const f = ev.target, msg = $("#usuario-msg");
     const corpo = { acao: "criar", nome: f.nome.value.trim(), login: f.login.value.trim(), senha: f.senha.value, papel: f.papel.value,
-      permissoes: permissoesParaSalvar(f.papel.value, $("#perms-novo")) };
-    if (Array.isArray(corpo.permissoes) && !corpo.permissoes.length && !confirm("Nenhuma permissão marcada: este usuário não conseguirá acessar nada. Criar assim mesmo?")) return;
+      permissoes: null }; // segue as permissões do perfil escolhido
     msg.className = "dica"; msg.textContent = "Criando...";
     try {
       await chamarFuncao(corpo);
       msg.innerHTML = `✅ Usuário criado! Login: <b>${esc(corpo.login.toLowerCase())}</b> · Senha: <b>${esc(corpo.senha)}</b>`;
       f.reset();
-      renderPerfis($("#perfis-novo"), "vigilante", (papel) => renderPermissoes($("#perms-novo"), papel));
-      renderPermissoes($("#perms-novo"), "vigilante");
+      renderPerfis($("#perfis-novo"), "vigilante", resumoPerfilNovo);
+      resumoPerfilNovo("vigilante");
       await carregarPerfis();
       preencherFiltros();
     } catch (e) {
@@ -865,12 +874,12 @@ const Admin = (() => {
     $$("#nav-admin button").forEach((b) => b.onclick = () => trocarAba(b.dataset.aba));
     $("#btn-menu").onclick = () => document.body.classList.toggle("menu-aberto");
     $("#fundo-menu").onclick = () => document.body.classList.remove("menu-aberto");
-    ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria", "#f-geo"].forEach((s) => $(s).onchange = atualizarTudo);
+    ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria"].forEach((s) => $(s).onchange = atualizarTudo);
     ["#f-de", "#f-ate"].forEach((s) => $(s).onchange = carregarVisitas);
     $("#busca").oninput = renderTabela;
     $("#btn-atualizar").onclick = carregarVisitas;
     $("#btn-limpar-filtros").onclick = () => {
-      ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria", "#f-geo"].forEach((s) => $(s).value = "");
+      ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria"].forEach((s) => $(s).value = "");
       Object.keys(extra).forEach((k) => extra[k] = "");
       $("#busca").value = "";
       atualizarTudo();
