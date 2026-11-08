@@ -306,7 +306,8 @@ const Admin = (() => {
           { label: "Com anormalidade", data: meses.map((m) => porMesA[m] || 0), backgroundColor: "#e76f51", stack: "s", maxBarThickness: 90, borderRadius: 4 },
         ],
       },
-      options: { scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } },
+      options: { layout: { padding: { top: 24 } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grace: "8%", ticks: { precision: 0 } } } },
+      plugins: [rotulosColunas],
       clique: (i) => { extra.mes = extra.mes === meses[i] ? "" : meses[i]; atualizarTudo(); },
     });
 
@@ -355,7 +356,38 @@ const Admin = (() => {
 
   }
 
-  function grafico(id, { type, data, options = {}, clique, vazio }) {
+  // Escreve as quantidades nas colunas empilhadas: valor de cada parte (dentro) e total (em cima)
+  const rotulosColunas = {
+    id: "rotulosColunas",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const metas = chart.data.datasets.map((_, i) => chart.getDatasetMeta(i)).filter((m) => !m.hidden);
+      if (!metas.length) return;
+      ctx.save();
+      ctx.textAlign = "center";
+      chart.data.labels.forEach((_, i) => {
+        let total = 0, topo = Infinity, x = null;
+        metas.forEach((m) => {
+          const v = Number(chart.data.datasets[m.index].data[i]) || 0;
+          const barra = m.data[i];
+          if (!barra || !v) return;
+          total += v; x = barra.x; topo = Math.min(topo, barra.y);
+          const altura = Math.abs(barra.base - barra.y);
+          if (metas.length > 1 && altura >= 18) {
+            ctx.fillStyle = "#fff"; ctx.font = "700 12px " + Chart.defaults.font.family; ctx.textBaseline = "middle";
+            ctx.fillText(v, barra.x, (barra.y + barra.base) / 2);
+          }
+        });
+        if (total && x != null) {
+          ctx.fillStyle = "#1d2733"; ctx.font = "800 14px " + Chart.defaults.font.family; ctx.textBaseline = "bottom";
+          ctx.fillText(total, x, topo - 4);
+        }
+      });
+      ctx.restore();
+    },
+  };
+
+  function grafico(id, { type, data, options = {}, clique, vazio, plugins = [] }) {
     graficos[id]?.destroy();
     const canvas = $("#" + id);
     if (vazio) {
@@ -363,7 +395,7 @@ const Admin = (() => {
       clique = null;
     }
     graficos[id] = new Chart(canvas, {
-      type, data,
+      type, data, plugins,
       options: {
         responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
         interaction: { mode: "nearest", intersect: true },
