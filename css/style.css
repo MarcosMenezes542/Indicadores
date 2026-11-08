@@ -480,3 +480,19 @@ a.lateral-item { text-decoration: none; }
 @media (max-width: 980px) {
   .entrada-hero-texto::before { inset: -40% -2% -50% 52%; background-position: right center; opacity: .34; }
 }
+/* Logo da CPFL Energia abaixo da frase, inteira e visível (substitui a marca-d'água) */
+.entrada-hero-texto::before { content: none !important; display: none !important; }
+.entrada-logo-parceiro {
+  display: inline-flex; align-items: center; margin-top: 1.2rem; padding: .7rem 1.1rem;
+  background: #fff; border-radius: 14px; box-shadow: 0 10px 28px #0005;
+}
+.entrada-logo-parceiro img { display: block; height: 72px; width: auto; }
+@media (max-width: 980px) {
+  .entrada-logo-parceiro { margin-top: .7rem; padding: .5rem .8rem; border-radius: 12px; }
+  .entrada-logo-parceiro img { height: 46px; }
+  .entrada-hero-texto { padding: 0; }
+}
+@media (min-width: 981px) {
+  .entrada-hero { padding-top: 6.5rem; gap: 1.2rem; }
+  .entrada-mapa { max-height: 300px; }
+}
