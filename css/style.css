@@ -496,3 +496,10 @@ a.lateral-item { text-decoration: none; }
   .entrada-hero { padding-top: 6.5rem; gap: 1.2rem; }
   .entrada-mapa { max-height: 300px; }
 }
+/* Logo sem o cartão branco, levemente transparente */
+.entrada-logo-parceiro { background: none; box-shadow: none; padding: 0; border-radius: 0; }
+.entrada-logo-parceiro img { opacity: .7; height: 84px; }
+@media (max-width: 980px) {
+  .entrada-logo-parceiro { padding: 0; }
+  .entrada-logo-parceiro img { height: 52px; }
+}
