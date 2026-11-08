@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b4f8a" />
+  <title>VMO — Visitas Operacionais</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/icon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="vendor/supabase.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/xlsx.mini.min.js" defer></script>
+</head>
+<body>
+  <!-- Topo -->
+  <header id="topo" class="topo oculto">
+    <div class="marca"><img src="img/icon.svg" alt="" /> <span>VMO <small>Visitas Operacionais</small></span></div>
+    <nav id="nav-admin" class="nav-admin oculto">
+      <button data-aba="painel" class="ativo">📊 Painel</button>
+      <button data-aba="visitas">📋 Visitas</button>
+      <button data-aba="usuarios">👥 Usuários</button>
+      <button data-aba="unidades">🏢 Unidades</button>
+      <button data-aba="nova">➕ Registrar visita</button>
+    </nav>
+    <div class="usuario"><span id="nome-usuario"></span> <button id="btn-sair" class="btn-link">Sair</button></div>
+  </header>
+
+  <main id="app">
+    <!-- LOGIN -->
+    <section id="tela-login" class="tela login">
+      <div class="cartao login-cartao">
+        <img src="img/icon.svg" alt="" class="login-logo" />
+        <h1>VMO — Visitas Operacionais</h1>
+        <p class="sub">Vigilância motorizada · Unidades CPFL</p>
+        <form id="form-login">
+          <label>Usuário <input name="login" autocomplete="username" autocapitalize="none" required /></label>
+          <label>Senha <input name="senha" type="password" autocomplete="current-password" required /></label>
+          <button class="btn primario grande" type="submit">Entrar</button>
+          <p id="login-erro" class="erro"></p>
+        </form>
+        <p class="dica">Não tem acesso? Solicite o seu usuário ao administrador.</p>
+      </div>
+    </section>
+
+    <!-- APP DO VMO -->
+    <section id="tela-vmo" class="tela oculto">
+      <div id="vmo-inicio">
+        <div class="cartao boas-vindas">
+          <h2>Olá, <span id="vmo-nome"></span> 👋</h2>
+          <p>Registre cada visita: chegada, vistoria, anormalidades com fotos e saída.</p>
+          <button id="btn-nova-visita" class="btn primario grande">🚓 Iniciar nova visita</button>
+          <button id="btn-continuar" class="btn grande oculto">⏱️ Continuar visita em andamento</button>
+        </div>
+        <h3 class="titulo-secao">Minhas últimas visitas</h3>
+        <div id="minhas-visitas" class="lista"></div>
+      </div>
+
+      <form id="form-visita" class="oculto" novalidate>
+        <div class="cartao">
+          <div class="linha-titulo"><h2>Visita operacional</h2><button type="button" id="btn-voltar" class="btn-link">← Voltar</button></div>
+          <label>Unidade visitada *
+            <input name="unidade" list="lista-unidades" required placeholder="Selecione ou digite a unidade" />
+            <datalist id="lista-unidades"></datalist>
+          </label>
+
+          <div class="horario">
+            <div>
+              <span class="rotulo">🟢 Chegada *</span>
+              <input type="datetime-local" name="chegada" required />
+              <button type="button" class="btn sucesso" id="btn-chegada">Registrar chegada agora</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cartao">
+          <h3>Situação encontrada</h3>
+          <div class="alternar">
+            <label><input type="radio" name="situacao" value="normal" checked /> <span>✅ Tudo normal</span></label>
+            <label><input type="radio" name="situacao" value="anormal" /> <span>⚠️ Anormalidade identificada</span></label>
+          </div>
+          <div id="ocorrencias" class="oculto"></div>
+          <button type="button" id="btn-add-ocorrencia" class="btn oculto">➕ Adicionar outra anormalidade</button>
+        </div>
+
+        <div class="cartao">
+          <label>📝 Resumo do ocorrido / observações da vistoria
+            <textarea name="observacoes" rows="4" maxlength="4000" placeholder="Descreva o que foi verificado e o que aconteceu durante a visita"></textarea>
+          </label>
+        </div>
+
+        <div class="cartao">
+          <div class="horario">
+            <div>
+              <span class="rotulo">🔴 Saída *</span>
+              <input type="datetime-local" name="saida" required />
+              <button type="button" class="btn perigo" id="btn-saida">Registrar saída agora</button>
+            </div>
+          </div>
+          <p id="permanencia" class="dica"></p>
+        </div>
+
+        <p id="visita-erro" class="erro"></p>
+        <div class="acoes-fixas">
+          <button type="button" id="btn-descartar" class="btn">Descartar</button>
+          <button type="submit" class="btn primario grande" id="btn-enviar">📤 Enviar visita</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- PAINEL DO ADMINISTRADOR -->
+    <section id="tela-admin" class="tela oculto">
+      <!-- Filtros comuns -->
+      <div id="filtros" class="cartao filtros">
+        <label>De <input type="date" id="f-de" /></label>
+        <label>Até <input type="date" id="f-ate" /></label>
+        <label>VMO <select id="f-vmo"><option value="">Todos</option></select></label>
+        <label>Unidade <select id="f-unidade"><option value="">Todas</option></select></label>
+        <label>Situação
+          <select id="f-situacao"><option value="">Todas</option><option value="anormal">Com anormalidade</option><option value="normal">Normal</option></select>
+        </label>
+        <label>Gravidade <select id="f-gravidade"><option value="">Todas</option></select></label>
+        <label>Categoria <select id="f-categoria"><option value="">Todas</option></select></label>
+        <div class="filtros-acoes direita">
+          <button class="btn" id="btn-limpar-filtros">Limpar filtros</button>
+          <button class="btn" id="btn-atualizar">↻ Atualizar</button>
+          <span style="flex:1"></span>
+          <button class="btn" id="btn-csv">⬇️ CSV</button>
+          <button class="btn" id="btn-excel">⬇️ Excel</button>
+          <button class="btn primario" id="btn-imprimir">🖨️ Relatório p/ impressão</button>
+        </div>
+      </div>
+      <p id="filtro-ativo" class="dica"></p>
+
+      <div id="aba-painel" class="aba">
+        <div id="kpis" class="kpis"></div>
+        <div class="graficos">
+          <div class="cartao grafico largo"><h3>Visitas por dia</h3><div class="area"><canvas id="g-dia"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por VMO <small>clique para filtrar</small></h3><div class="area"><canvas id="g-vmo"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por unidade <small>clique para filtrar</small></h3><div class="area"><canvas id="g-unidade"></canvas></div></div>
+          <div class="cartao grafico"><h3>Anormalidades por categoria</h3><div class="area"><canvas id="g-categoria"></canvas></div></div>
+          <div class="cartao grafico"><h3>Anormalidades por gravidade</h3><div class="area"><canvas id="g-gravidade"></canvas></div></div>
+          <div class="cartao grafico"><h3>Tempo médio de permanência (min) por unidade</h3><div class="area"><canvas id="g-tempo"></canvas></div></div>
+          <div class="cartao grafico"><h3>Visitas por faixa de horário</h3><div class="area"><canvas id="g-hora"></canvas></div></div>
+        </div>
+      </div>
+
+      <div id="aba-visitas" class="aba oculto">
+        <div class="cartao">
+          <input id="busca" class="busca" placeholder="🔎 Buscar por VMO, unidade, descrição..." />
+          <div class="tabela-wrap"><table id="tabela-visitas" class="tabela"></table></div>
+        </div>
+      </div>
+
+      <div id="aba-usuarios" class="aba oculto">
+        <div class="duas-colunas">
+          <div class="cartao">
+            <h3>Criar novo usuário</h3>
+            <form id="form-usuario">
+              <label>Nome completo * <input name="nome" required minlength="2" /></label>
+              <label>Usuário (login) * <input name="login" required pattern="[a-zA-Z0-9._@\-]{3,80}" autocapitalize="none" placeholder="ex.: joao.silva" /></label>
+              <label>Senha inicial * <input name="senha" required minlength="8" placeholder="mínimo 8 caracteres" /></label>
+              <label>Perfil
+                <select name="papel"><option value="vigilante">VMO (vigilante)</option><option value="admin">Administrador</option></select>
+              </label>
+              <button class="btn primario" type="submit">Criar usuário</button>
+              <p id="usuario-msg" class="dica"></p>
+            </form>
+          </div>
+          <div class="cartao">
+            <h3>Link de acesso do VMO</h3>
+            <p>Envie este link para os VMOs. Cada um entra com o seu usuário e senha.</p>
+            <div class="link-publico"><input id="link-publico" readonly /><button class="btn" id="btn-copiar">Copiar</button></div>
+            <a id="btn-whats" class="btn sucesso" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+            <p class="dica">No celular, o VMO pode usar “Adicionar à tela inicial” para abrir como aplicativo.</p>
+          </div>
+        </div>
+        <div class="cartao">
+          <h3>Usuários cadastrados</h3>
+          <div class="tabela-wrap"><table id="tabela-usuarios" class="tabela"></table></div>
+        </div>
+      </div>
+
+      <div id="aba-unidades" class="aba oculto">
+        <div class="cartao">
+          <h3>Unidades CPFL</h3>
+          <form id="form-unidade" class="inline">
+            <input name="nome" required placeholder="Nome da unidade (ex.: SE Campinas 19)" maxlength="160" />
+            <button class="btn primario">Adicionar</button>
+          </form>
+          <div id="lista-unidades-admin" class="chips"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal oculto" role="dialog" aria-modal="true">
+    <div class="modal-caixa">
+      <button class="modal-fechar" id="modal-fechar" aria-label="Fechar">×</button>
+      <div id="modal-conteudo"></div>
+    </div>
+  </div>
+
+  <div id="carregando" class="carregando oculto"><div class="spinner"></div><p id="carregando-texto">Carregando...</p></div>
+  <div id="aviso" class="aviso oculto"></div>
+
+  <!-- Área do relatório de impressão -->
+  <div id="relatorio" class="relatorio"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/comum.js"></script>
+  <script src="js/vmo.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
