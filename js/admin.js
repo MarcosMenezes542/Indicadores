@@ -23,12 +23,18 @@ const Admin = (() => {
     $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent('Aplicativo VMO para registro das visitas operacionais. Abra o link, toque em "Instalar aplicativo" e entre com o seu usuário e senha: ' + base)}`;
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
     Chart.defaults.color = "#5f6b7a";
+    const leitura = somenteLeitura();
+    $$("[data-so-admin]").forEach((el) => mostrar(el, !leitura));
+    mostrar("#aviso-leitura", leitura);
     trocarAba("painel");
-    await Promise.all([carregarPerfis(), carregarVisitas()]);
-    renderUnidades();
+    await Promise.all([leitura ? null : carregarPerfis(), carregarVisitas()]);
+    if (!leitura) renderUnidades();
   }
 
+  const somenteLeitura = () => Estado.perfil?.papel !== "admin";
+
   function trocarAba(aba) {
+    if (somenteLeitura() && (aba === "usuarios" || aba === "unidades")) aba = "painel";
     $$("#nav-admin button").forEach((b) => b.classList.toggle("ativo", b.dataset.aba === aba));
     ["painel", "visitas", "usuarios", "unidades"].forEach((a) => mostrar(`#aba-${a}`, a === aba));
     mostrar("#filtros", aba === "painel" || aba === "visitas");
@@ -117,7 +123,7 @@ const Admin = (() => {
     descreverFiltroExtra();
     if (!$("#aba-painel").classList.contains("oculto")) renderPainel();
     renderTabela();
-    renderUsuarios();
+    if (!somenteLeitura()) renderUsuarios();
   }
 
   /* ---------- Painel / gráficos ---------- */
@@ -250,7 +256,7 @@ const Admin = (() => {
       ordem = { campo: th.dataset.ordem, desc: ordem.campo === th.dataset.ordem ? !ordem.desc : true };
       renderTabela();
     });
-    $$("#tabela-visitas [data-ver]").forEach((b) => b.onclick = () => abrirDetalheVisita(visitas.find((v) => v.id === b.dataset.ver), { admin: true }));
+    $$("#tabela-visitas [data-ver]").forEach((b) => b.onclick = () => abrirDetalheVisita(visitas.find((v) => v.id === b.dataset.ver), { admin: !somenteLeitura() }));
   }
 
   async function excluirVisita(v) {
@@ -389,14 +395,14 @@ const Admin = (() => {
     const vmos = perfis.filter((p) => p.papel === "vigilante");
     $("#resumo-usuarios").innerHTML = [
       ["Usuários", perfis.length, ""], ["VMOs ativos", vmos.filter((p) => p.ativo).length, "ok"],
-      ["Administradores", perfis.filter((p) => p.papel === "admin").length, ""], ["Inativos", perfis.filter((p) => !p.ativo).length, "alerta"],
+      ["Gestores", perfis.filter((p) => p.papel === "gestor").length, ""], ["Administradores", perfis.filter((p) => p.papel === "admin").length, ""], ["Inativos", perfis.filter((p) => !p.ativo).length, "alerta"],
     ].map(([t, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${t}</div></div>`).join("");
     const eu = Estado.usuario?.id;
     $("#tabela-usuarios").innerHTML = `
       <thead><tr><th>Nome</th><th>Usuário (login)</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th>Visitas no período</th><th>Criado em</th><th>Ações</th></tr></thead>
       <tbody>${lista.map((p) => `<tr>
         <td>${esc(p.nome)}${p.id === eu ? " <small>(você)</small>" : ""}</td><td><code>${esc(p.login)}</code></td>
-        <td>${p.papel === "admin" ? "Administrador" : "VMO"}</td>
+        <td>${nomePapel(p.papel)}</td>
         <td><span class="selo ${p.ativo ? "ativo" : "inativo"}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
         <td>${"ultimo_acesso" in p ? (p.ultimo_acesso ? fmtDataHora(p.ultimo_acesso) : "Nunca entrou") : "—"}</td>
         <td>${n[p.nome] || 0}</td><td>${fmtData(p.criado_em)}</td>
@@ -468,7 +474,7 @@ const Admin = (() => {
       <form id="form-editar">
         <label>Nome <input name="nome" value="${esc(p.nome)}" required minlength="2" /></label>
         <label>Usuário (login) <input value="${esc(p.login)}" disabled /></label>
-        <label>Perfil <select name="papel"><option value="vigilante" ${p.papel === "vigilante" ? "selected" : ""}>VMO (vigilante)</option><option value="admin" ${p.papel === "admin" ? "selected" : ""}>Administrador</option></select></label>
+        <label>Perfil <select name="papel">${Object.entries({ vigilante: "VMO (vigilante) — registra visitas", gestor: "Gestor — somente visualização", admin: "Administrador — acesso total" }).map(([k, t]) => `<option value="${k}" ${p.papel === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
         <label><input type="checkbox" name="ativo" ${p.ativo ? "checked" : ""} style="display:inline;width:auto" /> Usuário ativo (desmarque para bloquear o acesso)</label>
         <p class="erro" id="editar-erro"></p>
         <button class="btn primario">Salvar</button>

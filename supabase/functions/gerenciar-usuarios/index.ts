@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const DOMINIO = "vigilancia.local";
+const PAPEIS = ["admin", "vigilante", "gestor"]; // gestor = somente visualização
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -28,7 +29,7 @@ async function criarConta(nome: string, login: string, senha: string, papel: str
   if (!nome || String(nome).trim().length < 2) return { erro: "Informe o nome (mínimo 2 letras)." };
   if (!loginValido(login)) return { erro: "Usuário inválido: use de 3 a 80 caracteres, sem espaços nem acentos." };
   if (!senha || String(senha).length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
-  if (!["admin", "vigilante"].includes(papel)) return { erro: "Perfil inválido." };
+  if (!PAPEIS.includes(papel)) return { erro: "Perfil inválido." };
   const { data, error } = await admin.auth.admin.createUser({
     email: toEmail(login),
     password: String(senha),
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
     const papel = body.papel;
     const ativo = !!body.ativo;
     if (nome.length < 2) return resp({ erro: "Informe o nome (mínimo 2 letras)." }, 400);
-    if (!["admin", "vigilante"].includes(papel)) return resp({ erro: "Perfil inválido." }, 400);
+    if (!PAPEIS.includes(papel)) return resp({ erro: "Perfil inválido." }, 400);
     if (id === u.user.id && (!ativo || papel !== "admin"))
       return resp({ erro: "Você não pode desativar nem rebaixar a sua própria conta." }, 400);
     const { error: e1 } = await admin.from("perfis").update({ nome, papel, ativo }).eq("id", id);

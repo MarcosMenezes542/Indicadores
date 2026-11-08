@@ -5,6 +5,8 @@ const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY, {
 });
 
 const Estado = { usuario: null, perfil: null, unidades: [] };
+const NOME_PAPEL = { admin: "Administrador", vigilante: "VMO", gestor: "Gestor (visualização)" };
+const nomePapel = (p) => NOME_PAPEL[p] || p;
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -146,7 +148,7 @@ function abrirMinhaConta() {
     <div class="detalhe-grid">
       <div><b>Nome</b>${esc(p.nome)}</div>
       <div><b>Usuário (login)</b>${esc(p.login)}</div>
-      <div><b>Perfil</b>${p.papel === "admin" ? "Administrador" : "VMO"}</div>
+      <div><b>Perfil</b>${nomePapel(p.papel)}</div>
     </div>
     <h3>Alterar minha senha</h3>
     <form id="form-minha-senha">

@@ -218,3 +218,4 @@ textarea { resize: vertical; }
 .cartao.instalar { border: 2px dashed var(--azul); background: var(--azul-claro); }
 .topo a.btn-link { color: #fff; }
 .tabela .acoes .btn { margin: 1px 0; }
+.faixa-leitura { background: #fff6dc; color: #6b5200; border: 1px solid #f0d98a; border-radius: 10px; padding: .6rem .9rem; font-weight: 600; }

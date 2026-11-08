@@ -22,10 +22,12 @@ const Main = (() => {
       const perfil = await carregarPerfil();
       if (!perfil) { telas("login"); return; }
       if (!perfil.ativo) return await negar("Seu usuário está desativado. Procure o administrador.");
-      if (MODO === "admin" && perfil.papel !== "admin")
+      if (MODO === "admin" && !["admin", "gestor"].includes(perfil.papel))
         return await negar('Acesso restrito ao administrador.<br>VMO: use o <a href="./">aplicativo do VMO</a>.');
+      if (MODO === "vmo" && perfil.papel === "gestor")
+        return await negar('O perfil Gestor é somente de visualização.<br>Acesse o <a href="admin.html">painel</a>.');
 
-      $("#nome-usuario").textContent = `${perfil.nome} · ${perfil.papel === "admin" ? "Administrador" : "VMO"}`;
+      $("#nome-usuario").textContent = `${perfil.nome} · ${nomePapel(perfil.papel)}`;
       await carregarUnidades();
       if (MODO === "admin") {
         telas("admin");

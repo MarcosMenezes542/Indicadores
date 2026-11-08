@@ -20,8 +20,8 @@
     <nav id="nav-admin" class="nav-admin">
       <button data-aba="painel" class="ativo">📊 Painel</button>
       <button data-aba="visitas">📋 Visitas</button>
-      <button data-aba="usuarios">👥 Usuários</button>
-      <button data-aba="unidades">🏢 Unidades</button>
+      <button data-aba="usuarios" data-so-admin>👥 Usuários</button>
+      <button data-aba="unidades" data-so-admin>🏢 Unidades</button>
     </nav>
     <div class="usuario"><span id="nome-usuario"></span> <button id="btn-conta" class="btn-link">🔑 Minha conta</button> <button id="btn-sair" class="btn-link">Sair</button></div>
   </header>
@@ -66,6 +66,7 @@
         </div>
       </div>
       <p id="filtro-ativo" class="dica"></p>
+      <p id="aviso-leitura" class="faixa-leitura oculto">👁️ Perfil Gestor: você pode visualizar, filtrar, baixar e imprimir. Não é possível alterar dados.</p>
 
       <div id="aba-painel" class="aba">
         <div id="kpis" class="kpis"></div>
@@ -96,7 +97,7 @@
               <label>Usuário (login) * <input name="login" required pattern="[a-zA-Z0-9._@\-]{3,80}" autocapitalize="none" placeholder="ex.: joao.silva" /></label>
               <label>Senha inicial * <input name="senha" required minlength="8" placeholder="mínimo 8 caracteres" /></label>
               <label>Perfil
-                <select name="papel"><option value="vigilante">VMO (vigilante)</option><option value="admin">Administrador</option></select>
+                <select name="papel"><option value="vigilante">VMO (vigilante) — registra visitas</option><option value="gestor">Gestor — somente visualização</option><option value="admin">Administrador — acesso total</option></select>
               </label>
               <button class="btn primario" type="submit">Criar usuário</button>
               <p id="usuario-msg" class="dica"></p>
@@ -116,7 +117,7 @@
           <div id="resumo-usuarios" class="kpis"></div>
           <div class="filtros" style="margin-bottom:.8rem">
             <label>Buscar <input id="u-busca" placeholder="Nome ou login" /></label>
-            <label>Perfil <select id="u-papel"><option value="">Todos</option><option value="vigilante">VMO</option><option value="admin">Administrador</option></select></label>
+            <label>Perfil <select id="u-papel"><option value="">Todos</option><option value="vigilante">VMO</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></label>
             <label>Status <select id="u-status"><option value="">Todos</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>
           </div>
           <div class="tabela-wrap"><table id="tabela-usuarios" class="tabela"></table></div>
