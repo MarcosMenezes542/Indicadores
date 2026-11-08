@@ -86,9 +86,20 @@ const Main = (() => {
     await entrarNoApp();
   }
 
+  // Sair sempre encerra a sessão NESTE aparelho, mesmo sem internet ou se o servidor não responder
   async function sair() {
-    if (!confirm("Deseja sair?")) return;
-    await sb.auth.signOut();
+    if (!confirm("Deseja sair da sua conta?")) return;
+    carregando(true, "Saindo...");
+    try {
+      // encerra a sessão no servidor (se responder em até 4 s)
+      await Promise.race([sb.auth.signOut({ scope: "global" }), new Promise((ok) => setTimeout(ok, 4000))]);
+    } catch {}
+    try { await sb.auth.signOut({ scope: "local" }); } catch {}
+    try {
+      // garante que nenhuma sessão fique guardada no aparelho
+      Object.keys(localStorage).filter((k) => k === "vmo-auth" || k.startsWith("vmo-auth") || /^sb-.*-auth-token/.test(k)).forEach((k) => localStorage.removeItem(k));
+      sessionStorage.removeItem("app-gestao");
+    } catch {}
     location.replace("index.html");
   }
 
