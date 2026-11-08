@@ -289,13 +289,18 @@ const Instalacao = (() => {
       ? `<p class="faixa-leitura">⚠️ Este link foi aberto dentro do WhatsApp/Instagram, que não instala aplicativos. Toque no menu <b>⋮</b> e em <b>Abrir no Chrome</b> (ou no navegador), ou copie o link abaixo.</p>`
       : "";
     abrirModal(`
-      <h2>📲 Instalar o app "${nomeApp()}" no celular</h2>
+      <h2>📲 Instalar o app "${nomeApp()}"</h2>
       ${alerta}
       <div class="passos">
-        <div><b>Android (Chrome)</b>
+        <div><b>💻 Computador / notebook (Chrome ou Edge)</b>
+          <ol><li>Abra este endereço no <b>Chrome</b> ou no <b>Edge</b>.</li><li>Na barra de endereço, clique no ícone <b>Instalar</b> (⊕ ou 🖥️ no canto direito).</li>
+          <li>Ou abra o menu <b>⋮</b> / <b>…</b> → <b>Instalar Visitas VMO</b> (no Edge: Aplicativos → Instalar este site como aplicativo).</li>
+          <li>O atalho aparece na área de trabalho e no menu Iniciar.</li></ol>
+          <p class="dica">Não é obrigatório: no computador você também pode só acessar o link e salvar nos favoritos.</p></div>
+        <div><b>📱 Android (Chrome)</b>
           <ol><li>Abra este endereço no <b>Chrome</b>.</li><li>Toque no menu <b>⋮</b> (três pontinhos, no canto superior direito).</li>
           <li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme em <b>Instalar</b>.</li></ol></div>
-        <div><b>iPhone (Safari)</b>
+        <div><b>📱 iPhone (Safari)</b>
           <ol><li>Abra este endereço no <b>Safari</b>.</li><li>Toque em <b>Compartilhar</b> (□↑, na barra de baixo).</li>
           <li>Role e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol></div>
       </div>
