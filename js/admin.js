@@ -356,7 +356,7 @@ const Admin = (() => {
 
   }
 
-  // Escreve as quantidades nas colunas empilhadas: valor de cada parte (dentro) e total (em cima)
+  // Escreve o total de visitas em cima de cada coluna
   const rotulosColunas = {
     id: "rotulosColunas",
     afterDatasetsDraw(chart) {
@@ -372,11 +372,6 @@ const Admin = (() => {
           const barra = m.data[i];
           if (!barra || !v) return;
           total += v; x = barra.x; topo = Math.min(topo, barra.y);
-          const altura = Math.abs(barra.base - barra.y);
-          if (metas.length > 1 && altura >= 18) {
-            ctx.fillStyle = "#fff"; ctx.font = "700 12px " + Chart.defaults.font.family; ctx.textBaseline = "middle";
-            ctx.fillText(v, barra.x, (barra.y + barra.base) / 2);
-          }
         });
         if (total && x != null) {
           ctx.fillStyle = "#1d2733"; ctx.font = "800 14px " + Chart.defaults.font.family; ctx.textBaseline = "bottom";
