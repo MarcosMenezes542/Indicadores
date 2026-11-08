@@ -6,12 +6,13 @@ Aplicativo web (funciona no celular e no computador) para os **Vigilantes Motori
 
 **Um único link e um único app para todos:** `https://vmo-visitas-operacionais.vercel.app/`
 
-Depois do login, o sistema abre a área de acordo com o perfil:
+Depois do login, o sistema abre a área de acordo com as **permissões** do usuário. O administrador escolhe o perfil (VMO, Supervisor, Gestor ou Administrador) e ajusta as permissões de cada pessoa no cadastro. Permissões padrão:
 
 | Perfil | Vai para | O que pode fazer |
 |---|---|---|
 | VMO (`vigilante`) | Registro de visitas (`index.html`) | Registrar visitas com fotos e GPS |
 | Gestor (`gestor`) | Painel (`admin.html`) | Visualizar, filtrar, baixar e imprimir (somente leitura) |
+| Supervisor (`supervisor`) | Painel (`admin.html`) | Registrar visitas, ver painel e visitas, baixar e imprimir |
 | Administrador (`admin`) | Painel (`admin.html`) | Tudo, inclusive usuários e unidades |
 
 Quem não tem o perfil certo é redirecionado. Além disso, as regras do banco (RLS) garantem as permissões: o VMO só lê as próprias visitas e o gestor não consegue gravar nada.

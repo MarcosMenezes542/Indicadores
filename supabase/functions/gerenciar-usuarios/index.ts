@@ -1,11 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const DOMINIO = "vigilancia.local";
-const PAPEIS = ["admin", "vigilante", "gestor"]; // gestor = somente visualização
+const PAPEIS = ["admin", "vigilante", "gestor", "supervisor"];
 const PERMISSOES = ["registrar_visitas", "ver_painel", "ver_visitas", "exportar", "imprimir", "excluir_visitas", "gerenciar_unidades", "gerenciar_usuarios"];
 const PADRAO: Record<string, string[]> = {
   admin: PERMISSOES,
   gestor: ["ver_painel", "ver_visitas", "exportar", "imprimir"],
+  supervisor: ["registrar_visitas", "ver_painel", "ver_visitas", "exportar", "imprimir"],
   vigilante: ["registrar_visitas"],
 };
 // Permissões efetivas: o administrador tem todas; os demais usam as escolhidas ou as padrão do perfil

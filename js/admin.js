@@ -31,8 +31,8 @@ const Admin = (() => {
     mostrar("#btn-imprimir", pode("imprimir"));
     mostrar("#aviso-leitura", !["excluir_visitas", "gerenciar_unidades", "gerenciar_usuarios"].some(pode));
     mostrar("#btn-fixar-auto", pode("gerenciar_unidades"));
-    if (!souAdmin()) $$('select[name=papel] option[value=admin]').forEach((o) => o.remove());
-    renderPermissoes($("#perms-novo"), $("#form-usuario").papel.value);
+    renderPerfis($("#perfis-novo"), "vigilante", (papel) => renderPermissoes($("#perms-novo"), papel));
+    renderPermissoes($("#perms-novo"), "vigilante");
     trocarAba(abasPermitidas()[0]);
     await Promise.all([pode("gerenciar_usuarios") ? carregarPerfis() : null, carregarVisitas()]);
     if (pode("gerenciar_unidades")) renderUnidades();
@@ -42,17 +42,52 @@ const Admin = (() => {
   const PERM_ABA = { painel: "ver_painel", visitas: "ver_visitas", usuarios: "gerenciar_usuarios", unidades: "gerenciar_unidades" };
   const abasPermitidas = () => Object.keys(PERM_ABA).filter((a) => pode(PERM_ABA[a]));
 
-  /* Caixas de permissões (cadastro e edição de usuário) */
+  /* Caixa de perfis (VMO, Supervisor, Gestor, Administrador) */
+  function renderPerfis(caixa, atual, aoMudar) {
+    caixa.innerHTML = OPCOES_PERFIL.filter((o) => o.id !== "admin" || souAdmin()).map((o) => `
+      <label class="perfil-op">
+        <input type="radio" name="papel" value="${o.id}" ${o.id === atual ? "checked" : ""} />
+        <span><i>${o.icone}</i><b>${o.nome}</b><small>${o.desc}</small></span>
+      </label>`).join("");
+    $$("input[type=radio]", caixa).forEach((r) => r.onchange = () => aoMudar(r.value));
+  }
+
+  /* Caixa de permissões: o mesmo padrão para VMO, Supervisor e Gestor.
+     O Administrador não precisa: ele já tem todos os acessos. */
   function renderPermissoes(caixa, papel, marcadas) {
+    if (papel === "admin") {
+      caixa.className = "perm-admin";
+      caixa.innerHTML = `🧑‍💼 <b>Administrador tem acesso total.</b> Não é preciso configurar permissões para este perfil.`;
+      return;
+    }
     const lista = marcadas || PERMISSOES_PADRAO[papel] || [];
-    const tudo = papel === "admin";
+    const op = OPCOES_PERFIL.find((o) => o.id === papel);
     const grupos = [...new Set(PERMISSOES.map((p) => p.grupo))];
-    caixa.innerHTML = (tudo ? `<p class="faixa-leitura" style="margin:0 0 .5rem">O Administrador sempre tem todas as permissões.</p>` : "") +
+    caixa.className = "permissoes-box";
+    caixa.innerHTML = `
+      <div class="perm-topo">
+        <div><b>🔐 Permissões do perfil ${op ? op.icone + " " + op.nome : nomePapel(papel)}</b>
+          <small>Já vêm marcadas as permissões padrão. Marque ou desmarque conforme a necessidade desta pessoa.</small></div>
+        <div class="perm-atalhos">
+          <button type="button" class="btn peq" data-perm-acao="padrao">↺ Padrão</button>
+          <button type="button" class="btn peq" data-perm-acao="todas">Marcar todas</button>
+          <button type="button" class="btn peq" data-perm-acao="nenhuma">Limpar</button>
+        </div>
+      </div>` +
       grupos.map((g) => `<fieldset class="perm-grupo"><legend>${g}</legend>${PERMISSOES.filter((p) => p.grupo === g).map((p) => `
-        <label class="perm-item ${tudo ? "travada" : ""}">
-          <input type="checkbox" value="${p.id}" ${tudo || lista.includes(p.id) ? "checked" : ""} ${tudo ? "disabled" : ""} />
+        <label class="perm-item">
+          <input type="checkbox" value="${p.id}" ${lista.includes(p.id) ? "checked" : ""} />
           <span><b>${p.nome}</b><small>${p.desc}</small></span>
-        </label>`).join("")}</fieldset>`).join("");
+        </label>`).join("")}</fieldset>`).join("") +
+      `<p class="perm-resumo"></p>`;
+    const resumo = () => { const n = lerPermissoes(caixa).length; $(".perm-resumo", caixa).textContent = `${n} de ${PERMISSOES.length} permissões liberadas`; };
+    $$("input[type=checkbox]", caixa).forEach((c) => c.onchange = resumo);
+    $$("[data-perm-acao]", caixa).forEach((b) => b.onclick = () => {
+      const a = b.dataset.permAcao;
+      $$("input[type=checkbox]", caixa).forEach((c) => c.checked = a === "todas" ? true : a === "nenhuma" ? false : (PERMISSOES_PADRAO[papel] || []).includes(c.value));
+      resumo();
+    });
+    resumo();
   }
   const lerPermissoes = (caixa) => $$("input[type=checkbox]", caixa).filter((c) => c.checked).map((c) => c.value);
 
@@ -446,7 +481,7 @@ const Admin = (() => {
     const vmos = perfis.filter((p) => p.papel === "vigilante");
     $("#resumo-usuarios").innerHTML = [
       ["Usuários", perfis.length, ""], ["VMOs ativos", vmos.filter((p) => p.ativo).length, "ok"],
-      ["Gestores", perfis.filter((p) => p.papel === "gestor").length, ""], ["Administradores", perfis.filter((p) => p.papel === "admin").length, ""], ["Inativos", perfis.filter((p) => !p.ativo).length, "alerta"],
+      ["Supervisores", perfis.filter((p) => p.papel === "supervisor").length, ""], ["Gestores", perfis.filter((p) => p.papel === "gestor").length, ""], ["Administradores", perfis.filter((p) => p.papel === "admin").length, ""], ["Inativos", perfis.filter((p) => !p.ativo).length, "alerta"],
     ].map(([t, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${t}</div></div>`).join("");
     const eu = Estado.usuario?.id;
     $("#tabela-usuarios").innerHTML = `
@@ -516,7 +551,8 @@ const Admin = (() => {
       await chamarFuncao(corpo);
       msg.innerHTML = `✅ Usuário criado! Login: <b>${esc(corpo.login.toLowerCase())}</b> · Senha: <b>${esc(corpo.senha)}</b>`;
       f.reset();
-      renderPermissoes($("#perms-novo"), f.papel.value);
+      renderPerfis($("#perfis-novo"), "vigilante", (papel) => renderPermissoes($("#perms-novo"), papel));
+      renderPermissoes($("#perms-novo"), "vigilante");
       await carregarPerfis();
       preencherFiltros();
     } catch (e) {
@@ -530,18 +566,17 @@ const Admin = (() => {
       <form id="form-editar">
         <label>Nome <input name="nome" value="${esc(p.nome)}" required minlength="2" /></label>
         <label>Usuário (login) <input value="${esc(p.login)}" disabled /></label>
-        <label>Perfil <select name="papel">${Object.entries({ vigilante: "VMO (vigilante) — registra visitas", gestor: "Gestor — acompanha os resultados", admin: "Administrador — acesso total" })
-          .filter(([k]) => k !== "admin" || souAdmin()).map(([k, t]) => `<option value="${k}" ${p.papel === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
-        <div class="rotulo-campo">Permissões de acesso</div>
-        <div id="perms-editar" class="permissoes-box"></div>
+        <div class="rotulo-campo">Perfil</div>
+        <div id="perfis-editar" class="perfis-escolha"></div>
+        <div id="perms-editar"></div>
         <p class="dica">Ao trocar o perfil, as permissões voltam para o padrão dele. Depois você pode ajustar.</p>
         <label><input type="checkbox" name="ativo" ${p.ativo ? "checked" : ""} style="display:inline;width:auto" /> Usuário ativo (desmarque para bloquear o acesso)</label>
         <p class="erro" id="editar-erro"></p>
         <button class="btn primario">Salvar</button>
       </form>`);
     const fe = $("#form-editar");
+    renderPerfis($("#perfis-editar"), p.papel, (papel) => renderPermissoes($("#perms-editar"), papel));
     renderPermissoes($("#perms-editar"), p.papel, permissoesDe(p));
-    fe.papel.onchange = () => renderPermissoes($("#perms-editar"), fe.papel.value);
     fe.onsubmit = async (e) => {
       e.preventDefault();
       const f = e.target;
@@ -785,7 +820,6 @@ const Admin = (() => {
     $("#btn-excel").onclick = exportarExcel;
     $("#btn-imprimir").onclick = imprimirRelatorio;
     $("#form-usuario").onsubmit = criarUsuario;
-    $("#form-usuario").papel.onchange = (e) => renderPermissoes($("#perms-novo"), e.target.value);
     ["#u-busca", "#u-papel", "#u-status"].forEach((sel) => $(sel).oninput = renderUsuarios);
     $("#lote-unidades").oninput = previaLote;
     $("#btn-lote").onclick = adicionarLote;

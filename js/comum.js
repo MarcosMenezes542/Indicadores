@@ -5,7 +5,7 @@ const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY, {
 });
 
 const Estado = { usuario: null, perfil: null, unidades: [] };
-const NOME_PAPEL = { admin: "Administrador", vigilante: "VMO", gestor: "Gestor" };
+const NOME_PAPEL = { admin: "Administrador", vigilante: "VMO", supervisor: "Supervisor", gestor: "Gestor" };
 const nomePapel = (p) => NOME_PAPEL[p] || p;
 
 /* ---------- Permissões ---------- */
@@ -23,8 +23,15 @@ const TODAS_PERMISSOES = PERMISSOES.map((p) => p.id);
 const PERMISSOES_PADRAO = {
   admin: TODAS_PERMISSOES,
   gestor: ["ver_painel", "ver_visitas", "exportar", "imprimir"],
+  supervisor: ["registrar_visitas", "ver_painel", "ver_visitas", "exportar", "imprimir"],
   vigilante: ["registrar_visitas"],
 };
+const OPCOES_PERFIL = [
+  { id: "vigilante", icone: "👮", nome: "VMO", desc: "Registra as visitas" },
+  { id: "supervisor", icone: "🧭", nome: "Supervisor", desc: "Acompanha as equipes" },
+  { id: "gestor", icone: "📈", nome: "Gestor", desc: "Acompanha os resultados" },
+  { id: "admin", icone: "🧑‍💼", nome: "Administrador", desc: "Acesso total" },
+];
 // Permissões efetivas de um usuário (o administrador sempre tem todas)
 function permissoesDe(p) {
   if (!p) return [];

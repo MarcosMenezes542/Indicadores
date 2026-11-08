@@ -107,12 +107,9 @@
               <label>Nome completo * <input name="nome" required minlength="2" /></label>
               <label>Usuário (login) * <input name="login" required pattern="[a-zA-Z0-9._@\-]{3,80}" autocapitalize="none" placeholder="ex.: joao.silva" /></label>
               <label>Senha inicial * <input name="senha" required minlength="8" placeholder="mínimo 8 caracteres" /></label>
-              <label>Perfil
-                <select name="papel"><option value="vigilante">VMO (vigilante) — registra visitas</option><option value="gestor">Gestor — acompanha os resultados</option><option value="admin">Administrador — acesso total</option></select>
-              </label>
-              <div class="rotulo-campo">Permissões de acesso</div>
-              <p class="dica" style="margin-top:0">O perfil já marca as permissões padrão. Ajuste conforme a necessidade desta pessoa.</p>
-              <div id="perms-novo" class="permissoes-box"></div>
+              <div class="rotulo-campo">Perfil *</div>
+              <div id="perfis-novo" class="perfis-escolha"></div>
+              <div id="perms-novo"></div>
               <button class="btn primario" type="submit">Criar usuário</button>
               <p id="usuario-msg" class="dica"></p>
             </form>
@@ -131,7 +128,7 @@
           <div id="resumo-usuarios" class="kpis"></div>
           <div class="filtros" style="margin-bottom:.8rem">
             <label>Buscar <input id="u-busca" placeholder="Nome ou login" /></label>
-            <label>Perfil <select id="u-papel"><option value="">Todos</option><option value="vigilante">VMO</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></label>
+            <label>Perfil <select id="u-papel"><option value="">Todos</option><option value="vigilante">VMO</option><option value="supervisor">Supervisor</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></label>
             <label>Status <select id="u-status"><option value="">Todos</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>
           </div>
           <div class="tabela-wrap"><table id="tabela-usuarios" class="tabela"></table></div>

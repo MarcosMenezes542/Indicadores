@@ -1,7 +1,7 @@
 /* Service worker: permite instalar o app e abrir mesmo com internet fraca.
    Arquivos do app: rede primeiro (sempre a versão mais nova), cache como reserva.
    Dados (Supabase) nunca passam pelo cache. */
-const VERSAO = "vmo-v12";
+const VERSAO = "vmo-v13";
 const ARQUIVOS = [
   "./", "index.html", "admin.html", "manifest.json", "manifest-admin.json",
   "css/style.css", "js/config.js", "js/comum.js", "js/vmo.js", "js/admin.js", "js/main.js",
