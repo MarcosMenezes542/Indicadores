@@ -25,14 +25,15 @@
       <div><b>Gestão Operacional</b><small>de Visitas dos VMO</small></div>
     </div>
     <nav id="nav-admin" class="lateral-nav">
-      <span class="lateral-secao">Menu</span>
+      <span class="lateral-secao" data-grupo="consulta">Menu</span>
       <button data-aba="painel" class="ativo"><span class="ic">📊</span> Painel</button>
       <button data-aba="visitas"><span class="ic">📋</span> Visitas</button>
-      <span class="lateral-secao" data-so-admin>Administração</span>
-      <button data-aba="usuarios" data-so-admin><span class="ic">👥</span> Usuários</button>
-      <button data-aba="unidades" data-so-admin><span class="ic">🏢</span> Unidades</button>
+      <span class="lateral-secao" data-grupo="gestao">Administração</span>
+      <button data-aba="usuarios"><span class="ic">👥</span> Usuários</button>
+      <button data-aba="unidades"><span class="ic">🏢</span> Unidades</button>
     </nav>
     <div class="lateral-rodape">
+      <a id="btn-registrar-visita" class="lateral-item oculto" href="index.html?registrar=1"><span class="ic">➕</span> Registrar visita</a>
       <div class="lateral-usuario">
         <span class="avatar" id="avatar-usuario">?</span>
         <div><b id="nome-usuario"></b><small id="papel-usuario"></small></div>
@@ -75,7 +76,7 @@
         </div>
       </div>
       <p id="filtro-ativo" class="dica"></p>
-      <p id="aviso-leitura" class="faixa-leitura oculto">👁️ Perfil Gestor: você pode visualizar, filtrar, baixar e imprimir. Não é possível alterar dados.</p>
+      <p id="aviso-leitura" class="faixa-leitura oculto">👁️ Acesso somente para consulta: você pode visualizar e filtrar, mas não alterar dados.</p>
 
       <div id="aba-painel" class="aba">
         <div id="kpis" class="kpis"></div>
@@ -107,8 +108,11 @@
               <label>Usuário (login) * <input name="login" required pattern="[a-zA-Z0-9._@\-]{3,80}" autocapitalize="none" placeholder="ex.: joao.silva" /></label>
               <label>Senha inicial * <input name="senha" required minlength="8" placeholder="mínimo 8 caracteres" /></label>
               <label>Perfil
-                <select name="papel"><option value="vigilante">VMO (vigilante) — registra visitas</option><option value="gestor">Gestor — somente visualização</option><option value="admin">Administrador — acesso total</option></select>
+                <select name="papel"><option value="vigilante">VMO (vigilante) — registra visitas</option><option value="gestor">Gestor — acompanha os resultados</option><option value="admin">Administrador — acesso total</option></select>
               </label>
+              <div class="rotulo-campo">Permissões de acesso</div>
+              <p class="dica" style="margin-top:0">O perfil já marca as permissões padrão. Ajuste conforme a necessidade desta pessoa.</p>
+              <div id="perms-novo" class="permissoes-box"></div>
               <button class="btn primario" type="submit">Criar usuário</button>
               <p id="usuario-msg" class="dica"></p>
             </form>
@@ -116,7 +120,7 @@
           <div class="cartao">
             <h3>📲 Link de acesso (único para todos)</h3>
             <p>Todos usam <b>o mesmo link e o mesmo aplicativo</b>. Depois do login, o sistema abre a tela conforme o perfil:
-              <b>VMO</b> vê só o registro de visitas, <b>Gestor</b> vê o painel sem poder alterar e <b>Administrador</b> tem acesso total.</p>
+              cada pessoa vê apenas o que as <b>permissões</b> dela liberam (definidas no cadastro de cada usuário).</p>
             <div class="link-publico"><input id="link-publico" readonly /><button class="btn" id="btn-copiar">Copiar</button></div>
             <a id="btn-whats" class="btn sucesso" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
 

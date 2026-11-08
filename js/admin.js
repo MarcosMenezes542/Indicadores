@@ -22,18 +22,43 @@ const Admin = (() => {
     $("#btn-whats").href = `https://wa.me/?text=${encodeURIComponent('Gestão Operacional de Visitas dos VMO. Abra o link, toque em "Instalar o aplicativo" e entre com o seu usuário e senha: ' + base)}`;
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
     Chart.defaults.color = "#5f6b7a";
-    const leitura = somenteLeitura();
-    $$("[data-so-admin]").forEach((el) => mostrar(el, !leitura));
-    mostrar("#aviso-leitura", leitura);
-    trocarAba("painel");
-    await Promise.all([leitura ? null : carregarPerfis(), carregarVisitas()]);
-    if (!leitura) renderUnidades();
+    // Menu, botões e abas conforme as permissões do usuário
+    $$("#nav-admin button[data-aba]").forEach((b) => mostrar(b, abasPermitidas().includes(b.dataset.aba)));
+    mostrar('[data-grupo="consulta"]', pode("ver_painel") || pode("ver_visitas"));
+    mostrar('[data-grupo="gestao"]', pode("gerenciar_usuarios") || pode("gerenciar_unidades"));
+    mostrar("#btn-csv", pode("exportar"));
+    mostrar("#btn-excel", pode("exportar"));
+    mostrar("#btn-imprimir", pode("imprimir"));
+    mostrar("#aviso-leitura", !["excluir_visitas", "gerenciar_unidades", "gerenciar_usuarios"].some(pode));
+    mostrar("#btn-fixar-auto", pode("gerenciar_unidades"));
+    if (!souAdmin()) $$('select[name=papel] option[value=admin]').forEach((o) => o.remove());
+    renderPermissoes($("#perms-novo"), $("#form-usuario").papel.value);
+    trocarAba(abasPermitidas()[0]);
+    await Promise.all([pode("gerenciar_usuarios") ? carregarPerfis() : null, carregarVisitas()]);
+    if (pode("gerenciar_unidades")) renderUnidades();
   }
 
-  const somenteLeitura = () => Estado.perfil?.papel !== "admin";
+  const souAdmin = () => Estado.perfil?.papel === "admin";
+  const PERM_ABA = { painel: "ver_painel", visitas: "ver_visitas", usuarios: "gerenciar_usuarios", unidades: "gerenciar_unidades" };
+  const abasPermitidas = () => Object.keys(PERM_ABA).filter((a) => pode(PERM_ABA[a]));
+
+  /* Caixas de permissões (cadastro e edição de usuário) */
+  function renderPermissoes(caixa, papel, marcadas) {
+    const lista = marcadas || PERMISSOES_PADRAO[papel] || [];
+    const tudo = papel === "admin";
+    const grupos = [...new Set(PERMISSOES.map((p) => p.grupo))];
+    caixa.innerHTML = (tudo ? `<p class="faixa-leitura" style="margin:0 0 .5rem">O Administrador sempre tem todas as permissões.</p>` : "") +
+      grupos.map((g) => `<fieldset class="perm-grupo"><legend>${g}</legend>${PERMISSOES.filter((p) => p.grupo === g).map((p) => `
+        <label class="perm-item ${tudo ? "travada" : ""}">
+          <input type="checkbox" value="${p.id}" ${tudo || lista.includes(p.id) ? "checked" : ""} ${tudo ? "disabled" : ""} />
+          <span><b>${p.nome}</b><small>${p.desc}</small></span>
+        </label>`).join("")}</fieldset>`).join("");
+  }
+  const lerPermissoes = (caixa) => $$("input[type=checkbox]", caixa).filter((c) => c.checked).map((c) => c.value);
 
   function trocarAba(aba) {
-    if (somenteLeitura() && (aba === "usuarios" || aba === "unidades")) aba = "painel";
+    const permitidas = abasPermitidas();
+    if (!permitidas.includes(aba)) aba = permitidas[0];
     $$("#nav-admin button").forEach((b) => b.classList.toggle("ativo", b.dataset.aba === aba));
     const botao = $(`#nav-admin button[data-aba="${aba}"]`);
     if ($("#titulo-aba") && botao) $("#titulo-aba").textContent = botao.textContent.replace(/^\S+\s*/, "").trim();
@@ -129,7 +154,7 @@ const Admin = (() => {
     descreverFiltroExtra();
     if (!$("#aba-painel").classList.contains("oculto")) renderPainel();
     renderTabela();
-    if (!somenteLeitura()) renderUsuarios();
+    if (pode("gerenciar_usuarios")) renderUsuarios();
   }
 
   /* ---------- Painel / gráficos ---------- */
@@ -276,7 +301,7 @@ const Admin = (() => {
       ordem = { campo: th.dataset.ordem, desc: ordem.campo === th.dataset.ordem ? !ordem.desc : true };
       renderTabela();
     });
-    $$("#tabela-visitas [data-ver]").forEach((b) => b.onclick = () => abrirDetalheVisita(visitas.find((v) => v.id === b.dataset.ver), { admin: !somenteLeitura() }));
+    $$("#tabela-visitas [data-ver]").forEach((b) => b.onclick = () => abrirDetalheVisita(visitas.find((v) => v.id === b.dataset.ver), { excluir: pode("excluir_visitas"), unidades: pode("gerenciar_unidades") }));
   }
 
   async function excluirVisita(v) {
@@ -425,20 +450,22 @@ const Admin = (() => {
     ].map(([t, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${t}</div></div>`).join("");
     const eu = Estado.usuario?.id;
     $("#tabela-usuarios").innerHTML = `
-      <thead><tr><th>Nome</th><th>Usuário (login)</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th>Visitas no período</th><th>Criado em</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Usuário (login)</th><th>Perfil</th><th>Permissões</th><th>Status</th><th>Último acesso</th><th>Visitas no período</th><th>Criado em</th><th>Ações</th></tr></thead>
       <tbody>${lista.map((p) => `<tr>
         <td>${esc(p.nome)}${p.id === eu ? " <small>(você)</small>" : ""}</td><td><code>${esc(p.login)}</code></td>
         <td>${nomePapel(p.papel)}</td>
+        <td class="perms-celula">${p.papel === "admin" ? `<span class="chip-perm todas">Todas</span>`
+          : PERMISSOES.filter((x) => permissoesDe(p).includes(x.id)).map((x) => `<span class="chip-perm" title="${esc(x.desc)}">${esc(x.nome)}</span>`).join(" ") || `<span class="selo inativo">Nenhuma</span>`}</td>
         <td><span class="selo ${p.ativo ? "ativo" : "inativo"}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
         <td>${"ultimo_acesso" in p ? (p.ultimo_acesso ? fmtDataHora(p.ultimo_acesso) : "Nunca entrou") : "—"}</td>
         <td>${n[p.nome] || 0}</td><td>${fmtData(p.criado_em)}</td>
-        <td class="acoes">
+        <td class="acoes">${p.papel === "admin" && !souAdmin() ? `<small class="dica">Somente administradores</small>` : `
           <button class="btn peq" data-editar="${p.id}">✏️ Editar</button>
           <button class="btn peq" data-senha="${p.id}">🔑 Senha</button>
           ${p.id === eu ? "" : `<button class="btn peq" data-alternar="${p.id}">${p.ativo ? "⛔ Desativar" : "✅ Ativar"}</button>
-          <button class="btn peq perigo" data-excluir="${p.id}" title="Excluir">🗑️</button>`}
+          <button class="btn peq perigo" data-excluir="${p.id}" title="Excluir">🗑️</button>`}`}
         </td>
-      </tr>`).join("") || `<tr><td colspan="8" class="dica">Nenhum usuário encontrado.</td></tr>`}</tbody>`;
+      </tr>`).join("") || `<tr><td colspan="9" class="dica">Nenhum usuário encontrado.</td></tr>`}</tbody>`;
     const achar = (id) => perfis.find((p) => p.id === id);
     $$("#tabela-usuarios [data-editar]").forEach((b) => b.onclick = () => editarUsuario(achar(b.dataset.editar)));
     $$("#tabela-usuarios [data-senha]").forEach((b) => b.onclick = () => b.dataset.senha === eu ? abrirMinhaConta() : trocarSenha(achar(b.dataset.senha)));
@@ -481,12 +508,15 @@ const Admin = (() => {
   async function criarUsuario(ev) {
     ev.preventDefault();
     const f = ev.target, msg = $("#usuario-msg");
-    const corpo = { acao: "criar", nome: f.nome.value.trim(), login: f.login.value.trim(), senha: f.senha.value, papel: f.papel.value };
+    const corpo = { acao: "criar", nome: f.nome.value.trim(), login: f.login.value.trim(), senha: f.senha.value, papel: f.papel.value,
+      permissoes: f.papel.value === "admin" ? null : lerPermissoes($("#perms-novo")) };
+    if (corpo.permissoes && !corpo.permissoes.length && !confirm("Nenhuma permissão marcada: este usuário não conseguirá acessar nada. Criar assim mesmo?")) return;
     msg.className = "dica"; msg.textContent = "Criando...";
     try {
       await chamarFuncao(corpo);
       msg.innerHTML = `✅ Usuário criado! Login: <b>${esc(corpo.login.toLowerCase())}</b> · Senha: <b>${esc(corpo.senha)}</b>`;
       f.reset();
+      renderPermissoes($("#perms-novo"), f.papel.value);
       await carregarPerfis();
       preencherFiltros();
     } catch (e) {
@@ -500,16 +530,24 @@ const Admin = (() => {
       <form id="form-editar">
         <label>Nome <input name="nome" value="${esc(p.nome)}" required minlength="2" /></label>
         <label>Usuário (login) <input value="${esc(p.login)}" disabled /></label>
-        <label>Perfil <select name="papel">${Object.entries({ vigilante: "VMO (vigilante) — registra visitas", gestor: "Gestor — somente visualização", admin: "Administrador — acesso total" }).map(([k, t]) => `<option value="${k}" ${p.papel === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+        <label>Perfil <select name="papel">${Object.entries({ vigilante: "VMO (vigilante) — registra visitas", gestor: "Gestor — acompanha os resultados", admin: "Administrador — acesso total" })
+          .filter(([k]) => k !== "admin" || souAdmin()).map(([k, t]) => `<option value="${k}" ${p.papel === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+        <div class="rotulo-campo">Permissões de acesso</div>
+        <div id="perms-editar" class="permissoes-box"></div>
+        <p class="dica">Ao trocar o perfil, as permissões voltam para o padrão dele. Depois você pode ajustar.</p>
         <label><input type="checkbox" name="ativo" ${p.ativo ? "checked" : ""} style="display:inline;width:auto" /> Usuário ativo (desmarque para bloquear o acesso)</label>
         <p class="erro" id="editar-erro"></p>
         <button class="btn primario">Salvar</button>
       </form>`);
-    $("#form-editar").onsubmit = async (e) => {
+    const fe = $("#form-editar");
+    renderPermissoes($("#perms-editar"), p.papel, permissoesDe(p));
+    fe.papel.onchange = () => renderPermissoes($("#perms-editar"), fe.papel.value);
+    fe.onsubmit = async (e) => {
       e.preventDefault();
       const f = e.target;
       try {
-        await chamarFuncao({ acao: "atualizar", id: p.id, nome: f.nome.value.trim(), papel: f.papel.value, ativo: f.ativo.checked });
+        await chamarFuncao({ acao: "atualizar", id: p.id, nome: f.nome.value.trim(), papel: f.papel.value, ativo: f.ativo.checked,
+          permissoes: f.papel.value === "admin" ? null : lerPermissoes($("#perms-editar")) });
         fecharModal(); aviso("Usuário atualizado.");
         await carregarPerfis();
       } catch (er) { $("#editar-erro").textContent = er.message; }
@@ -747,6 +785,7 @@ const Admin = (() => {
     $("#btn-excel").onclick = exportarExcel;
     $("#btn-imprimir").onclick = imprimirRelatorio;
     $("#form-usuario").onsubmit = criarUsuario;
+    $("#form-usuario").papel.onchange = (e) => renderPermissoes($("#perms-novo"), e.target.value);
     ["#u-busca", "#u-papel", "#u-status"].forEach((sel) => $(sel).oninput = renderUsuarios);
     $("#lote-unidades").oninput = previaLote;
     $("#btn-lote").onclick = adicionarLote;
@@ -764,7 +803,7 @@ const Admin = (() => {
 })();
 
 /* Detalhe de uma visita */
-async function abrirDetalheVisita(v, { admin = false } = {}) {
+async function abrirDetalheVisita(v, { excluir = false, unidades = false } = {}) {
   const fotos = (v.anomalias || []).flatMap((a) => a.fotos || []);
   abrirModal(`<p class="dica">Carregando...</p>`);
   const urls = await urlsAssinadas(fotos);
@@ -786,16 +825,16 @@ async function abrirDetalheVisita(v, { admin = false } = {}) {
         <div class="fotos-grid">${(a.fotos || []).map((p) => urls[p] ? `<img src="${esc(urls[p])}" alt="Foto da anormalidade" data-ampliar />` : `<span class="dica">Foto indisponível</span>`).join("")}</div>
       </div>`).join("")}
     <h3>📍 Localização (dupla verificação)</h3>
-    ${blocoGeo(v, admin)}
+    ${blocoGeo(v, unidades)}
     <h3>Resumo / observações</h3>
     <p>${esc(v.observacoes || "—").replace(/\n/g, "<br>")}</p>
     <div class="filtros-acoes" style="margin-top:1rem">
-      <button class="btn primario" id="btn-imprimir-visita">🖨️ Imprimir esta visita</button>
-      ${admin ? `<button class="btn perigo" id="btn-excluir-visita">🗑️ Excluir visita</button>` : ""}
+      ${pode("imprimir") ? `<button class="btn primario" id="btn-imprimir-visita">🖨️ Imprimir esta visita</button>` : ""}
+      ${excluir ? `<button class="btn perigo" id="btn-excluir-visita">🗑️ Excluir visita</button>` : ""}
     </div>`);
   $$("#modal-conteudo [data-ampliar]").forEach((img) => img.onclick = () => window.open(img.src, "_blank"));
-  $("#btn-imprimir-visita").onclick = () => imprimirVisitas([v], urls, `Visita — ${v.unidade}`);
-  if (admin) $("#btn-excluir-visita").onclick = () => Admin.excluirVisita(v);
+  if ($("#btn-imprimir-visita")) $("#btn-imprimir-visita").onclick = () => imprimirVisitas([v], urls, `Visita — ${v.unidade}`);
+  if (excluir) $("#btn-excluir-visita").onclick = () => Admin.excluirVisita(v);
   const usar = $("#btn-usar-geo");
   if (usar) usar.onclick = () => Admin.editarCoordenadas(v.unidade, v.geo_chegada);
 }

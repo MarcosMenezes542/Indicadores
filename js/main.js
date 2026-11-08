@@ -3,7 +3,6 @@
    - admin.html (painel): somente administradores. */
 const Main = (() => {
   const MODO = document.body.dataset.modo; // "vmo" (index.html: login único + app do VMO) | "admin" (admin.html: painel)
-  const PAINEL = ["admin", "gestor"];
   let iniciado = false;
 
   function telas(qual) {
@@ -32,9 +31,15 @@ const Main = (() => {
       if (!perfil) return irParaLogin();
       if (!perfil.ativo) return await negar("Seu usuário está desativado. Procure o administrador.");
 
-      // Cada perfil vai para a sua área
-      if (MODO === "vmo" && PAINEL.includes(perfil.papel)) { location.replace("admin.html"); return; }
-      if (MODO === "admin" && !PAINEL.includes(perfil.papel)) { location.replace("index.html"); return; }
+      // Cada usuário vai para a área permitida
+      const painel = acessaPainel(perfil);
+      const registrar = permissoesDe(perfil).includes("registrar_visitas");
+      if (!painel && !registrar) return await negar("Seu usuário ainda não tem nenhuma permissão. Procure o administrador.");
+      const querRegistrar = new URLSearchParams(location.search).get("registrar") === "1";
+      if (MODO === "vmo" && painel && !(registrar && querRegistrar)) { location.replace("admin.html"); return; }
+      if (MODO === "admin" && !painel) { location.replace("index.html"); return; }
+      mostrar("#link-painel", MODO === "vmo" && painel);
+      mostrar("#btn-registrar-visita", MODO === "admin" && registrar);
 
       if ($("#papel-usuario")) {
         $("#nome-usuario").textContent = perfil.nome;

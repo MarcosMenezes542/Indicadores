@@ -2,6 +2,18 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const DOMINIO = "vigilancia.local";
 const PAPEIS = ["admin", "vigilante", "gestor"]; // gestor = somente visualização
+const PERMISSOES = ["registrar_visitas", "ver_painel", "ver_visitas", "exportar", "imprimir", "excluir_visitas", "gerenciar_unidades", "gerenciar_usuarios"];
+const PADRAO: Record<string, string[]> = {
+  admin: PERMISSOES,
+  gestor: ["ver_painel", "ver_visitas", "exportar", "imprimir"],
+  vigilante: ["registrar_visitas"],
+};
+// Permissões efetivas: o administrador tem todas; os demais usam as escolhidas ou as padrão do perfil
+const permsDe = (p: { papel: string; permissoes?: string[] | null }) =>
+  p.papel === "admin" ? PERMISSOES : (Array.isArray(p.permissoes) ? p.permissoes : PADRAO[p.papel] || []);
+// Limpa a lista recebida (só aceita permissões conhecidas); admin não guarda lista própria
+const limparPerms = (lista: unknown, papel: string) =>
+  papel === "admin" || !Array.isArray(lista) ? null : [...new Set(lista.map(String).filter((x) => PERMISSOES.includes(x)))];
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -25,7 +37,7 @@ const traduz = (m: string) => {
   return m;
 };
 
-async function criarConta(nome: string, login: string, senha: string, papel: string) {
+async function criarConta(nome: string, login: string, senha: string, papel: string, permissoes: unknown = null) {
   if (!nome || String(nome).trim().length < 2) return { erro: "Informe o nome (mínimo 2 letras)." };
   if (!loginValido(login)) return { erro: "Usuário inválido: use de 3 a 80 caracteres, sem espaços nem acentos." };
   if (!senha || String(senha).length < 8) return { erro: "A senha precisa ter pelo menos 8 caracteres." };
@@ -37,6 +49,8 @@ async function criarConta(nome: string, login: string, senha: string, papel: str
     app_metadata: { papel, nome: String(nome).trim() },
   });
   if (error) return { erro: traduz(error.message) };
+  const perms = limparPerms(permissoes, papel);
+  if (perms) await admin.from("perfis").update({ permissoes: perms }).eq("id", data.user.id);
   return { ok: true, id: data.user.id };
 }
 
@@ -61,11 +75,15 @@ Deno.serve(async (req) => {
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   const { data: u, error: ue } = await admin.auth.getUser(token);
   if (ue || !u?.user) return resp({ erro: "Sessão expirada. Entre novamente." }, 401);
-  const { data: eu } = await admin.from("perfis").select("papel,ativo").eq("id", u.user.id).maybeSingle();
-  if (!eu || eu.papel !== "admin" || !eu.ativo) return resp({ erro: "Apenas administradores podem gerenciar usuários." }, 403);
+  const { data: eu } = await admin.from("perfis").select("papel,ativo,permissoes").eq("id", u.user.id).maybeSingle();
+  if (!eu || !eu.ativo || !permsDe(eu).includes("gerenciar_usuarios"))
+    return resp({ erro: "Você não tem permissão para gerenciar usuários." }, 403);
+  const souAdmin = eu.papel === "admin";
 
   if (acao === "criar") {
-    const r = await criarConta(body.nome, body.login, body.senha, body.papel || "vigilante");
+    const papel = body.papel || "vigilante";
+    if (papel === "admin" && !souAdmin) return resp({ erro: "Apenas administradores podem criar outro administrador." }, 403);
+    const r = await criarConta(body.nome, body.login, body.senha, papel, body.permissoes);
     return resp(r, r.erro ? 400 : 200);
   }
 
@@ -94,9 +112,16 @@ Deno.serve(async (req) => {
     const ativo = !!body.ativo;
     if (nome.length < 2) return resp({ erro: "Informe o nome (mínimo 2 letras)." }, 400);
     if (!PAPEIS.includes(papel)) return resp({ erro: "Perfil inválido." }, 400);
-    if (id === u.user.id && (!ativo || papel !== "admin"))
-      return resp({ erro: "Você não pode desativar nem rebaixar a sua própria conta." }, 400);
-    const { error: e1 } = await admin.from("perfis").update({ nome, papel, ativo }).eq("id", id);
+    if (!souAdmin && (papel === "admin" || alvo.papel === "admin"))
+      return resp({ erro: "Apenas administradores podem alterar um administrador." }, 403);
+    // permissões: se não vierem na requisição, mantém as atuais
+    const permissoes = "permissoes" in body ? limparPerms(body.permissoes, papel) : (papel === "admin" ? null : alvo.permissoes);
+    if (id === u.user.id) {
+      const minhas = permsDe({ papel, permissoes });
+      if (!ativo || (souAdmin && papel !== "admin") || !minhas.includes("gerenciar_usuarios"))
+        return resp({ erro: "Você não pode desativar a sua conta, mudar o seu perfil nem tirar a sua permissão de gerenciar usuários." }, 400);
+    }
+    const { error: e1 } = await admin.from("perfis").update({ nome, papel, ativo, permissoes }).eq("id", id);
     if (e1) return resp({ erro: e1.message }, 500);
     const { error: e2 } = await admin.auth.admin.updateUserById(id, {
       app_metadata: { papel, nome },
@@ -105,6 +130,8 @@ Deno.serve(async (req) => {
     if (e2) return resp({ erro: e2.message }, 500);
     return resp({ ok: true });
   }
+
+  if (alvo.papel === "admin" && !souAdmin) return resp({ erro: "Apenas administradores podem alterar um administrador." }, 403);
 
   if (acao === "senha") {
     const senha = String(body.senha || "");

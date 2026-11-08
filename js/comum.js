@@ -5,14 +5,44 @@ const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY, {
 });
 
 const Estado = { usuario: null, perfil: null, unidades: [] };
-const NOME_PAPEL = { admin: "Administrador", vigilante: "VMO", gestor: "Gestor (visualização)" };
+const NOME_PAPEL = { admin: "Administrador", vigilante: "VMO", gestor: "Gestor" };
 const nomePapel = (p) => NOME_PAPEL[p] || p;
+
+/* ---------- Permissões ---------- */
+const PERMISSOES = [
+  { id: "registrar_visitas", grupo: "📱 App do VMO", nome: "Registrar visitas", desc: "Usar o app do VMO: chegada, saída, fotos, anormalidades e GPS" },
+  { id: "ver_painel", grupo: "👁️ Consulta", nome: "Ver o painel", desc: "Indicadores e gráficos" },
+  { id: "ver_visitas", grupo: "👁️ Consulta", nome: "Ver as visitas", desc: "Lista de visitas com detalhes, fotos e mapa" },
+  { id: "exportar", grupo: "👁️ Consulta", nome: "Baixar dados", desc: "Exportar em CSV e Excel" },
+  { id: "imprimir", grupo: "👁️ Consulta", nome: "Imprimir relatórios", desc: "Relatório para impressão ou PDF" },
+  { id: "excluir_visitas", grupo: "⚙️ Gestão", nome: "Excluir visitas", desc: "Apagar visitas e as fotos delas" },
+  { id: "gerenciar_unidades", grupo: "⚙️ Gestão", nome: "Gerenciar unidades", desc: "Cadastrar, remover e definir a localização das unidades" },
+  { id: "gerenciar_usuarios", grupo: "⚙️ Gestão", nome: "Gerenciar usuários", desc: "Criar usuários, definir permissões, senhas e bloqueios" },
+];
+const TODAS_PERMISSOES = PERMISSOES.map((p) => p.id);
+const PERMISSOES_PADRAO = {
+  admin: TODAS_PERMISSOES,
+  gestor: ["ver_painel", "ver_visitas", "exportar", "imprimir"],
+  vigilante: ["registrar_visitas"],
+};
+// Permissões efetivas de um usuário (o administrador sempre tem todas)
+function permissoesDe(p) {
+  if (!p) return [];
+  if (p.papel === "admin") return TODAS_PERMISSOES;
+  return Array.isArray(p.permissoes) ? p.permissoes : (PERMISSOES_PADRAO[p.papel] || []);
+}
+const pode = (perm) => permissoesDe(Estado.perfil).includes(perm);
+const PERMS_PAINEL = ["ver_painel", "ver_visitas", "gerenciar_unidades", "gerenciar_usuarios"];
+const acessaPainel = (p = Estado.perfil) => permissoesDe(p).some((x) => PERMS_PAINEL.includes(x));
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-function mostrar(el, sim = true) { (typeof el === "string" ? $(el) : el).classList.toggle("oculto", !sim); }
+function mostrar(el, sim = true) {
+  const alvo = typeof el === "string" ? $(el) : el;
+  if (alvo) alvo.classList.toggle("oculto", !sim); // ignora elementos que não existem nesta página
+}
 
 function carregando(sim, texto = "Carregando...") {
   $("#carregando-texto").textContent = texto;
@@ -240,6 +270,7 @@ function abrirMinhaConta() {
       <div><b>Usuário (login)</b>${esc(p.login)}</div>
       <div><b>Perfil</b>${nomePapel(p.papel)}</div>
     </div>
+    <p class="dica"><b>Suas permissões:</b> ${PERMISSOES.filter((x) => permissoesDe(p).includes(x.id)).map((x) => `<span class="chip-perm">${esc(x.nome)}</span>`).join(" ") || "nenhuma"}</p>
     <h3>Alterar minha senha</h3>
     <form id="form-minha-senha" autocomplete="off">
       <label>Senha atual <input type="password" name="atual" required autocomplete="off" /></label>
