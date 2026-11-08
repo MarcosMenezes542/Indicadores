@@ -144,13 +144,15 @@
             </div>
           </div>
           <div class="cartao">
-            <h3>📍 Localização das unidades</h3>
-            <p>Com as coordenadas cadastradas, o sistema confere se o GPS do VMO estava a até <b><span id="raio-geo"></span> m</b> da unidade informada na visita.</p>
-            <p class="dica"><b>Como obter as coordenadas:</b></p>
+            <h3>📍 Como funciona a conferência por GPS</h3>
+            <p>O app usa a <b>localização do próprio celular do VMO</b> na chegada e na saída. Você vê a posição no mapa de cada visita.</p>
+            <p>Para dizer se ele estava <b>na unidade</b>, o sistema compara com uma referência:</p>
             <ul class="dica">
-              <li>No Google Maps, clique com o botão direito em cima da unidade e clique nos números (ex.: <code>-22.8219, -47.2669</code>) para copiar.</li>
-              <li>Ou, numa visita que você sabe que foi feita no local, abra o detalhe da visita e clique em <b>📌 Usar como localização da unidade</b>.</li>
+              <li><b>🛰️ Automática:</b> depois de 3 visitas com GPS numa unidade, o sistema aprende o ponto da unidade (onde os VMOs costumam registrar). Visitas longe desse ponto ficam marcadas como ⚠️. <b>Você não precisa cadastrar nada.</b></li>
+              <li><b>📍 Cadastrada (opcional):</b> se quiser mais precisão desde a primeira visita, informe as coordenadas na lista abaixo ou na importação.</li>
             </ul>
+            <p class="dica">Tolerância: até <b><span id="raio-geo"></span> m</b> da referência.</p>
+            <button class="btn" id="btn-fixar-auto" type="button">🛰️ Gravar as localizações automáticas como oficiais</button>
           </div>
         </div>
         <div class="cartao">

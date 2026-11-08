@@ -59,6 +59,7 @@ const Admin = (() => {
         if (data.length < 1000) break;
       }
       visitas = todos;
+      calcularReferenciasAuto(visitas);
       preencherFiltros();
       atualizarTudo();
     } catch (e) {
@@ -285,6 +286,7 @@ const Admin = (() => {
     carregando(false);
     if (error) return aviso(error.message, true);
     visitas = visitas.filter((x) => x.id !== v.id);
+    calcularReferenciasAuto(visitas);
     fecharModal();
     atualizarTudo();
     aviso("Visita excluída.");
@@ -540,7 +542,9 @@ const Admin = (() => {
         const c = Estado.coordUnidades[u];
         return `<tr>
           <td>${esc(u)}</td>
-          <td>${c ? `<a href="${linkMapa(c)}" target="_blank" rel="noopener">📍 ${fmtCoord(c)}</a>` : `<span class="selo geo-ref">❔ Sem coordenadas</span>`}</td>
+          <td>${c ? `<a href="${linkMapa(c)}" target="_blank" rel="noopener">📍 ${fmtCoord(c)}</a> <small>(cadastrada)</small>`
+            : Estado.refAuto?.[u] ? `<a href="${linkMapa(Estado.refAuto[u])}" target="_blank" rel="noopener">🛰️ ${fmtCoord(Estado.refAuto[u])}</a> <small>(automática, ${Estado.refAuto[u].n} visitas)</small>`
+            : `<span class="selo geo-ref">Aguardando visitas com GPS</span>`}</td>
           <td>${n[u] || 0}</td>
           <td class="acoes"><button class="btn peq" data-coord="${esc(u)}">📍 ${c ? "Alterar" : "Cadastrar"} localização</button>
             <button class="btn peq perigo" data-u="${esc(u)}" title="Remover">🗑️</button></td>
@@ -552,6 +556,21 @@ const Admin = (() => {
       if (error) return aviso(error.message, true);
       await recarregarUnidades();
     });
+  }
+
+  async function fixarReferenciasAuto() {
+    const alvo = Estado.unidades.filter((u) => !Estado.coordUnidades[u] && Estado.refAuto?.[u]);
+    if (!alvo.length) return aviso("Nenhuma unidade nova com localização automática (são necessárias 3 visitas com GPS no período).", true);
+    if (!confirm(`Gravar a localização automática de ${alvo.length} unidade(s) como coordenada oficial?\n(Calculada pelo GPS dos celulares dos VMOs nas visitas do período.)`)) return;
+    carregando(true, "Salvando...");
+    try {
+      for (const u of alvo) {
+        const r = Estado.refAuto[u];
+        const { error } = await sb.from("unidades").update({ latitude: r.lat, longitude: r.lng }).eq("nome", u);
+        if (error) throw error;
+      }
+      aviso(`📍 Localização gravada para ${alvo.length} unidade(s).`);
+    } catch (e) { aviso(e.message, true); } finally { carregando(false); await recarregarUnidades(); }
   }
 
   async function recarregarUnidades() {
@@ -730,6 +749,7 @@ const Admin = (() => {
     $("#arquivo-unidades").onchange = importarArquivo;
     $("#btn-modelo-unidades").onclick = baixarModelo;
     $("#busca-unidade").oninput = renderUnidades;
+    $("#btn-fixar-auto").onclick = fixarReferenciasAuto;
     $("#btn-copiar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-publico").value); } catch { $("#link-publico").select(); document.execCommand("copy"); }
       aviso("Link copiado!");
@@ -778,7 +798,7 @@ async function abrirDetalheVisita(v, { admin = false } = {}) {
 
 function blocoGeo(v, admin) {
   const ver = verificarGeo(v.geo_chegada, v.unidade);
-  const ref = Estado.coordUnidades?.[v.unidade];
+  const ref = referenciaUnidade(v.unidade);
   const linha = (rot, g) => !g ? `<div><b>${rot}</b>Não registrada</div>`
     : g.erro ? `<div><b>${rot}</b>❌ ${esc(g.erro)}</div>`
     : `<div><b>${rot}</b><a href="${linkMapa(g)}" target="_blank" rel="noopener">${fmtCoord(g)}</a><br><small>±${g.precisao ?? "?"} m · ${fmtHora(g.em)}${ref ? ` · ${fmtDistancia(distanciaM(g, ref))} da unidade` : ""}</small></div>`;
@@ -786,8 +806,9 @@ function blocoGeo(v, admin) {
     <div class="detalhe-grid">
       ${linha("GPS na chegada", v.geo_chegada)}
       ${linha("GPS na saída", v.geo_saida)}
-      <div><b>Unidade cadastrada</b>${ref ? `<a href="${linkMapa(ref)}" target="_blank" rel="noopener">${fmtCoord(ref)}</a>` : "Sem coordenadas"}</div>
+      <div><b>Referência da unidade</b>${ref ? `<a href="${linkMapa(ref)}" target="_blank" rel="noopener">${fmtCoord(ref)}</a><br><small>${ref.origem === "auto" ? `automática (${ref.n} visitas)` : "cadastrada"}</small>` : "Ainda sem referência"}</div>
     </div>
+    ${v.geo_chegada?.lat != null ? mapaEmbed(v.geo_chegada, 220) : ""}
     ${admin && v.geo_chegada?.lat != null ? `<button class="btn peq" id="btn-usar-geo">📌 Usar como localização da unidade</button>` : ""}`;
 }
 

@@ -232,3 +232,4 @@ textarea { resize: vertical; }
 .dica-clara { font-size: .85rem; opacity: .85; margin: .2rem 0 .4rem; }
 input[hidden] { display: none !important; }
 #lote-unidades { font-family: ui-monospace, Consolas, monospace; font-size: .9rem; }
+.mapa { display: block; width: 100%; border: 0; border-radius: 8px; margin: .4rem 0; background: #e3e8ef; }

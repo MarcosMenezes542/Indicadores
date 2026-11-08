@@ -83,10 +83,11 @@ const VMO = (() => {
       el.className = `geo ${v.classe}`;
       el.innerHTML = `
         <div>📍 <b>Localização registrada</b> às ${fmtHora(g.em)} · precisão ±${g.precisao} m</div>
-        <div><a href="${linkMapa(g)}" target="_blank" rel="noopener">${fmtCoord(g)} — ver no mapa</a></div>
+        ${mapaEmbed(g)}
+        <div><a href="${linkMapa(g)}" target="_blank" rel="noopener">${fmtCoord(g)} — abrir no Google Maps</a></div>
         <div class="geo-status">${v.icone} ${esc(v.codigo === "ok" ? `Você está na unidade (${fmtDistancia(v.dist)})`
           : v.codigo === "longe" ? `Atenção: você está a ${fmtDistancia(v.dist)} da unidade "${rascunho.unidade}". Confira se a unidade está correta.`
-          : rascunho.unidade ? "Esta unidade ainda não tem coordenadas cadastradas; a localização será conferida pelo administrador." : "Informe a unidade para conferir a distância.")}</div>
+          : "Sua localização foi registrada pelo celular e será enviada com a visita.")}</div>
         ${botao("↻ Atualizar localização")}`;
     });
   }

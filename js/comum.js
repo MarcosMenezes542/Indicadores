@@ -89,17 +89,50 @@ const linkMapa = (g) => `https://www.google.com/maps?q=${g.lat},${g.lng}`;
 const fmtCoord = (g) => `${Number(g.lat).toFixed(6)}, ${Number(g.lng).toFixed(6)}`;
 
 // Compara a posição do VMO com a coordenada cadastrada da unidade
+// Referência da unidade: a coordenada cadastrada (se houver) ou, automaticamente,
+// o ponto mais comum (mediana) das localizações registradas pelos celulares dos VMOs nessa unidade.
+function referenciaUnidade(unidade) {
+  const c = Estado.coordUnidades?.[unidade];
+  if (c) return { ...c, origem: "cadastro" };
+  const a = Estado.refAuto?.[unidade];
+  return a ? { ...a, origem: "auto" } : null;
+}
+
+// Calcula a referência automática de cada unidade a partir das visitas (mín. 3 leituras boas)
+function calcularReferenciasAuto(listaVisitas) {
+  const pontos = {};
+  listaVisitas.forEach((v) => {
+    const g = v.geo_chegada;
+    if (g?.lat != null && (g.precisao ?? 999) <= 150) (pontos[v.unidade] ||= []).push(g);
+  });
+  const mediana = (xs) => { const s = [...xs].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  Estado.refAuto = {};
+  Object.entries(pontos).forEach(([u, ps]) => {
+    if (ps.length >= 3) Estado.refAuto[u] = { lat: +mediana(ps.map((p) => p.lat)).toFixed(6), lng: +mediana(ps.map((p) => p.lng)).toFixed(6), n: ps.length };
+  });
+  return Estado.refAuto;
+}
+
 function verificarGeo(geo, unidade) {
   if (!geo || geo.lat == null) return { codigo: "sem_gps", icone: "❌", rotulo: "Sem localização", classe: "geo-sem", detalhe: geo?.erro || "Localização não registrada" };
-  const ref = Estado.coordUnidades?.[unidade];
-  if (!ref) return { codigo: "sem_ref", icone: "❔", rotulo: "Unidade sem coordenadas", classe: "geo-ref", detalhe: "Cadastre a localização da unidade para conferir" };
+  const ref = referenciaUnidade(unidade);
+  if (!ref) return { codigo: "sem_ref", icone: "📍", rotulo: "Localização registrada", classe: "geo-ref", detalhe: "Ainda sem referência da unidade (são necessárias 3 visitas com GPS ou o cadastro da coordenada). Confira no mapa." };
   const d = distanciaM(geo, ref);
   const limite = CFG.RAIO_VERIFICACAO_M + Math.min(geo.precisao || 0, 300);
+  const base = ref.origem === "auto" ? `comparado às ${ref.n} visitas registradas nesta unidade` : "comparado à coordenada cadastrada da unidade";
   return d <= limite
-    ? { codigo: "ok", icone: "✅", rotulo: `No local (${fmtDistancia(d)})`, classe: "geo-ok", dist: d }
-    : { codigo: "longe", icone: "⚠️", rotulo: `Fora da unidade (${fmtDistancia(d)})`, classe: "geo-longe", dist: d };
+    ? { codigo: "ok", icone: "✅", rotulo: `No local (${fmtDistancia(d)})`, classe: "geo-ok", dist: d, detalhe: base }
+    : { codigo: "longe", icone: "⚠️", rotulo: `Fora da unidade (${fmtDistancia(d)})`, classe: "geo-longe", dist: d, detalhe: base };
 }
-const ROTULO_GEO = { ok: "✅ Confirmada no local", longe: "⚠️ Fora da unidade", sem_ref: "❔ Unidade sem coordenadas", sem_gps: "❌ Sem localização" };
+const ROTULO_GEO = { ok: "✅ Confirmada no local", longe: "⚠️ Fora da unidade", sem_ref: "📍 Registrada (sem referência)", sem_gps: "❌ Sem localização" };
+
+// Mapa (OpenStreetMap) com a posição do celular
+function mapaEmbed(g, altura = 170) {
+  const d = 0.004;
+  const bbox = [g.lng - d, g.lat - d * 0.7, g.lng + d, g.lat + d * 0.7].map((x) => x.toFixed(6)).join(",");
+  return `<iframe class="mapa" style="height:${altura}px" loading="lazy" title="Mapa da localização"
+    src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${g.lat},${g.lng}"></iframe>`;
+}
 
 function obterLocalizacao(tempo = 20000) {
   return new Promise((ok) => {
