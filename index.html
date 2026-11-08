@@ -107,19 +107,19 @@
           <h2>Bem-vindo(a)</h2>
           <p class="entrada-sub">Entre com o seu usuário. O sistema abre a sua área de acordo com o seu perfil.</p>
 
-          <form id="form-login" novalidate>
+          <form id="form-login" novalidate autocomplete="off">
             <label class="campo">
               <span>Usuário</span>
               <div class="campo-caixa">
                 <i>👤</i>
-                <input name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="seu.usuario ou e-mail" />
+                <input name="login" autocomplete="off" autocapitalize="none" data-lpignore="true" data-1p-ignore data-form-type="other" spellcheck="false" required placeholder="seu.usuario ou e-mail" />
               </div>
             </label>
             <label class="campo">
               <span>Senha</span>
               <div class="campo-caixa">
                 <i>🔒</i>
-                <input name="senha" type="password" autocomplete="current-password" required placeholder="••••••••" />
+                <input name="senha" type="password" autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other" required placeholder="••••••••" />
                 <button type="button" class="ver-senha" id="btn-ver-senha" aria-label="Mostrar senha">👁️</button>
               </div>
               <small id="aviso-caps" class="caps oculto">⇪ Caps Lock está ativado</small>
@@ -160,11 +160,11 @@
         </div>
       </div>
 
-      <form id="form-visita" class="oculto" novalidate>
+      <form id="form-visita" class="oculto" novalidate autocomplete="off">
         <div class="cartao">
           <div class="linha-titulo"><h2>Visita operacional</h2><button type="button" id="btn-voltar" class="btn-link">← Voltar</button></div>
           <label>Unidade visitada *
-            <input name="unidade" list="lista-unidades" required placeholder="Selecione ou digite a unidade" />
+            <input name="local_ronda" list="lista-unidades" required placeholder="Selecione ou digite a unidade" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" />
             <datalist id="lista-unidades"></datalist>
           </label>
 

@@ -33,6 +33,26 @@ function abrirModal(html) { $("#modal-conteudo").innerHTML = html; mostrar("#mod
 function fecharModal() { mostrar("#modal", false); $("#modal-conteudo").innerHTML = ""; }
 function verImagem(src) { abrirModal(`<img class="grande" src="${esc(src)}" alt="Foto" />`); }
 
+/* ---------- Sem preenchimento automático do navegador ----------
+   Evita que o Chrome/Google ofereça senhas, cartões e endereços salvos no aparelho. */
+function semAutopreenchimento(raiz = document) {
+  const el = raiz.nodeType === 1 ? raiz : document.documentElement;
+  const alvos = [...(el.matches?.("form, input, textarea, select") ? [el] : []), ...el.querySelectorAll("form, input, textarea, select")];
+  alvos.forEach((c) => {
+    if (c.type === "checkbox" || c.type === "radio" || c.type === "file" || c.type === "hidden") return;
+    c.setAttribute("autocomplete", "off");
+    c.setAttribute("data-lpignore", "true");
+    c.setAttribute("data-1p-ignore", "");
+    c.setAttribute("data-form-type", "other");
+    if (c.tagName !== "FORM" && c.tagName !== "SELECT") { c.setAttribute("autocorrect", "off"); }
+  });
+}
+document.addEventListener("DOMContentLoaded", () => {
+  semAutopreenchimento();
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && semAutopreenchimento(n))))
+    .observe(document.body, { childList: true, subtree: true });
+});
+
 /* ---------- Datas ---------- */
 const fmtDataHora = (d) => d ? new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 const fmtData = (d) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
@@ -221,10 +241,10 @@ function abrirMinhaConta() {
       <div><b>Perfil</b>${nomePapel(p.papel)}</div>
     </div>
     <h3>Alterar minha senha</h3>
-    <form id="form-minha-senha">
-      <label>Senha atual <input type="password" name="atual" required autocomplete="current-password" /></label>
-      <label>Nova senha <input type="password" name="nova" required minlength="8" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></label>
-      <label>Repita a nova senha <input type="password" name="confirma" required minlength="8" autocomplete="new-password" /></label>
+    <form id="form-minha-senha" autocomplete="off">
+      <label>Senha atual <input type="password" name="atual" required autocomplete="off" /></label>
+      <label>Nova senha <input type="password" name="nova" required minlength="8" autocomplete="off" placeholder="mínimo 8 caracteres" /></label>
+      <label>Repita a nova senha <input type="password" name="confirma" required minlength="8" autocomplete="off" /></label>
       <label style="font-weight:400"><input type="checkbox" id="mostrar-senhas" style="display:inline;width:auto" /> Mostrar senhas</label>
       <p class="erro" id="minha-senha-erro"></p>
       <button class="btn primario">Salvar nova senha</button>

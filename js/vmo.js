@@ -36,7 +36,7 @@ const VMO = (() => {
       capturarGeo("chegada");
     }
     const f = $("#form-visita");
-    f.unidade.value = rascunho.unidade;
+    f.local_ronda.value = rascunho.unidade;
     f.chegada.value = rascunho.chegada;
     f.saida.value = rascunho.saida;
     f.observacoes.value = rascunho.observacoes;
@@ -288,13 +288,14 @@ const VMO = (() => {
     f.addEventListener("input", (e) => {
       if (!rascunho) return;
       const t = e.target;
-      if (["unidade", "chegada", "saida", "observacoes"].includes(t.name)) rascunho[t.name] = t.value;
+      const CAMPOS = { local_ronda: "unidade", chegada: "chegada", saida: "saida", observacoes: "observacoes" };
+      if (CAMPOS[t.name]) rascunho[CAMPOS[t.name]] = t.value;
       if (t.dataset.campo) {
         const o = rascunho.ocorrencias.find((x) => x.oid === t.closest("[data-oid]").dataset.oid);
         o[t.dataset.campo] = t.value;
       }
       if (t.name === "chegada" || t.name === "saida") atualizarPermanencia();
-      if (t.name === "unidade") renderGeo();
+      if (t.name === "local_ronda") renderGeo();
       salvar();
     });
     f.addEventListener("change", (e) => {
