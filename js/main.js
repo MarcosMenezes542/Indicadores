@@ -27,7 +27,11 @@ const Main = (() => {
       if (MODO === "vmo" && perfil.papel === "gestor")
         return await negar('O perfil Gestor é somente de visualização.<br>Acesse o <a href="admin.html">painel</a>.');
 
-      $("#nome-usuario").textContent = `${perfil.nome} · ${nomePapel(perfil.papel)}`;
+      if ($("#papel-usuario")) {
+        $("#nome-usuario").textContent = perfil.nome;
+        $("#papel-usuario").textContent = nomePapel(perfil.papel);
+        $("#avatar-usuario").textContent = perfil.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+      } else $("#nome-usuario").textContent = `${perfil.nome} · ${nomePapel(perfil.papel)}`;
       await carregarUnidades();
       if (MODO === "admin") {
         telas("admin");

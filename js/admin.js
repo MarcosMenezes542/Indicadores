@@ -36,6 +36,9 @@ const Admin = (() => {
   function trocarAba(aba) {
     if (somenteLeitura() && (aba === "usuarios" || aba === "unidades")) aba = "painel";
     $$("#nav-admin button").forEach((b) => b.classList.toggle("ativo", b.dataset.aba === aba));
+    const botao = $(`#nav-admin button[data-aba="${aba}"]`);
+    if ($("#titulo-aba") && botao) $("#titulo-aba").textContent = botao.textContent.replace(/^\S+\s*/, "").trim();
+    document.body.classList.remove("menu-aberto");
     ["painel", "visitas", "usuarios", "unidades"].forEach((a) => mostrar(`#aba-${a}`, a === aba));
     mostrar("#filtros", aba === "painel" || aba === "visitas");
     mostrar("#filtro-ativo", aba === "painel" || aba === "visitas");
@@ -729,6 +732,8 @@ const Admin = (() => {
 
   function ligarEventos() {
     $$("#nav-admin button").forEach((b) => b.onclick = () => trocarAba(b.dataset.aba));
+    $("#btn-menu").onclick = () => document.body.classList.toggle("menu-aberto");
+    $("#fundo-menu").onclick = () => document.body.classList.remove("menu-aberto");
     ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria", "#f-geo"].forEach((s) => $(s).onchange = atualizarTudo);
     ["#f-de", "#f-ate"].forEach((s) => $(s).onchange = carregarVisitas);
     $("#busca").oninput = renderTabela;

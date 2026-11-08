@@ -233,3 +233,43 @@ textarea { resize: vertical; }
 input[hidden] { display: none !important; }
 #lote-unidades { font-family: ui-monospace, Consolas, monospace; font-size: .9rem; }
 .mapa { display: block; width: 100%; border: 0; border-radius: 8px; margin: .4rem 0; background: #e3e8ef; }
+
+/* ===== Menu lateral do painel (admin/gestor) ===== */
+:root { --lateral: 250px; }
+.lateral {
+  position: fixed; inset: 0 auto 0 0; width: var(--lateral); z-index: 40; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #0b4f8a, #083a66); color: #fff; box-shadow: 2px 0 12px rgba(0, 0, 0, .12);
+}
+.lateral-marca { display: flex; align-items: center; gap: .7rem; padding: 1.1rem 1rem; border-bottom: 1px solid #ffffff22; }
+.lateral-marca img { width: 40px; height: 40px; border-radius: 10px; border: 2px solid #ffffff33; }
+.lateral-marca b { display: block; font-size: 1rem; line-height: 1.2; }
+.lateral-marca small { display: block; opacity: .8; font-size: .8rem; }
+.lateral-nav { flex: 1; overflow-y: auto; padding: .6rem; display: flex; flex-direction: column; gap: .2rem; }
+.lateral-secao { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; padding: .9rem .7rem .3rem; }
+.lateral-nav button, .lateral-item {
+  display: flex; align-items: center; gap: .7rem; width: 100%; text-align: left; padding: .7rem .8rem; border: 0; border-radius: 10px;
+  background: transparent; color: #fff; font: inherit; font-size: .95rem; cursor: pointer;
+}
+.lateral-nav button:hover, .lateral-item:hover { background: #ffffff1a; }
+.lateral-nav button.ativo { background: #fff; color: var(--azul); font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+.lateral .ic { width: 1.4rem; text-align: center; }
+.lateral-rodape { padding: .6rem; border-top: 1px solid #ffffff22; }
+.lateral-usuario { display: flex; align-items: center; gap: .6rem; padding: .5rem .5rem .7rem; }
+.lateral-usuario b { display: block; font-size: .9rem; line-height: 1.2; }
+.lateral-usuario small { display: block; opacity: .75; font-size: .78rem; }
+.avatar { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #fff; color: var(--azul); display: grid; place-items: center; font-weight: 800; font-size: .9rem; }
+.lateral-item.sair:hover { background: #c0392b; }
+.lateral:not(.oculto) ~ main { margin-left: var(--lateral); max-width: none; padding: 1.2rem 1.5rem; }
+.barra-movel, .fundo-menu { display: none; }
+
+@media (max-width: 900px) {
+  .lateral { transform: translateX(-100%); transition: transform .25s ease; }
+  body.menu-aberto .lateral { transform: none; }
+  body.menu-aberto .fundo-menu { display: block; position: fixed; inset: 0; background: #0006; z-index: 35; }
+  .lateral:not(.oculto) ~ .barra-movel {
+    display: flex; align-items: center; gap: .8rem; position: sticky; top: 0; z-index: 30;
+    background: var(--azul); color: #fff; padding: .6rem 1rem; box-shadow: var(--sombra);
+  }
+  .btn-menu { background: #ffffff22; color: #fff; border: 0; border-radius: 8px; font-size: 1.3rem; width: 40px; height: 40px; cursor: pointer; }
+  .lateral:not(.oculto) ~ main { margin-left: 0; padding: .8rem; }
+}

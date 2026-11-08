@@ -14,16 +14,33 @@
   <script src="vendor/xlsx.mini.min.js" defer></script>
 </head>
 <body data-modo="admin">
-  <!-- Topo -->
-  <header id="topo" class="topo oculto">
-    <div class="marca"><img src="img/icon.svg" alt="" /> <span>Gestão Operacional <small>de Visitas dos VMO</small></span></div>
-    <nav id="nav-admin" class="nav-admin">
-      <button data-aba="painel" class="ativo">📊 Painel</button>
-      <button data-aba="visitas">📋 Visitas</button>
-      <button data-aba="usuarios" data-so-admin>👥 Usuários</button>
-      <button data-aba="unidades" data-so-admin>🏢 Unidades</button>
+  <!-- Menu lateral -->
+  <aside id="topo" class="lateral oculto">
+    <div class="lateral-marca">
+      <img src="img/icon.svg" alt="" />
+      <div><b>Gestão Operacional</b><small>de Visitas dos VMO</small></div>
+    </div>
+    <nav id="nav-admin" class="lateral-nav">
+      <span class="lateral-secao">Menu</span>
+      <button data-aba="painel" class="ativo"><span class="ic">📊</span> Painel</button>
+      <button data-aba="visitas"><span class="ic">📋</span> Visitas</button>
+      <span class="lateral-secao" data-so-admin>Administração</span>
+      <button data-aba="usuarios" data-so-admin><span class="ic">👥</span> Usuários</button>
+      <button data-aba="unidades" data-so-admin><span class="ic">🏢</span> Unidades</button>
     </nav>
-    <div class="usuario"><span id="nome-usuario"></span> <button id="btn-conta" class="btn-link">🔑 Minha conta</button> <button id="btn-sair" class="btn-link">Sair</button></div>
+    <div class="lateral-rodape">
+      <div class="lateral-usuario">
+        <span class="avatar" id="avatar-usuario">?</span>
+        <div><b id="nome-usuario"></b><small id="papel-usuario"></small></div>
+      </div>
+      <button id="btn-conta" class="lateral-item"><span class="ic">🔑</span> Minha conta</button>
+      <button id="btn-sair" class="lateral-item sair"><span class="ic">🚪</span> Sair</button>
+    </div>
+  </aside>
+  <div id="fundo-menu" class="fundo-menu"></div>
+  <header class="barra-movel">
+    <button id="btn-menu" class="btn-menu" aria-label="Abrir menu">☰</button>
+    <b id="titulo-aba">Painel</b>
   </header>
 
   <main id="app">
