@@ -583,3 +583,11 @@ a.lateral-item { text-decoration: none; }
   .entrada-cartao .btn-instalar { margin-top: .7rem; padding: .55rem; font-size: .9rem; }
   .entrada-rodape { margin-top: .5rem; font-size: .78rem; }
 }
+
+/* Cartão do período (De / Até) dentro dos filtros */
+.cartao-periodo { grid-column: span 2; border: 1px solid var(--borda); border-radius: 12px; padding: .55rem .7rem .7rem; background: var(--azul-claro); }
+.cartao-periodo-titulo { font-size: .8rem; font-weight: 700; color: var(--azul-escuro); margin-bottom: .35rem; }
+.cartao-periodo-campos { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.cartao-periodo label { margin: 0; }
+.cartao-periodo input { background: #fff; }
+@media (max-width: 640px) { .cartao-periodo { grid-column: 1 / -1; } }

@@ -4,7 +4,7 @@ const Admin = (() => {
   let perfis = [];
   let graficos = {};
   let ordem = { campo: "chegada", desc: true };
-  const extra = { vmo: "", unidade: "", categoria: "", gravidade: "", dia: "", hora: "", geo: "" }; // filtros vindos de cliques nos gráficos
+  const extra = { vmo: "", unidade: "", categoria: "", gravidade: "", mes: "", hora: "", geo: "" }; // filtros vindos de cliques nos gráficos
 
   const CORES = ["#0b4f8a", "#2a9d8f", "#e76f51", "#f4a261", "#8e5ea2", "#3a86ff", "#e9c46a", "#6a994e", "#bc4749", "#577590", "#ff7aa2", "#7f8c8d", "#219ebc", "#9c6644"];
   const COR_GRAV = { "Baixa": "#3a86ff", "Média": "#e0b000", "Alta": "#e76f51", "Crítica": "#b3261e" };
@@ -229,7 +229,7 @@ const Admin = (() => {
       if (f.situacao === "normal" && v.tem_anormalidade) return false;
       if (f.gravidade && !(v.anomalias || []).some((a) => a.gravidade === f.gravidade)) return false;
       if (f.categoria && !(v.anomalias || []).some((a) => a.categoria === f.categoria)) return false;
-      if (extra.dia && chaveDia(v.chegada) !== extra.dia) return false;
+      if (extra.mes && chaveDia(v.chegada).slice(0, 7) !== extra.mes) return false;
       if (extra.hora !== "" && faixaHora(v.chegada) !== extra.hora) return false;
       if (f.geo && verificarGeo(v.geo_chegada, v.unidade).codigo !== f.geo) return false;
       if (busca) {
@@ -246,7 +246,7 @@ const Admin = (() => {
     if (extra.unidade) partes.push(`Unidade: ${extra.unidade}`);
     if (extra.categoria) partes.push(`Categoria: ${extra.categoria}`);
     if (extra.gravidade) partes.push(`Gravidade: ${extra.gravidade}`);
-    if (extra.dia) partes.push(`Dia: ${fmtData(extra.dia + "T12:00")}`);
+    if (extra.mes) partes.push(`Mês: ${nomeMes(extra.mes)}`);
     if (extra.hora !== "") partes.push(`Horário: ${extra.hora}`);
     if (extra.geo) partes.push(`GPS: ${ROTULO_GEO[extra.geo]}`);
     $("#filtro-ativo").innerHTML = partes.length
@@ -289,24 +289,25 @@ const Admin = (() => {
     ];
     $("#kpis").innerHTML = kpis.map(([n, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${n}</div></div>`).join("");
 
-    // Visitas por dia (empilhado: normal x com anormalidade)
-    const dias = [];
+    // Visitas por mês (empilhado: normal x com anormalidade)
+    const meses = [];
     const de = new Date(($("#f-de").value || chaveDia(lista.at(-1)?.chegada || new Date())) + "T12:00");
     const ate = new Date(($("#f-ate").value || chaveDia(new Date())) + "T12:00");
-    for (let d = new Date(de); d <= ate && dias.length < 400; d.setDate(d.getDate() + 1)) dias.push(chaveDia(d));
-    const porDiaN = contar(lista.filter((v) => !v.tem_anormalidade), (v) => chaveDia(v.chegada));
-    const porDiaA = contar(lista.filter((v) => v.tem_anormalidade), (v) => chaveDia(v.chegada));
+    for (let d = new Date(de.getFullYear(), de.getMonth(), 1); d <= ate && meses.length < 120; d.setMonth(d.getMonth() + 1)) meses.push(chaveDia(d).slice(0, 7));
+    const mesDe = (v) => chaveDia(v.chegada).slice(0, 7);
+    const porMesN = contar(lista.filter((v) => !v.tem_anormalidade), mesDe);
+    const porMesA = contar(lista.filter((v) => v.tem_anormalidade), mesDe);
     grafico("g-dia", {
       type: "bar",
       data: {
-        labels: dias.map((d) => d.slice(8, 10) + "/" + d.slice(5, 7)),
+        labels: meses.map(nomeMes),
         datasets: [
-          { label: "Normal", data: dias.map((d) => porDiaN[d] || 0), backgroundColor: "#2a9d8f", stack: "s" },
-          { label: "Com anormalidade", data: dias.map((d) => porDiaA[d] || 0), backgroundColor: "#e76f51", stack: "s" },
+          { label: "Normal", data: meses.map((m) => porMesN[m] || 0), backgroundColor: "#2a9d8f", stack: "s", maxBarThickness: 90, borderRadius: 4 },
+          { label: "Com anormalidade", data: meses.map((m) => porMesA[m] || 0), backgroundColor: "#e76f51", stack: "s", maxBarThickness: 90, borderRadius: 4 },
         ],
       },
       options: { scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } },
-      clique: (i) => { extra.dia = extra.dia === dias[i] ? "" : dias[i]; atualizarTudo(); },
+      clique: (i) => { extra.mes = extra.mes === meses[i] ? "" : meses[i]; atualizarTudo(); },
     });
 
     const barraH = (id, pares, cor, chave, rotulo = "Visitas") => grafico(id, {
@@ -352,14 +353,6 @@ const Admin = (() => {
       clique: (i) => { extra.hora = extra.hora === faixas[i] ? "" : faixas[i]; atualizarTudo(); },
     });
 
-    const cods = ["ok", "longe", "sem_ref", "sem_gps"].filter((c) => geoCont[c]);
-    grafico("g-geo", {
-      type: "doughnut",
-      data: { labels: cods.map((c) => ROTULO_GEO[c]), datasets: [{ data: cods.map((c) => geoCont[c]), backgroundColor: cods.map((c) => ({ ok: "#2a9d8f", longe: "#e76f51", sem_ref: "#e0b000", sem_gps: "#9aa5b1" })[c]) }] },
-      options: { cutout: "55%", plugins: { legend: { position: "right" } } },
-      clique: (i) => { extra.geo = extra.geo === cods[i] ? "" : cods[i]; atualizarTudo(); },
-      vazio: !cods.length,
-    });
   }
 
   function grafico(id, { type, data, options = {}, clique, vazio }) {
@@ -494,7 +487,7 @@ const Admin = (() => {
     await new Promise((r) => setTimeout(r, 450));
     const imgs = Object.fromEntries(Object.entries(graficos).map(([id, g]) => [id, g.toBase64Image("image/png", 1)]));
     if (abaAtual !== "painel") mostrar("#aba-painel", false);
-    const titulos = { "g-dia": "Visitas por dia", "g-vmo": "Visitas por VMO", "g-unidade": "Visitas por unidade", "g-categoria": "Anormalidades por categoria", "g-gravidade": "Anormalidades por gravidade", "g-tempo": "Tempo médio por unidade (min)", "g-hora": "Visitas por faixa de horário", "g-geo": "Verificação por GPS (chegada)" };
+    const titulos = { "g-dia": "Visitas por mês", "g-vmo": "Visitas por VMO", "g-unidade": "Visitas por unidade", "g-categoria": "Anormalidades por categoria", "g-gravidade": "Anormalidades por gravidade", "g-tempo": "Tempo médio por unidade (min)", "g-hora": "Visitas por faixa de horário" };
     let urls = {};
     if (incluirFotos) { carregando(true, "Preparando fotos..."); urls = await urlsAssinadas(lista.flatMap((v) => (v.anomalias || []).flatMap((a) => a.fotos || []))); carregando(false); }
     const filtrosTxt = [

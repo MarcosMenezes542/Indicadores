@@ -105,6 +105,8 @@ function fmtDuracao(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`;
 }
+const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const nomeMes = (chave) => { const [a, m] = String(chave).split("-"); return `${MESES_CURTOS[+m - 1]}/${a}`; };
 function chaveDia(d) { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; }
 
 /* ---------- Login ---------- */

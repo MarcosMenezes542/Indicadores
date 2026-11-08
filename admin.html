@@ -54,8 +54,13 @@
     <section id="tela-admin" class="tela oculto">
       <!-- Filtros comuns -->
       <div id="filtros" class="cartao filtros">
-        <label>De <input type="date" id="f-de" /></label>
-        <label>Até <input type="date" id="f-ate" /></label>
+        <div class="cartao-periodo">
+          <div class="cartao-periodo-titulo">📅 Período das visitas</div>
+          <div class="cartao-periodo-campos">
+            <label>De <input type="date" id="f-de" /></label>
+            <label>Até <input type="date" id="f-ate" /></label>
+          </div>
+        </div>
         <label>VMO <select id="f-vmo"><option value="">Todos</option></select></label>
         <label>Unidade <select id="f-unidade"><option value="">Todas</option></select></label>
         <label>Situação
@@ -78,14 +83,13 @@
       <div id="aba-painel" class="aba">
         <div id="kpis" class="kpis"></div>
         <div class="graficos">
-          <div class="cartao grafico largo"><h3>Visitas por dia</h3><div class="area"><canvas id="g-dia"></canvas></div></div>
+          <div class="cartao grafico largo"><h3>Visitas por mês <small>clique para filtrar</small></h3><div class="area"><canvas id="g-dia"></canvas></div></div>
           <div class="cartao grafico"><h3>Visitas por VMO <small>clique para filtrar</small></h3><div class="area"><canvas id="g-vmo"></canvas></div></div>
           <div class="cartao grafico"><h3>Visitas por unidade <small>clique para filtrar</small></h3><div class="area"><canvas id="g-unidade"></canvas></div></div>
           <div class="cartao grafico"><h3>Anormalidades por categoria</h3><div class="area"><canvas id="g-categoria"></canvas></div></div>
           <div class="cartao grafico"><h3>Anormalidades por gravidade</h3><div class="area"><canvas id="g-gravidade"></canvas></div></div>
           <div class="cartao grafico"><h3>Tempo médio de permanência (min) por unidade</h3><div class="area"><canvas id="g-tempo"></canvas></div></div>
           <div class="cartao grafico"><h3>Visitas por faixa de horário</h3><div class="area"><canvas id="g-hora"></canvas></div></div>
-          <div class="cartao grafico"><h3>📍 Verificação por GPS (chegada) <small>clique para filtrar</small></h3><div class="area"><canvas id="g-geo"></canvas></div></div>
         </div>
       </div>
 
