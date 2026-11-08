@@ -28,6 +28,90 @@ const VMO = (() => {
     window.scrollTo(0, 0);
   }
 
+  /* ----- Seletor de unidade com pesquisa ----- */
+  const semAcento = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const chaveRecentes = () => `vmo-unidades-recentes-${Estado.usuario.id}`;
+  const recentes = () => { try { return JSON.parse(localStorage.getItem(chaveRecentes())) || []; } catch { return []; } };
+  function lembrarRecente(u) {
+    if (!u) return;
+    localStorage.setItem(chaveRecentes(), JSON.stringify([u, ...recentes().filter((x) => x !== u)].slice(0, 5)));
+  }
+
+  function definirUnidade(valor, avisar = true) {
+    const campo = $("#form-visita").local_ronda;
+    campo.value = valor || "";
+    const el = $("#unidade-escolhida");
+    el.textContent = valor || "Toque para escolher a unidade";
+    el.classList.toggle("vazio", !valor);
+    if (avisar) campo.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function abrirSeletor() {
+    mostrar("#seletor-unidade .seletor-painel", true);
+    mostrar("#seletor-unidade .seletor-fundo", true);
+    document.body.classList.add("seletor-aberto");
+    const busca = $("#busca-unidade-vmo");
+    busca.value = "";
+    renderSeletor();
+    setTimeout(() => busca.focus(), 50);
+  }
+  function fecharSeletor() {
+    mostrar("#seletor-unidade .seletor-painel", false);
+    mostrar("#seletor-unidade .seletor-fundo", false);
+    document.body.classList.remove("seletor-aberto");
+  }
+
+  function renderSeletor() {
+    const termo = $("#busca-unidade-vmo").value.trim();
+    mostrar("#limpar-busca-unidade", !!termo);
+    const t = semAcento(termo);
+    const atual = $("#form-visita").local_ronda.value;
+    const g = rascunho?.geo_chegada?.lat != null ? rascunho.geo_chegada : null;
+    const dist = (u) => { const c = Estado.coordUnidades?.[u]; return g && c ? distanciaM(g, c) : null; };
+    let lista = Estado.unidades.filter((u) => !t || semAcento(u).includes(t));
+    // ordem: mais próximas (se houver GPS e coordenadas), depois alfabética
+    lista.sort((a, b) => { const da = dist(a), db = dist(b); if (da != null || db != null) return (da ?? 1e12) - (db ?? 1e12); return a.localeCompare(b, "pt-BR"); });
+    const destacar = (u) => {
+      if (!t) return esc(u);
+      const i = semAcento(u).indexOf(t);
+      return i < 0 ? esc(u) : esc(u.slice(0, i)) + "<mark>" + esc(u.slice(i, i + termo.length)) + "</mark>" + esc(u.slice(i + termo.length));
+    };
+    const item = (u) => {
+      const d = dist(u);
+      return `<li role="option" class="${u === atual ? "escolhida" : ""}" data-unidade="${esc(u)}" aria-selected="${u === atual}">
+        <span class="seletor-nome">${destacar(u)}</span>
+        ${d != null ? `<small class="seletor-dist">📍 ${fmtDistancia(d)}</small>` : ""}${u === atual ? "<b>✓</b>" : ""}</li>`;
+    };
+    let html = "";
+    const rec = !t ? recentes().filter((u) => Estado.unidades.includes(u)) : [];
+    if (rec.length) html += `<li class="seletor-grupo">🕘 Usadas recentemente</li>` + rec.map(item).join("") + `<li class="seletor-grupo">${g ? "📍 Todas (mais próximas primeiro)" : "Todas as unidades"}</li>`;
+    else if (g && lista.some((u) => dist(u) != null)) html += `<li class="seletor-grupo">📍 Mais próximas de você primeiro</li>`;
+    html += lista.map(item).join("");
+    if (!lista.length) html += `<li class="seletor-vazio">Nenhuma unidade encontrada para "${esc(termo)}".</li>`;
+    if (termo && !Estado.unidades.some((u) => semAcento(u) === t))
+      html += `<li class="seletor-outra" data-unidade="${esc(termo)}">➕ Usar "<b>${esc(termo)}</b>" (unidade não cadastrada)</li>`;
+    $("#lista-seletor-unidade").innerHTML = html;
+  }
+
+  function escolher(u) {
+    definirUnidade(u);
+    lembrarRecente(u);
+    fecharSeletor();
+  }
+
+  function ligarSeletor() {
+    $("#btn-unidade").onclick = abrirSeletor;
+    $$("#seletor-unidade [data-fechar-seletor]").forEach((b) => b.onclick = fecharSeletor);
+    const busca = $("#busca-unidade-vmo");
+    busca.oninput = (e) => { e.stopPropagation(); renderSeletor(); };
+    busca.onkeydown = (e) => {
+      if (e.key === "Enter") { e.preventDefault(); const p = $("#lista-seletor-unidade [data-unidade]"); if (p) escolher(p.dataset.unidade); }
+      if (e.key === "Escape") fecharSeletor();
+    };
+    $("#limpar-busca-unidade").onclick = () => { busca.value = ""; renderSeletor(); busca.focus(); };
+    $("#lista-seletor-unidade").onclick = (e) => { const li = e.target.closest("[data-unidade]"); if (li) escolher(li.dataset.unidade); };
+  }
+
   function abrirFormulario(continuar) {
     rascunho = continuar ? lerRascunho() : null;
     if (!rascunho) {
@@ -36,7 +120,7 @@ const VMO = (() => {
       capturarGeo("chegada");
     }
     const f = $("#form-visita");
-    f.local_ronda.value = rascunho.unidade;
+    definirUnidade(rascunho.unidade, false);
     f.chegada.value = rascunho.chegada;
     f.saida.value = rascunho.saida;
     f.observacoes.value = rascunho.observacoes;
@@ -273,6 +357,7 @@ const VMO = (() => {
   }
 
   function ligarEventos() {
+    ligarSeletor();
     const f = $("#form-visita");
     $("#btn-nova-visita").onclick = async () => {
       if (lerRascunho() && !confirm("Existe uma visita em andamento. Deseja descartá-la e iniciar uma nova?")) return;

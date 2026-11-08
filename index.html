@@ -163,10 +163,25 @@
       <form id="form-visita" class="oculto" novalidate autocomplete="off">
         <div class="cartao">
           <div class="linha-titulo"><h2>Visita operacional</h2><button type="button" id="btn-voltar" class="btn-link">← Voltar</button></div>
-          <label>Unidade visitada *
-            <input name="local_ronda" list="lista-unidades" required placeholder="Selecione ou digite a unidade" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" />
-            <datalist id="lista-unidades"></datalist>
-          </label>
+          <span class="rotulo-campo">Unidade visitada *</span>
+          <div class="seletor" id="seletor-unidade">
+            <input type="hidden" name="local_ronda" />
+            <button type="button" class="seletor-botao" id="btn-unidade" aria-haspopup="listbox">
+              <span class="seletor-icone">🏢</span>
+              <span class="seletor-valor vazio" id="unidade-escolhida">Toque para escolher a unidade</span>
+              <b class="seletor-seta">▾</b>
+            </button>
+            <div class="seletor-fundo oculto" data-fechar-seletor></div>
+            <div class="seletor-painel oculto" role="dialog" aria-label="Escolher unidade">
+              <div class="seletor-cabecalho"><b>Escolha a unidade</b><button type="button" class="seletor-fechar" data-fechar-seletor aria-label="Fechar">×</button></div>
+              <div class="seletor-busca">
+                <i>🔎</i>
+                <input type="search" id="busca-unidade-vmo" placeholder="Pesquisar unidade..." enterkeyhint="search" />
+                <button type="button" class="seletor-limpar oculto" id="limpar-busca-unidade" aria-label="Limpar pesquisa">×</button>
+              </div>
+              <ul class="seletor-lista" id="lista-seletor-unidade" role="listbox"></ul>
+            </div>
+          </div>
 
           <div class="horario">
             <div>
