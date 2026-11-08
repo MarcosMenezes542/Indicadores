@@ -31,8 +31,9 @@ const VMO = (() => {
   function abrirFormulario(continuar) {
     rascunho = continuar ? lerRascunho() : null;
     if (!rascunho) {
-      rascunho = { id: uuid(), unidade: "", chegada: paraInputLocal(new Date()), saida: "", situacao: "normal", observacoes: "", ocorrencias: [] };
+      rascunho = { id: uuid(), unidade: "", chegada: paraInputLocal(new Date()), saida: "", situacao: "normal", observacoes: "", ocorrencias: [], geo_chegada: null, geo_saida: null };
       salvar();
+      capturarGeo("chegada");
     }
     const f = $("#form-visita");
     f.unidade.value = rascunho.unidade;
@@ -43,9 +44,57 @@ const VMO = (() => {
     $("#visita-erro").textContent = "";
     renderOcorrencias();
     atualizarPermanencia();
+    renderGeo();
     mostrar("#vmo-inicio", false);
     mostrar(f, true);
     window.scrollTo(0, 0);
+  }
+
+  /* ----- Localização ----- */
+  const capturando = new Set();
+  async function capturarGeo(tipo) {
+    if (!rascunho || capturando.has(tipo)) return;
+    const id = rascunho.id;
+    capturando.add(tipo);
+    renderGeo();
+    const g = await obterLocalizacao();
+    capturando.delete(tipo);
+    if (!rascunho || rascunho.id !== id) return;
+    rascunho[`geo_${tipo}`] = g;
+    salvar();
+    renderGeo();
+    if (g.erro) aviso("📍 " + g.erro + ". Ative a localização do celular.", true);
+  }
+
+  function renderGeo() {
+    if (!rascunho) return;
+    ["chegada", "saida"].forEach((tipo) => {
+      const el = $(`#geo-${tipo}`);
+      const g = rascunho[`geo_${tipo}`];
+      const botao = (txt) => `<button type="button" class="btn peq" data-geo="${tipo}">${txt}</button>`;
+      if (capturando.has(tipo)) { el.className = "geo"; el.innerHTML = `📡 Obtendo sua localização...`; return; }
+      if (!g) { el.className = "geo"; el.innerHTML = `📍 Localização ainda não registrada ${botao("Registrar localização")}`; return; }
+      if (g.erro) {
+        el.className = "geo geo-sem";
+        el.innerHTML = `❌ ${esc(g.erro)}.<br><small>Ative o GPS e permita a localização para este app.</small> ${botao("Tentar novamente")}`;
+        return;
+      }
+      const v = verificarGeo(g, rascunho.unidade);
+      el.className = `geo ${v.classe}`;
+      el.innerHTML = `
+        <div>📍 <b>Localização registrada</b> às ${fmtHora(g.em)} · precisão ±${g.precisao} m</div>
+        <div><a href="${linkMapa(g)}" target="_blank" rel="noopener">${fmtCoord(g)} — ver no mapa</a></div>
+        <div class="geo-status">${v.icone} ${esc(v.codigo === "ok" ? `Você está na unidade (${fmtDistancia(v.dist)})`
+          : v.codigo === "longe" ? `Atenção: você está a ${fmtDistancia(v.dist)} da unidade "${rascunho.unidade}". Confira se a unidade está correta.`
+          : rascunho.unidade ? "Esta unidade ainda não tem coordenadas cadastradas; a localização será conferida pelo administrador." : "Informe a unidade para conferir a distância.")}</div>
+        ${botao("↻ Atualizar localização")}`;
+    });
+  }
+
+  function comDistancia(g, unidade) {
+    if (!g) return null;
+    const ref = Estado.coordUnidades?.[unidade];
+    return g.lat != null && ref ? { ...g, distancia_m: Math.round(distanciaM(g, ref)) } : g;
   }
 
   function atualizarPermanencia() {
@@ -153,6 +202,16 @@ const VMO = (() => {
     if (erro) return;
     const r = rascunho;
     const uid = Estado.usuario.id;
+    if (!r.geo_saida || r.geo_saida.erro) {
+      carregando(true, "Registrando localização de saída...");
+      const g = await obterLocalizacao(15000);
+      carregando(false);
+      if (!g.erro || !r.geo_saida) r.geo_saida = g;
+      salvar(); renderGeo();
+    }
+    if (!r.geo_chegada || r.geo_chegada.lat == null) {
+      if (!confirm("⚠️ A localização da CHEGADA não foi registrada.\nO administrador verá esta visita como \"sem localização\".\n\nToque em Cancelar para tentar registrar a localização, ou OK para enviar assim mesmo.")) return;
+    }
     const btn = $("#btn-enviar");
     btn.disabled = true;
     try {
@@ -186,6 +245,8 @@ const VMO = (() => {
         anomalias,
         observacoes: r.observacoes.trim(),
         autor: uid,
+        geo_chegada: comDistancia(r.geo_chegada, r.unidade.trim()),
+        geo_saida: comDistancia(r.geo_saida, r.unidade.trim()),
       });
       if (error && !/duplicate key/i.test(error.message)) throw error;
       await limparRascunho();
@@ -220,8 +281,8 @@ const VMO = (() => {
     $("#btn-continuar").onclick = () => abrirFormulario(true);
     $("#btn-voltar").onclick = () => { salvar(); mostrarInicio(); aviso("Visita salva no aparelho. Continue quando quiser."); };
     $("#btn-descartar").onclick = descartar;
-    $("#btn-chegada").onclick = () => { f.chegada.value = paraInputLocal(new Date()); f.chegada.dispatchEvent(new Event("input", { bubbles: true })); };
-    $("#btn-saida").onclick = () => { f.saida.value = paraInputLocal(new Date()); f.saida.dispatchEvent(new Event("input", { bubbles: true })); };
+    $("#btn-chegada").onclick = () => { f.chegada.value = paraInputLocal(new Date()); f.chegada.dispatchEvent(new Event("input", { bubbles: true })); capturarGeo("chegada"); };
+    $("#btn-saida").onclick = () => { f.saida.value = paraInputLocal(new Date()); f.saida.dispatchEvent(new Event("input", { bubbles: true })); capturarGeo("saida"); };
     $("#btn-add-ocorrencia").onclick = () => { rascunho.ocorrencias.push(novaOcorrencia()); salvar(); renderOcorrencias(); };
     f.addEventListener("input", (e) => {
       if (!rascunho) return;
@@ -232,6 +293,7 @@ const VMO = (() => {
         o[t.dataset.campo] = t.value;
       }
       if (t.name === "chegada" || t.name === "saida") atualizarPermanencia();
+      if (t.name === "unidade") renderGeo();
       salvar();
     });
     f.addEventListener("change", (e) => {
@@ -260,6 +322,7 @@ const VMO = (() => {
         salvar(); renderOcorrencias();
       }
       if (t.matches(".miniatura img")) verImagem(t.src);
+      if (t.matches("[data-geo]")) capturarGeo(t.dataset.geo);
     });
     f.addEventListener("submit", enviar);
   }

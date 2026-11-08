@@ -219,3 +219,16 @@ textarea { resize: vertical; }
 .topo a.btn-link { color: #fff; }
 .tabela .acoes .btn { margin: 1px 0; }
 .faixa-leitura { background: #fff6dc; color: #6b5200; border: 1px solid #f0d98a; border-radius: 10px; padding: .6rem .9rem; font-weight: 600; }
+
+/* Geolocalização */
+.geo { margin-top: .6rem; padding: .6rem .75rem; border-radius: 10px; background: var(--fundo); font-size: .9rem; line-height: 1.5; }
+.geo .btn { margin-top: .4rem; }
+.geo a { color: inherit; }
+.geo-status { font-weight: 700; margin-top: .2rem; }
+.geo.geo-ok, .selo.geo-ok { background: #e5f5ec; color: #17683a; }
+.geo.geo-longe, .selo.geo-longe { background: #fdecea; color: #a1251a; }
+.geo.geo-ref, .selo.geo-ref { background: #fff6dc; color: #6b5200; }
+.geo.geo-sem, .selo.geo-sem { background: #eef0f3; color: #4a5563; }
+.dica-clara { font-size: .85rem; opacity: .85; margin: .2rem 0 .4rem; }
+input[hidden] { display: none !important; }
+#lote-unidades { font-family: ui-monospace, Consolas, monospace; font-size: .9rem; }

@@ -56,6 +56,9 @@
         </label>
         <label>Gravidade <select id="f-gravidade"><option value="">Todas</option></select></label>
         <label>Categoria <select id="f-categoria"><option value="">Todas</option></select></label>
+        <label>Localização (GPS)
+          <select id="f-geo"><option value="">Todas</option><option value="ok">✅ Confirmada no local</option><option value="longe">⚠️ Fora da unidade</option><option value="sem_ref">❔ Unidade sem coordenadas</option><option value="sem_gps">❌ Sem localização</option></select>
+        </label>
         <div class="filtros-acoes direita">
           <button class="btn" id="btn-limpar-filtros">Limpar filtros</button>
           <button class="btn" id="btn-atualizar">↻ Atualizar</button>
@@ -78,6 +81,7 @@
           <div class="cartao grafico"><h3>Anormalidades por gravidade</h3><div class="area"><canvas id="g-gravidade"></canvas></div></div>
           <div class="cartao grafico"><h3>Tempo médio de permanência (min) por unidade</h3><div class="area"><canvas id="g-tempo"></canvas></div></div>
           <div class="cartao grafico"><h3>Visitas por faixa de horário</h3><div class="area"><canvas id="g-hora"></canvas></div></div>
+          <div class="cartao grafico"><h3>📍 Verificação por GPS (chegada) <small>clique para filtrar</small></h3><div class="area"><canvas id="g-geo"></canvas></div></div>
         </div>
       </div>
 
@@ -126,13 +130,33 @@
       </div>
 
       <div id="aba-unidades" class="aba oculto">
+        <div class="duas-colunas">
+          <div class="cartao">
+            <h3>➕ Adicionar várias unidades de uma vez</h3>
+            <p class="dica">Escreva ou cole <b>uma unidade por linha</b> (pode copiar uma coluna direto do Excel).
+              Para já cadastrar a localização, use <code>Nome ; latitude ; longitude</code>. As coordenadas são opcionais.</p>
+            <textarea id="lote-unidades" rows="10" placeholder="SE Campinas 19&#10;SE Sumaré; -22.8219; -47.2669&#10;SE Hortolândia&#10;SE Boa Vista; -22.9325; -47.0844"></textarea>
+            <p id="lote-previa" class="dica"></p>
+            <div class="filtros-acoes">
+              <button class="btn primario" id="btn-lote" type="button">Adicionar unidades</button>
+              <label class="btn" style="margin:0">📄 Importar planilha (Excel/CSV)<input type="file" id="arquivo-unidades" accept=".xlsx,.xls,.csv,.txt" hidden /></label>
+              <button class="btn" id="btn-modelo-unidades" type="button">⬇️ Baixar modelo</button>
+            </div>
+          </div>
+          <div class="cartao">
+            <h3>📍 Localização das unidades</h3>
+            <p>Com as coordenadas cadastradas, o sistema confere se o GPS do VMO estava a até <b><span id="raio-geo"></span> m</b> da unidade informada na visita.</p>
+            <p class="dica"><b>Como obter as coordenadas:</b></p>
+            <ul class="dica">
+              <li>No Google Maps, clique com o botão direito em cima da unidade e clique nos números (ex.: <code>-22.8219, -47.2669</code>) para copiar.</li>
+              <li>Ou, numa visita que você sabe que foi feita no local, abra o detalhe da visita e clique em <b>📌 Usar como localização da unidade</b>.</li>
+            </ul>
+          </div>
+        </div>
         <div class="cartao">
-          <h3>Unidades CPFL</h3>
-          <form id="form-unidade" class="inline">
-            <input name="nome" required placeholder="Nome da unidade (ex.: SE Campinas 19)" maxlength="160" />
-            <button class="btn primario">Adicionar</button>
-          </form>
-          <div id="lista-unidades-admin" class="chips"></div>
+          <h3>Unidades cadastradas (<span id="qtd-unidades">0</span>)</h3>
+          <input id="busca-unidade" class="busca" placeholder="🔎 Buscar unidade" />
+          <div class="tabela-wrap"><table id="tabela-unidades" class="tabela"></table></div>
         </div>
       </div>
     </section>

@@ -4,7 +4,7 @@ const Admin = (() => {
   let perfis = [];
   let graficos = {};
   let ordem = { campo: "chegada", desc: true };
-  const extra = { vmo: "", unidade: "", categoria: "", gravidade: "", dia: "", hora: "" }; // filtros vindos de cliques nos gráficos
+  const extra = { vmo: "", unidade: "", categoria: "", gravidade: "", dia: "", hora: "", geo: "" }; // filtros vindos de cliques nos gráficos
 
   const CORES = ["#0b4f8a", "#2a9d8f", "#e76f51", "#f4a261", "#8e5ea2", "#3a86ff", "#e9c46a", "#6a994e", "#bc4749", "#577590", "#ff7aa2", "#7f8c8d", "#219ebc", "#9c6644"];
   const COR_GRAV = { "Baixa": "#3a86ff", "Média": "#e0b000", "Alta": "#e76f51", "Crítica": "#b3261e" };
@@ -86,6 +86,7 @@ const Admin = (() => {
       situacao: $("#f-situacao").value,
       gravidade: $("#f-gravidade").value || extra.gravidade,
       categoria: $("#f-categoria").value || extra.categoria,
+      geo: $("#f-geo").value || extra.geo,
     };
     const busca = ($("#busca").value || "").trim().toLowerCase();
     return visitas.filter((v) => {
@@ -97,6 +98,7 @@ const Admin = (() => {
       if (f.categoria && !(v.anomalias || []).some((a) => a.categoria === f.categoria)) return false;
       if (extra.dia && chaveDia(v.chegada) !== extra.dia) return false;
       if (extra.hora !== "" && faixaHora(v.chegada) !== extra.hora) return false;
+      if (f.geo && verificarGeo(v.geo_chegada, v.unidade).codigo !== f.geo) return false;
       if (busca) {
         const txt = [v.vigilante, v.unidade, v.observacoes, ...(v.anomalias || []).flatMap((a) => [a.categoria, a.descricao])].join(" ").toLowerCase();
         if (!txt.includes(busca)) return false;
@@ -113,6 +115,7 @@ const Admin = (() => {
     if (extra.gravidade) partes.push(`Gravidade: ${extra.gravidade}`);
     if (extra.dia) partes.push(`Dia: ${fmtData(extra.dia + "T12:00")}`);
     if (extra.hora !== "") partes.push(`Horário: ${extra.hora}`);
+    if (extra.geo) partes.push(`GPS: ${ROTULO_GEO[extra.geo]}`);
     $("#filtro-ativo").innerHTML = partes.length
       ? `🔎 Filtro do gráfico: <b>${esc(partes.join(" · "))}</b> <button class="btn-link" id="limpar-extra">remover</button>` : "";
     const b = $("#limpar-extra");
@@ -138,6 +141,8 @@ const Admin = (() => {
     const durs = lista.map((v) => minutosEntre(v.chegada, v.saida)).filter((m) => m >= 0);
     const media = durs.length ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) : null;
     const criticas = ocorr.filter((a) => a.gravidade === "Crítica").length;
+    const geoCont = contar(lista, (v) => verificarGeo(v.geo_chegada, v.unidade).codigo);
+    const geoOk = geoCont.ok || 0;
     const kpis = [
       ["Visitas no período", lista.length, ""],
       ["Com anormalidade", `${comAnorm} <small>(${lista.length ? Math.round(comAnorm * 100 / lista.length) : 0}%)</small>`, "alerta"],
@@ -147,6 +152,8 @@ const Admin = (() => {
       ["Tempo médio na unidade", fmtDuracao(media), ""],
       ["VMOs em atividade", new Set(lista.map((v) => v.vigilante)).size, ""],
       ["Unidades visitadas", new Set(lista.map((v) => v.unidade)).size, ""],
+      ["📍 Confirmadas por GPS", `${geoOk} <small>(${lista.length ? Math.round(geoOk * 100 / lista.length) : 0}%)</small>`, "ok"],
+      ["⚠️ Fora da unidade", geoCont.longe || 0, "alerta"],
     ];
     $("#kpis").innerHTML = kpis.map(([n, v, c]) => `<div class="kpi ${c}"><div class="valor">${v}</div><div class="nome">${n}</div></div>`).join("");
 
@@ -212,6 +219,15 @@ const Admin = (() => {
       options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
       clique: (i) => { extra.hora = extra.hora === faixas[i] ? "" : faixas[i]; atualizarTudo(); },
     });
+
+    const cods = ["ok", "longe", "sem_ref", "sem_gps"].filter((c) => geoCont[c]);
+    grafico("g-geo", {
+      type: "doughnut",
+      data: { labels: cods.map((c) => ROTULO_GEO[c]), datasets: [{ data: cods.map((c) => geoCont[c]), backgroundColor: cods.map((c) => ({ ok: "#2a9d8f", longe: "#e76f51", sem_ref: "#e0b000", sem_gps: "#9aa5b1" })[c]) }] },
+      options: { cutout: "55%", plugins: { legend: { position: "right" } } },
+      clique: (i) => { extra.geo = extra.geo === cods[i] ? "" : cods[i]; atualizarTudo(); },
+      vazio: !cods.length,
+    });
   }
 
   function grafico(id, { type, data, options = {}, clique, vazio }) {
@@ -238,19 +254,20 @@ const Admin = (() => {
   function renderTabela() {
     const lista = filtrar();
     const c = ordem.campo;
-    const val = (v) => c === "permanencia" ? minutosEntre(v.chegada, v.saida) : c === "ocorrencias" ? (v.anomalias || []).length : (v[c] ?? "");
+    const val = (v) => c === "permanencia" ? minutosEntre(v.chegada, v.saida) : c === "ocorrencias" ? (v.anomalias || []).length : c === "geo" ? (verificarGeo(v.geo_chegada, v.unidade).dist ?? 1e12) : (v[c] ?? "");
     lista.sort((a, b) => { const x = val(a), y = val(b); return (x > y ? 1 : x < y ? -1 : 0) * (ordem.desc ? -1 : 1); });
     const col = (campo, nome) => `<th data-ordem="${campo}">${nome}${ordem.campo === campo ? (ordem.desc ? " ▼" : " ▲") : ""}</th>`;
     $("#tabela-visitas").innerHTML = `
-      <thead><tr>${col("chegada", "Chegada")}${col("saida", "Saída")}${col("permanencia", "Permanência")}${col("vigilante", "VMO")}${col("unidade", "Unidade")}${col("tem_anormalidade", "Situação")}${col("ocorrencias", "Anormalidades")}<th>Ações</th></tr></thead>
+      <thead><tr>${col("chegada", "Chegada")}${col("saida", "Saída")}${col("permanencia", "Permanência")}${col("vigilante", "VMO")}${col("unidade", "Unidade")}${col("tem_anormalidade", "Situação")}${col("ocorrencias", "Anormalidades")}${col("geo", "📍 GPS")}<th>Ações</th></tr></thead>
       <tbody>${lista.map((v) => `
         <tr>
           <td>${fmtDataHora(v.chegada)}</td><td>${fmtDataHora(v.saida)}</td><td>${fmtDuracao(minutosEntre(v.chegada, v.saida))}</td>
           <td>${esc(v.vigilante)}</td><td>${esc(v.unidade)}</td>
           <td>${v.tem_anormalidade ? `<span class="selo anormal">Anormal</span>` : `<span class="selo normal">Normal</span>`}</td>
           <td>${(v.anomalias || []).map((a) => `<span class="selo g-${esc(a.gravidade)}" title="${esc(a.descricao)}">${esc(a.categoria)}</span>`).join(" ")}</td>
+          <td>${(() => { const g = verificarGeo(v.geo_chegada, v.unidade); return `<span class="selo ${g.classe}" title="${esc(g.detalhe || "")}">${g.icone} ${esc(g.rotulo)}</span>`; })()}</td>
           <td class="acoes"><button class="btn peq" data-ver="${v.id}">Ver</button></td>
-        </tr>`).join("") || `<tr><td colspan="8" class="dica">Nenhuma visita encontrada com os filtros atuais.</td></tr>`}
+        </tr>`).join("") || `<tr><td colspan="9" class="dica">Nenhuma visita encontrada com os filtros atuais.</td></tr>`}
       </tbody>`;
     $$("#tabela-visitas [data-ordem]").forEach((th) => th.onclick = () => {
       ordem = { campo: th.dataset.ordem, desc: ordem.campo === th.dataset.ordem ? !ordem.desc : true };
@@ -286,6 +303,11 @@ const Admin = (() => {
       "Qtd. anormalidades": (v.anomalias || []).length,
       "Anormalidades": (v.anomalias || []).map((a) => `${a.categoria} (${a.gravidade}): ${a.descricao}`).join(" | "),
       "Qtd. fotos": (v.anomalias || []).reduce((s, a) => s + (a.fotos || []).length, 0),
+      "Verificação GPS": ROTULO_GEO[verificarGeo(v.geo_chegada, v.unidade).codigo].replace(/^\S+\s/, ""),
+      "Distância da unidade (m)": (() => { const d = verificarGeo(v.geo_chegada, v.unidade).dist; return d == null ? "" : Math.round(d); })(),
+      "Latitude chegada": v.geo_chegada?.lat ?? "", "Longitude chegada": v.geo_chegada?.lng ?? "", "Precisão chegada (m)": v.geo_chegada?.precisao ?? "",
+      "Latitude saída": v.geo_saida?.lat ?? "", "Longitude saída": v.geo_saida?.lng ?? "",
+      "Obs. GPS": v.geo_chegada?.erro || "",
       "Resumo / observações": v.observacoes || "",
       "Enviado em": fmtDataHora(v.enviado_em || v.criado_em),
       "ID": v.id,
@@ -339,7 +361,7 @@ const Admin = (() => {
     await new Promise((r) => setTimeout(r, 450));
     const imgs = Object.fromEntries(Object.entries(graficos).map(([id, g]) => [id, g.toBase64Image("image/png", 1)]));
     if (abaAtual !== "painel") mostrar("#aba-painel", false);
-    const titulos = { "g-dia": "Visitas por dia", "g-vmo": "Visitas por VMO", "g-unidade": "Visitas por unidade", "g-categoria": "Anormalidades por categoria", "g-gravidade": "Anormalidades por gravidade", "g-tempo": "Tempo médio por unidade (min)", "g-hora": "Visitas por faixa de horário" };
+    const titulos = { "g-dia": "Visitas por dia", "g-vmo": "Visitas por VMO", "g-unidade": "Visitas por unidade", "g-categoria": "Anormalidades por categoria", "g-gravidade": "Anormalidades por gravidade", "g-tempo": "Tempo médio por unidade (min)", "g-hora": "Visitas por faixa de horário", "g-geo": "Verificação por GPS (chegada)" };
     let urls = {};
     if (incluirFotos) { carregando(true, "Preparando fotos..."); urls = await urlsAssinadas(lista.flatMap((v) => (v.anomalias || []).flatMap((a) => a.fotos || []))); carregando(false); }
     const filtrosTxt = [
@@ -357,11 +379,11 @@ const Admin = (() => {
       <h2>Gráficos</h2>
       <div class="rel-graficos">${Object.entries(imgs).map(([id, src]) => `<figure><figcaption>${titulos[id]}</figcaption><img src="${src}"></figure>`).join("")}</div>
       <h2>Visitas (${lista.length})</h2>
-      <table><thead><tr><th>Chegada</th><th>Saída</th><th>Perm.</th><th>VMO</th><th>Unidade</th><th>Situação</th><th>Anormalidades</th><th>Resumo</th></tr></thead>
+      <table><thead><tr><th>Chegada</th><th>Saída</th><th>Perm.</th><th>VMO</th><th>Unidade</th><th>Situação</th><th>Anormalidades</th><th>GPS</th><th>Resumo</th></tr></thead>
       <tbody>${lista.slice().sort((a, b) => new Date(a.chegada) - new Date(b.chegada)).map((v) => `<tr>
         <td>${fmtDataHora(v.chegada)}</td><td>${fmtDataHora(v.saida)}</td><td>${fmtDuracao(minutosEntre(v.chegada, v.saida))}</td>
         <td>${esc(v.vigilante)}</td><td>${esc(v.unidade)}</td><td>${v.tem_anormalidade ? "<b>Anormal</b>" : "Normal"}</td>
-        <td>${(v.anomalias || []).map((a) => `${esc(a.categoria)} (${esc(a.gravidade)})`).join("; ")}</td><td>${esc(v.observacoes || "")}</td></tr>`).join("")}</tbody></table>
+        <td>${(v.anomalias || []).map((a) => `${esc(a.categoria)} (${esc(a.gravidade)})`).join("; ")}</td><td>${(() => { const g = verificarGeo(v.geo_chegada, v.unidade); return `${g.icone} ${esc(g.rotulo)}`; })()}</td><td>${esc(v.observacoes || "")}</td></tr>`).join("")}</tbody></table>
       ${anormais.length ? `<h2>Detalhamento das anormalidades (${anormais.length} visitas)</h2>
         ${anormais.map((v) => `<div class="rel-visita"><strong>${esc(v.unidade)}</strong> — ${esc(v.vigilante)} — ${fmtDataHora(v.chegada)} a ${fmtHora(v.saida)}
           ${(v.anomalias || []).map((a, i) => `<div style="margin-top:3px"><b>${i + 1}. ${esc(a.categoria)}</b> (${esc(a.gravidade)}): ${esc(a.descricao)}
@@ -507,34 +529,193 @@ const Admin = (() => {
 
   /* ---------- Unidades ---------- */
   function renderUnidades() {
-    $("#lista-unidades-admin").innerHTML = Estado.unidades.map((u) => `<span class="chip">${esc(u)} <button title="Remover" data-u="${esc(u)}">×</button></span>`).join("") || `<p class="dica">Nenhuma unidade cadastrada.</p>`;
-    $$("#lista-unidades-admin [data-u]").forEach((b) => b.onclick = async () => {
+    $("#raio-geo").textContent = CFG.RAIO_VERIFICACAO_M;
+    $("#qtd-unidades").textContent = Estado.unidades.length;
+    const busca = ($("#busca-unidade").value || "").trim().toLowerCase();
+    const n = contar(visitas, (v) => v.unidade);
+    const lista = Estado.unidades.filter((u) => !busca || u.toLowerCase().includes(busca));
+    $("#tabela-unidades").innerHTML = `
+      <thead><tr><th>Unidade</th><th>Localização</th><th>Visitas no período</th><th>Ações</th></tr></thead>
+      <tbody>${lista.map((u) => {
+        const c = Estado.coordUnidades[u];
+        return `<tr>
+          <td>${esc(u)}</td>
+          <td>${c ? `<a href="${linkMapa(c)}" target="_blank" rel="noopener">📍 ${fmtCoord(c)}</a>` : `<span class="selo geo-ref">❔ Sem coordenadas</span>`}</td>
+          <td>${n[u] || 0}</td>
+          <td class="acoes"><button class="btn peq" data-coord="${esc(u)}">📍 ${c ? "Alterar" : "Cadastrar"} localização</button>
+            <button class="btn peq perigo" data-u="${esc(u)}" title="Remover">🗑️</button></td>
+        </tr>`; }).join("") || `<tr><td colspan="4" class="dica">Nenhuma unidade cadastrada.</td></tr>`}</tbody>`;
+    $$("#tabela-unidades [data-coord]").forEach((b) => b.onclick = () => editarCoordenadas(b.dataset.coord));
+    $$("#tabela-unidades [data-u]").forEach((b) => b.onclick = async () => {
       if (!confirm(`Remover a unidade "${b.dataset.u}" da lista? (As visitas já registradas não são afetadas.)`)) return;
       const { error } = await sb.from("unidades").delete().eq("nome", b.dataset.u);
       if (error) return aviso(error.message, true);
-      await carregarUnidades(); renderUnidades(); preencherFiltros();
+      await recarregarUnidades();
     });
   }
 
-  async function adicionarUnidade(ev) {
-    ev.preventDefault();
-    const nome = ev.target.nome.value.trim();
-    if (!nome) return;
-    const { error } = await sb.from("unidades").insert({ nome });
-    if (error) return aviso(/duplicate/i.test(error.message) ? "Essa unidade já existe." : error.message, true);
-    ev.target.reset();
-    await carregarUnidades(); renderUnidades(); preencherFiltros();
-    aviso("Unidade adicionada.");
+  async function recarregarUnidades() {
+    await carregarUnidades(); renderUnidades(); preencherFiltros(); atualizarTudo();
+  }
+
+  // Aceita "-22.82, -47.26", "-22,82 -47,26", "-22.82;-47.26" ou link do Google Maps
+  function lerCoordenadas(txt) {
+    const t = String(txt || "").trim();
+    if (!t) return null;
+    const m = t.match(/(-?\d{1,3}(?:[.,]\d+)?)\s*[,; \t]\s*(-?\d{1,3}(?:[.,]\d+)?)/) || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (!m) return undefined;
+    const num = (x) => parseFloat(String(x).replace(",", "."));
+    const lat = num(m[1]), lng = num(m[2]);
+    if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) return undefined;
+    return { lat, lng };
+  }
+
+  // Interpreta o texto colado: uma unidade por linha, com coordenadas opcionais
+  function lerLote(texto) {
+    const itens = new Map(), erros = [];
+    String(texto || "").split(/\r?\n/).forEach((linha, i) => {
+      const l = linha.trim();
+      if (!l) return;
+      const partes = l.split(/\t|;/).map((p) => p.trim()).filter((p, k) => k === 0 || p !== "");
+      let nome = partes[0], coord = null;
+      if (partes.length >= 3) coord = lerCoordenadas(`${partes[1]} ${partes[2]}`);
+      else if (partes.length === 2) coord = lerCoordenadas(partes[1]);
+      else {
+        const m = l.match(/^(.*?)[,\s]+(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)$/);
+        if (m) { nome = m[1].trim(); coord = lerCoordenadas(`${m[2]}, ${m[3]}`); }
+      }
+      if (/^(nome|unidades?)$/i.test(nome)) return; // linha de cabeçalho
+      nome = nome.replace(/\s+/g, " ").slice(0, 160);
+      if (!nome) return;
+      if (coord === undefined) { erros.push(`Linha ${i + 1}: coordenadas inválidas (unidade será adicionada sem localização)`); coord = null; }
+      itens.set(nome.toLowerCase(), { nome, coord });
+    });
+    const existentes = new Map(Estado.unidades.map((u) => [u.toLowerCase(), u]));
+    const novos = [], atualizar = [], repetidos = [];
+    itens.forEach((it, k) => {
+      if (existentes.has(k)) { if (it.coord) atualizar.push({ ...it, nome: existentes.get(k) }); else repetidos.push(it.nome); }
+      else novos.push(it);
+    });
+    return { novos, atualizar, repetidos, erros };
+  }
+
+  function previaLote() {
+    const r = lerLote($("#lote-unidades").value);
+    const partes = [];
+    if (r.novos.length) partes.push(`<b>${r.novos.length}</b> nova(s)`);
+    if (r.atualizar.length) partes.push(`<b>${r.atualizar.length}</b> já cadastrada(s) terão a localização atualizada`);
+    if (r.repetidos.length) partes.push(`${r.repetidos.length} já cadastrada(s) serão ignoradas`);
+    const comCoord = r.novos.filter((x) => x.coord).length + r.atualizar.length;
+    if (comCoord) partes.push(`📍 ${comCoord} com coordenadas`);
+    $("#lote-previa").innerHTML = (partes.join(" · ") || "") + (r.erros.length ? `<br><span class="erro">${r.erros.map(esc).join("<br>")}</span>` : "");
+  }
+
+  async function adicionarLote() {
+    const r = lerLote($("#lote-unidades").value);
+    if (!r.novos.length && !r.atualizar.length) return aviso(r.repetidos.length ? "Todas essas unidades já estão cadastradas." : "Digite ou cole as unidades, uma por linha.", true);
+    if (!confirm(`Adicionar ${r.novos.length} unidade(s)${r.atualizar.length ? ` e atualizar a localização de ${r.atualizar.length}` : ""}?`)) return;
+    carregando(true, "Salvando unidades...");
+    try {
+      const linha = (x) => x.coord ? { nome: x.nome, latitude: x.coord.lat, longitude: x.coord.lng } : { nome: x.nome };
+      const semCoord = r.novos.filter((x) => !x.coord).map(linha), comCoord = r.novos.filter((x) => x.coord).map(linha);
+      for (const grupo of [semCoord, comCoord]) {
+        for (let i = 0; i < grupo.length; i += 500) {
+          const { error } = await sb.from("unidades").insert(grupo.slice(i, i + 500));
+          if (error) throw error;
+        }
+      }
+      for (const x of r.atualizar) {
+        const { error } = await sb.from("unidades").update({ latitude: x.coord.lat, longitude: x.coord.lng }).eq("nome", x.nome);
+        if (error) throw error;
+      }
+      $("#lote-unidades").value = "";
+      $("#lote-previa").textContent = "";
+      aviso(`✅ ${r.novos.length} unidade(s) adicionada(s)${r.atualizar.length ? `, ${r.atualizar.length} atualizada(s)` : ""}.`);
+    } catch (e) {
+      aviso("Erro ao salvar unidades: " + (/duplicate/i.test(e.message) ? "unidade repetida." : e.message), true);
+    } finally {
+      carregando(false);
+      await recarregarUnidades();
+    }
+  }
+
+  async function importarArquivo(ev) {
+    const arq = ev.target.files[0];
+    ev.target.value = "";
+    if (!arq) return;
+    try {
+      let linhas;
+      if (/\.(csv|txt)$/i.test(arq.name)) {
+        linhas = (await arq.text()).split(/\r?\n/).map((l) => l.replace(/"/g, ""));
+      } else {
+        if (!window.XLSX) return aviso("Leitor de Excel ainda carregando, tente novamente.", true);
+        const wb = XLSX.read(await arq.arrayBuffer(), { type: "array" });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, blankrows: false });
+        linhas = rows.map((r) => r.slice(0, 3).map((c) => String(c ?? "").trim()).filter((c, k) => k === 0 || c).join(" ; "));
+      }
+      const atual = $("#lote-unidades").value.trim();
+      $("#lote-unidades").value = (atual ? atual + "\n" : "") + linhas.filter((l) => l.trim()).join("\n");
+      previaLote();
+      aviso("Planilha carregada. Confira a lista e clique em Adicionar unidades.");
+    } catch (e) {
+      aviso("Não foi possível ler o arquivo: " + e.message, true);
+    }
+  }
+
+  function baixarModelo() {
+    const csv = "\uFEFFNome;Latitude;Longitude\r\nSE Exemplo 1;-22.8219;-47.2669\r\nSE Exemplo 2;;\r\n";
+    baixarArquivo("modelo-unidades.csv", csv, "text/csv;charset=utf-8");
+  }
+
+  function editarCoordenadas(nome, sugestao) {
+    const c = sugestao || Estado.coordUnidades[nome];
+    const leituras = visitas.filter((v) => v.unidade === nome && v.geo_chegada?.lat != null).slice(0, 5);
+    abrirModal(`
+      <h2>📍 Localização da unidade</h2>
+      <p><b>${esc(nome)}</b></p>
+      <form id="form-coord">
+        <label>Coordenadas (latitude, longitude)
+          <input name="coord" value="${c ? fmtCoord(c) : ""}" placeholder="ex.: -22.8219, -47.2669 (cole do Google Maps)" />
+        </label>
+        <p class="erro" id="coord-erro"></p>
+        <div class="filtros-acoes">
+          <button class="btn primario">Salvar</button>
+          ${Estado.coordUnidades[nome] ? `<button type="button" class="btn" id="btn-limpar-coord">Remover localização</button>` : ""}
+          <a class="btn" id="btn-ver-mapa" target="_blank" rel="noopener">🗺️ Ver no mapa</a>
+        </div>
+      </form>
+      ${leituras.length ? `<h3 style="margin-top:1rem">Localizações registradas pelos VMOs nesta unidade</h3>
+        <table class="tabela"><tbody>${leituras.map((v, i) => `<tr><td>${fmtDataHora(v.chegada)}</td><td>${esc(v.vigilante)}</td>
+          <td><a href="${linkMapa(v.geo_chegada)}" target="_blank" rel="noopener">${fmtCoord(v.geo_chegada)}</a> ±${v.geo_chegada.precisao || "?"} m</td>
+          <td><button type="button" class="btn peq" data-usar="${i}">Usar esta</button></td></tr>`).join("")}</tbody></table>` : ""}`);
+    const f = $("#form-coord");
+    const atualizarMapa = () => { const p = lerCoordenadas(f.coord.value); $("#btn-ver-mapa").href = p ? linkMapa(p) : `https://www.google.com/maps/search/${encodeURIComponent(nome)}`; };
+    f.coord.oninput = atualizarMapa; atualizarMapa();
+    $$("#modal-conteudo [data-usar]").forEach((b) => b.onclick = () => { f.coord.value = fmtCoord(leituras[b.dataset.usar].geo_chegada); atualizarMapa(); });
+    const salvarCoord = async (lat, lng) => {
+      const { error } = await sb.from("unidades").update({ latitude: lat, longitude: lng }).eq("nome", nome);
+      if (error) return $("#coord-erro").textContent = error.message;
+      fecharModal(); aviso(lat == null ? "Localização removida." : "📍 Localização da unidade salva.");
+      await recarregarUnidades();
+    };
+    f.onsubmit = (e) => {
+      e.preventDefault();
+      const p = lerCoordenadas(f.coord.value);
+      if (!p) return $("#coord-erro").textContent = "Coordenadas inválidas. Use o formato: -22.8219, -47.2669";
+      salvarCoord(p.lat, p.lng);
+    };
+    const limpar = $("#btn-limpar-coord");
+    if (limpar) limpar.onclick = () => confirm("Remover a localização desta unidade?") && salvarCoord(null, null);
   }
 
   function ligarEventos() {
     $$("#nav-admin button").forEach((b) => b.onclick = () => trocarAba(b.dataset.aba));
-    ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria"].forEach((s) => $(s).onchange = atualizarTudo);
+    ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria", "#f-geo"].forEach((s) => $(s).onchange = atualizarTudo);
     ["#f-de", "#f-ate"].forEach((s) => $(s).onchange = carregarVisitas);
     $("#busca").oninput = renderTabela;
     $("#btn-atualizar").onclick = carregarVisitas;
     $("#btn-limpar-filtros").onclick = () => {
-      ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria"].forEach((s) => $(s).value = "");
+      ["#f-vmo", "#f-unidade", "#f-situacao", "#f-gravidade", "#f-categoria", "#f-geo"].forEach((s) => $(s).value = "");
       Object.keys(extra).forEach((k) => extra[k] = "");
       $("#busca").value = "";
       atualizarTudo();
@@ -544,14 +725,18 @@ const Admin = (() => {
     $("#btn-imprimir").onclick = imprimirRelatorio;
     $("#form-usuario").onsubmit = criarUsuario;
     ["#u-busca", "#u-papel", "#u-status"].forEach((sel) => $(sel).oninput = renderUsuarios);
-    $("#form-unidade").onsubmit = adicionarUnidade;
+    $("#lote-unidades").oninput = previaLote;
+    $("#btn-lote").onclick = adicionarLote;
+    $("#arquivo-unidades").onchange = importarArquivo;
+    $("#btn-modelo-unidades").onclick = baixarModelo;
+    $("#busca-unidade").oninput = renderUnidades;
     $("#btn-copiar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-publico").value); } catch { $("#link-publico").select(); document.execCommand("copy"); }
       aviso("Link copiado!");
     };
   }
 
-  return { iniciar, ligarEventos, excluirVisita, trocarAba };
+  return { iniciar, ligarEventos, excluirVisita, trocarAba, editarCoordenadas };
 })();
 
 /* Detalhe de uma visita */
@@ -576,6 +761,8 @@ async function abrirDetalheVisita(v, { admin = false } = {}) {
         <p>${esc(a.descricao)}</p>
         <div class="fotos-grid">${(a.fotos || []).map((p) => urls[p] ? `<img src="${esc(urls[p])}" alt="Foto da anormalidade" data-ampliar />` : `<span class="dica">Foto indisponível</span>`).join("")}</div>
       </div>`).join("")}
+    <h3>📍 Localização (dupla verificação)</h3>
+    ${blocoGeo(v, admin)}
     <h3>Resumo / observações</h3>
     <p>${esc(v.observacoes || "—").replace(/\n/g, "<br>")}</p>
     <div class="filtros-acoes" style="margin-top:1rem">
@@ -585,6 +772,23 @@ async function abrirDetalheVisita(v, { admin = false } = {}) {
   $$("#modal-conteudo [data-ampliar]").forEach((img) => img.onclick = () => window.open(img.src, "_blank"));
   $("#btn-imprimir-visita").onclick = () => imprimirVisitas([v], urls, `Visita — ${v.unidade}`);
   if (admin) $("#btn-excluir-visita").onclick = () => Admin.excluirVisita(v);
+  const usar = $("#btn-usar-geo");
+  if (usar) usar.onclick = () => Admin.editarCoordenadas(v.unidade, v.geo_chegada);
+}
+
+function blocoGeo(v, admin) {
+  const ver = verificarGeo(v.geo_chegada, v.unidade);
+  const ref = Estado.coordUnidades?.[v.unidade];
+  const linha = (rot, g) => !g ? `<div><b>${rot}</b>Não registrada</div>`
+    : g.erro ? `<div><b>${rot}</b>❌ ${esc(g.erro)}</div>`
+    : `<div><b>${rot}</b><a href="${linkMapa(g)}" target="_blank" rel="noopener">${fmtCoord(g)}</a><br><small>±${g.precisao ?? "?"} m · ${fmtHora(g.em)}${ref ? ` · ${fmtDistancia(distanciaM(g, ref))} da unidade` : ""}</small></div>`;
+  return `<div class="geo ${ver.classe}"><b>${ver.icone} ${esc(ver.rotulo)}</b>${ver.detalhe ? ` — ${esc(ver.detalhe)}` : ""}</div>
+    <div class="detalhe-grid">
+      ${linha("GPS na chegada", v.geo_chegada)}
+      ${linha("GPS na saída", v.geo_saida)}
+      <div><b>Unidade cadastrada</b>${ref ? `<a href="${linkMapa(ref)}" target="_blank" rel="noopener">${fmtCoord(ref)}</a>` : "Sem coordenadas"}</div>
+    </div>
+    ${admin && v.geo_chegada?.lat != null ? `<button class="btn peq" id="btn-usar-geo">📌 Usar como localização da unidade</button>` : ""}`;
 }
 
 /* Relatório detalhado de visitas (com fotos) para impressão */
@@ -597,6 +801,7 @@ function imprimirVisitas(lista, urls, titulo) {
         <strong>${esc(v.unidade)}</strong> — VMO: ${esc(v.vigilante)}<br>
         Chegada: ${fmtDataHora(v.chegada)} · Saída: ${fmtDataHora(v.saida)} · Permanência: ${fmtDuracao(minutosEntre(v.chegada, v.saida))}
         · Situação: <b>${v.tem_anormalidade ? "COM ANORMALIDADE" : "Normal"}</b>
+        <br>GPS: ${(() => { const g = verificarGeo(v.geo_chegada, v.unidade); return `${g.icone} ${esc(g.rotulo)}${v.geo_chegada?.lat != null ? ` — ${fmtCoord(v.geo_chegada)} (±${v.geo_chegada.precisao} m)` : ""}`; })()}
         ${(v.anomalias || []).map((a, i) => `
           <div style="margin-top:4px"><b>${i + 1}. ${esc(a.categoria)}</b> (${esc(a.gravidade)}): ${esc(a.descricao)}
           <div class="rel-fotos">${(a.fotos || []).filter((p) => urls[p]).map((p) => `<img src="${esc(urls[p])}">`).join("")}</div></div>`).join("")}

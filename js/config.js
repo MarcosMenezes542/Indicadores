@@ -5,6 +5,7 @@ window.VMO_CONFIG = {
   SUPABASE_KEY: "sb_publishable_9nsbsiwdZDPuXfGphk9J9A_hnrAkyxM",
   DOMINIO: "vigilancia.local", // logins sem "@" viram login@vigilancia.local
   BUCKET: "fotos",
+  RAIO_VERIFICACAO_M: 500, // distância máxima (m) entre o GPS do VMO e a unidade para considerar "no local"
   CATEGORIAS: [
     "Sinais de invasão / arrombamento",
     "Cerca / perímetro danificado",

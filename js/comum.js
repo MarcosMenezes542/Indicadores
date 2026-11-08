@@ -67,12 +67,49 @@ async function carregarPerfil() {
 }
 
 async function carregarUnidades() {
-  const { data, error } = await sb.from("unidades").select("nome").order("nome");
+  const { data, error } = await sb.from("unidades").select("*").order("nome");
   if (error) throw error;
   Estado.unidades = data.map((u) => u.nome);
+  Estado.coordUnidades = {};
+  data.forEach((u) => { if (u.latitude != null && u.longitude != null) Estado.coordUnidades[u.nome] = { lat: u.latitude, lng: u.longitude }; });
   const dl = $("#lista-unidades");
   if (dl) dl.innerHTML = Estado.unidades.map((n) => `<option value="${esc(n)}">`).join("");
   return Estado.unidades;
+}
+
+/* ---------- Geolocalização (dupla verificação da visita) ---------- */
+function distanciaM(a, b) {
+  const R = 6371000, rad = (x) => x * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const fmtDistancia = (m) => m == null ? "—" : m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+const linkMapa = (g) => `https://www.google.com/maps?q=${g.lat},${g.lng}`;
+const fmtCoord = (g) => `${Number(g.lat).toFixed(6)}, ${Number(g.lng).toFixed(6)}`;
+
+// Compara a posição do VMO com a coordenada cadastrada da unidade
+function verificarGeo(geo, unidade) {
+  if (!geo || geo.lat == null) return { codigo: "sem_gps", icone: "❌", rotulo: "Sem localização", classe: "geo-sem", detalhe: geo?.erro || "Localização não registrada" };
+  const ref = Estado.coordUnidades?.[unidade];
+  if (!ref) return { codigo: "sem_ref", icone: "❔", rotulo: "Unidade sem coordenadas", classe: "geo-ref", detalhe: "Cadastre a localização da unidade para conferir" };
+  const d = distanciaM(geo, ref);
+  const limite = CFG.RAIO_VERIFICACAO_M + Math.min(geo.precisao || 0, 300);
+  return d <= limite
+    ? { codigo: "ok", icone: "✅", rotulo: `No local (${fmtDistancia(d)})`, classe: "geo-ok", dist: d }
+    : { codigo: "longe", icone: "⚠️", rotulo: `Fora da unidade (${fmtDistancia(d)})`, classe: "geo-longe", dist: d };
+}
+const ROTULO_GEO = { ok: "✅ Confirmada no local", longe: "⚠️ Fora da unidade", sem_ref: "❔ Unidade sem coordenadas", sem_gps: "❌ Sem localização" };
+
+function obterLocalizacao(tempo = 20000) {
+  return new Promise((ok) => {
+    const em = new Date().toISOString();
+    if (!navigator.geolocation) return ok({ erro: "Aparelho sem suporte a localização", em });
+    navigator.geolocation.getCurrentPosition(
+      (p) => ok({ lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), precisao: Math.round(p.coords.accuracy), em: new Date(p.timestamp || Date.now()).toISOString() }),
+      (e) => ok({ erro: e.code === 1 ? "Permissão de localização negada" : e.code === 3 ? "Tempo esgotado ao obter a localização" : "Localização indisponível (sem sinal de GPS)", em }),
+      { enableHighAccuracy: true, timeout: tempo, maximumAge: 0 });
+  });
 }
 
 /* ---------- Fotos ---------- */

@@ -47,6 +47,7 @@
         <div class="cartao boas-vindas">
           <h2>Olá, <span id="vmo-nome"></span> 👋</h2>
           <p>Registre cada visita: chegada, vistoria, anormalidades com fotos e saída.</p>
+          <p class="dica-clara">📍 O aplicativo registra a sua localização na chegada e na saída. Mantenha o GPS do celular ligado.</p>
           <button id="btn-nova-visita" class="btn primario grande">🚓 Iniciar nova visita</button>
           <button id="btn-continuar" class="btn grande oculto">⏱️ Continuar visita em andamento</button>
         </div>
@@ -72,6 +73,7 @@
               <span class="rotulo">🟢 Chegada *</span>
               <input type="datetime-local" name="chegada" required />
               <button type="button" class="btn sucesso" id="btn-chegada">Registrar chegada agora</button>
+              <div id="geo-chegada" class="geo"></div>
             </div>
           </div>
         </div>
@@ -98,6 +100,7 @@
               <span class="rotulo">🔴 Saída *</span>
               <input type="datetime-local" name="saida" required />
               <button type="button" class="btn perigo" id="btn-saida">Registrar saída agora</button>
+              <div id="geo-saida" class="geo"></div>
             </div>
           </div>
           <p id="permanencia" class="dica"></p>
