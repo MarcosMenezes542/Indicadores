@@ -460,3 +460,4 @@ a.lateral-item { text-decoration: none; }
 .perm-resumo { margin: .3rem 0 0; font-size: .82rem; font-weight: 700; color: var(--azul); text-align: right; }
 .perm-admin { padding: .8rem 1rem; border-radius: 12px; background: #e5f5ec; color: #17683a; border: 1px solid #b9e3c8; margin-bottom: .9rem; font-size: .92rem; }
 .perfis { grid-template-columns: repeat(4, 1fr); }
+.entrada-cartao .btn-instalar { margin-top: 1.1rem; }
