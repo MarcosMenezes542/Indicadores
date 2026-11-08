@@ -1,12 +1,13 @@
 /* Service worker: permite instalar o app e abrir mesmo com internet fraca.
    Arquivos do app: rede primeiro (sempre a versão mais nova), cache como reserva.
    Dados (Supabase) nunca passam pelo cache. */
-const VERSAO = "vmo-v5";
+const VERSAO = "vmo-v6";
 const ARQUIVOS = [
   "./", "index.html", "admin.html", "manifest.json", "manifest-admin.json",
   "css/style.css", "js/config.js", "js/comum.js", "js/vmo.js", "js/admin.js", "js/main.js",
   "vendor/supabase.min.js", "vendor/chart.umd.min.js", "vendor/xlsx.mini.min.js",
   "img/icon.svg", "img/icon-192.png", "img/icon-512.png", "img/icon-maskable-512.png",
+  "img/icon-admin.svg", "img/icon-admin-192.png", "img/icon-admin-512.png", "img/icon-admin-maskable-512.png",
 ];
 
 self.addEventListener("install", (e) => {
@@ -28,6 +29,6 @@ self.addEventListener("fetch", (e) => {
         if (r.ok) { const copia = r.clone(); caches.open(VERSAO).then((c) => c.put(req, copia)); }
         return r;
       })
-      .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || (req.mode === "navigate" ? caches.match("index.html") : undefined)))
+      .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || (req.mode === "navigate" ? caches.match(url.pathname.endsWith("admin.html") ? "admin.html" : "index.html") : undefined)))
   );
 });

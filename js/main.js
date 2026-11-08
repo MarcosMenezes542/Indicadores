@@ -80,8 +80,9 @@ const Main = (() => {
     $("#modal-fechar").onclick = fecharModal;
     $("#modal").onclick = (e) => { if (e.target.id === "modal") fecharModal(); };
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharModal(); });
-    if (MODO === "vmo") { VMO.ligarEventos(); Instalacao.iniciar(); }
+    if (MODO === "vmo") VMO.ligarEventos();
     else Admin.ligarEventos();
+    Instalacao.iniciar();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
     entrarNoApp();
   }

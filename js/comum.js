@@ -262,24 +262,50 @@ const Instalacao = (() => {
   const instalado = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   const ios = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
+  const nomeApp = () => document.body.dataset.modo === "admin" ? "Gestão VMO" : "VMO Visitas";
+
   function atualizar() {
     const mostrarCartao = !instalado() && (!!evento || ios());
     $$("[data-instalar]").forEach((el) => mostrar(el, mostrarCartao));
     $$("[data-btn-instalar]").forEach((b) => mostrar(b, !!evento));
     $$("[data-instrucao-ios]").forEach((el) => mostrar(el, !evento && ios()));
+    // botões que aparecem sempre (enquanto o app não estiver instalado)
+    $$("[data-instalar-sempre]").forEach((el) => mostrar(el, !instalado()));
+  }
+
+  // Sem o convite automático do navegador: mostra o passo a passo
+  function instrucoes() {
+    abrirModal(`
+      <h2>📲 Instalar o app "${nomeApp()}" no celular</h2>
+      <div class="passos">
+        <div><b>Android (Chrome)</b>
+          <ol><li>Abra este endereço no <b>Chrome</b>.</li><li>Toque no menu <b>⋮</b> (três pontinhos, no canto superior direito).</li>
+          <li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li><li>Confirme em <b>Instalar</b>.</li></ol></div>
+        <div><b>iPhone (Safari)</b>
+          <ol><li>Abra este endereço no <b>Safari</b>.</li><li>Toque em <b>Compartilhar</b> (□↑, na barra de baixo).</li>
+          <li>Role e toque em <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol></div>
+      </div>
+      <p class="dica">O ícone <b>${nomeApp()}</b> aparece na tela inicial e abre direto, em tela cheia.</p>
+      <div class="link-publico"><input readonly value="${esc(location.href.split("#")[0])}" id="link-instalar" /><button class="btn" id="btn-copiar-instalar">Copiar link</button></div>`);
+    $("#btn-copiar-instalar").onclick = async () => {
+      try { await navigator.clipboard.writeText($("#link-instalar").value); } catch { $("#link-instalar").select(); document.execCommand("copy"); }
+      aviso("Link copiado! Abra no navegador do celular.");
+    };
+  }
+
+  async function instalar() {
+    if (!evento) return instrucoes();
+    evento.prompt();
+    await evento.userChoice;
+    evento = null;
+    atualizar();
   }
 
   function iniciar() {
     window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evento = e; atualizar(); });
-    window.addEventListener("appinstalled", () => { evento = null; atualizar(); aviso("✅ Aplicativo instalado! Abra pelo ícone VMO Visitas."); });
-    $$("[data-btn-instalar]").forEach((b) => b.onclick = async () => {
-      if (!evento) return;
-      evento.prompt();
-      await evento.userChoice;
-      evento = null;
-      atualizar();
-    });
+    window.addEventListener("appinstalled", () => { evento = null; atualizar(); aviso(`✅ Aplicativo instalado! Abra pelo ícone ${nomeApp()}.`); });
+    $$("[data-btn-instalar], [data-instalar-sempre]").forEach((b) => b.onclick = instalar);
     atualizar();
   }
-  return { iniciar };
+  return { iniciar, instalar };
 })();
