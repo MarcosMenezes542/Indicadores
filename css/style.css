@@ -506,3 +506,10 @@ a.lateral-item { text-decoration: none; }
 /* Logo maior */
 .entrada-logo-parceiro img { height: 130px; }
 @media (max-width: 980px) { .entrada-logo-parceiro img { height: 78px; } }
+/* Logo ocupando ~60% da largura do espaço abaixo do texto */
+.entrada-logo-parceiro { display: block; width: 60%; max-width: 520px; }
+.entrada-logo-parceiro img { width: 100%; height: auto; }
+@media (max-width: 980px) {
+  .entrada-logo-parceiro { width: 60%; max-width: 340px; }
+  .entrada-logo-parceiro img { width: 100%; height: auto; }
+}
