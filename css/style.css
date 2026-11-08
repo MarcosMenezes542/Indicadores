@@ -461,3 +461,13 @@ a.lateral-item { text-decoration: none; }
 .perm-admin { padding: .8rem 1rem; border-radius: 12px; background: #e5f5ec; color: #17683a; border: 1px solid #b9e3c8; margin-bottom: .9rem; font-size: .92rem; }
 .perfis { grid-template-columns: repeat(4, 1fr); }
 .entrada-cartao .btn-instalar { margin-top: 1.1rem; }
+
+/* Marca-d'água atrás da frase da tela de login.
+   Coloque o arquivo OFICIAL da logo em img/logo-fundo.png (fundo transparente).
+   Se o arquivo não existir, nada aparece. */
+.entrada-hero-texto { position: relative; isolation: isolate; }
+.entrada-hero-texto::before {
+  content: ""; position: absolute; z-index: -1; inset: -12% -6% -12% -4%;
+  background: url("../img/logo-fundo.png") left center / contain no-repeat;
+  opacity: .14; filter: brightness(0) invert(1); pointer-events: none;
+}
