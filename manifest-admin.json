@@ -1,6 +1,6 @@
 {
   "id": "./admin.html",
-  "name": "VMO — Painel do Administrador",
+  "name": "Gestão Operacional de Visitas dos VMO",
   "short_name": "VMO Painel",
   "lang": "pt-BR",
   "start_url": "./admin.html",
