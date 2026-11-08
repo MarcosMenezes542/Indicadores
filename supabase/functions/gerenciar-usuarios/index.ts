@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   const { data: u, error: ue } = await admin.auth.getUser(token);
   if (ue || !u?.user) return resp({ erro: "Sessão expirada. Entre novamente." }, 401);
+  // padrões de permissões salvos pelo administrador para cada perfil
+  const { data: padroes } = await admin.from("perfis_permissoes").select("papel,permissoes");
+  (padroes || []).forEach((r) => { if (Array.isArray(r.permissoes)) PADRAO[r.papel] = r.permissoes; });
   const { data: eu } = await admin.from("perfis").select("papel,ativo,permissoes").eq("id", u.user.id).maybeSingle();
   if (!eu || !eu.ativo || !permsDe(eu).includes("gerenciar_usuarios"))
     return resp({ erro: "Você não tem permissão para gerenciar usuários." }, 403);

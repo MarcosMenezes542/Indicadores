@@ -33,6 +33,7 @@ const Admin = (() => {
     mostrar("#btn-fixar-auto", pode("gerenciar_unidades"));
     renderPerfis($("#perfis-novo"), "vigilante", (papel) => renderPermissoes($("#perms-novo"), papel));
     renderPermissoes($("#perms-novo"), "vigilante");
+    iniciarPadroes();
     trocarAba(abasPermitidas()[0]);
     await Promise.all([pode("gerenciar_usuarios") ? carregarPerfis() : null, carregarVisitas()]);
     if (pode("gerenciar_unidades")) renderUnidades();
@@ -80,7 +81,12 @@ const Admin = (() => {
           <span><b>${p.nome}</b><small>${p.desc}</small></span>
         </label>`).join("")}</fieldset>`).join("") +
       `<p class="perm-resumo"></p>`;
-    const resumo = () => { const n = lerPermissoes(caixa).length; $(".perm-resumo", caixa).textContent = `${n} de ${PERMISSOES.length} permissões liberadas`; };
+    const resumo = () => {
+      const marcadas = lerPermissoes(caixa);
+      const igual = mesmasPermissoes(marcadas, PERMISSOES_PADRAO[papel]);
+      if (caixa.id === "perms-padrao") { $(".perm-resumo", caixa).textContent = `${marcadas.length} de ${PERMISSOES.length} permissões liberadas`; return; }
+      $(".perm-resumo", caixa).innerHTML = `${igual ? `<span class="segue-txt">⚙️ Igual ao padrão do perfil</span>` : `<span class="personalizada-txt">✏️ Personalizada para esta pessoa</span>`} · ${marcadas.length} de ${PERMISSOES.length} permissões liberadas`;
+    };
     $$("input[type=checkbox]", caixa).forEach((c) => c.onchange = resumo);
     $$("[data-perm-acao]", caixa).forEach((b) => b.onclick = () => {
       const a = b.dataset.permAcao;
@@ -90,6 +96,59 @@ const Admin = (() => {
     resumo();
   }
   const lerPermissoes = (caixa) => $$("input[type=checkbox]", caixa).filter((c) => c.checked).map((c) => c.value);
+  // Se o que foi marcado é igual ao padrão do perfil, o usuário passa a "seguir o padrão" (null)
+  const permissoesParaSalvar = (papel, caixa) => {
+    if (papel === "admin") return null;
+    const marcadas = lerPermissoes(caixa);
+    return mesmasPermissoes(marcadas, PERMISSOES_PADRAO[papel]) ? null : marcadas;
+  };
+
+  /* Permissões padrão de cada perfil (com botão Salvar) */
+  let papelPadrao = "vigilante";
+  function iniciarPadroes() {
+    renderPerfis($("#perfis-padrao"), papelPadrao, (papel) => {
+      if (confirmarDescarte()) { papelPadrao = papel; renderPadrao(); }
+      else { const r = $(`#perfis-padrao input[value=${papelPadrao}]`); if (r) r.checked = true; }
+    });
+    // o perfil Administrador não entra aqui (tem acesso total)
+    $$("#perfis-padrao input[value=admin]").forEach((i) => i.closest(".perfil-op").remove());
+    renderPadrao();
+    $("#btn-salvar-padrao").onclick = salvarPadrao;
+  }
+  function renderPadrao() {
+    renderPermissoes($("#perms-padrao"), papelPadrao);
+    const caixa = $("#perms-padrao");
+    $$(".perm-topo b", caixa).forEach((b) => b.textContent = `🔐 Padrão do perfil ${OPCOES_PERFIL.find((o) => o.id === papelPadrao).icone} ${nomePapel(papelPadrao)}`);
+    $$(".perm-topo small", caixa).forEach((s) => s.textContent = "Estas são as permissões que este perfil recebe automaticamente.");
+    $$("[data-perm-acao=padrao]", caixa).forEach((b) => b.textContent = "↺ Desfazer");
+    const atualizar = () => {
+      const mudou = !mesmasPermissoes(lerPermissoes(caixa), PERMISSOES_PADRAO[papelPadrao]);
+      $("#padrao-status").innerHTML = mudou ? `<b class="alterado">● Alterações não salvas</b>` : "✔ Salvo";
+      $("#btn-salvar-padrao").disabled = !mudou;
+    };
+    caixa.onchange = atualizar;
+    caixa.onclick = (e) => { if (e.target.matches("[data-perm-acao]")) setTimeout(atualizar, 0); };
+    atualizar();
+  }
+  const confirmarDescarte = () => $("#btn-salvar-padrao").disabled || confirm("Há alterações não salvas neste perfil. Descartar e trocar de perfil?");
+  async function salvarPadrao() {
+    const perms = lerPermissoes($("#perms-padrao"));
+    const nome = nomePapel(papelPadrao);
+    const afetados = perfis.filter((p) => p.papel === papelPadrao && !Array.isArray(p.permissoes)).length;
+    if (!perms.length && !confirm(`Nenhuma permissão marcada: usuários do perfil ${nome} que seguem o padrão não conseguirão acessar nada. Salvar assim mesmo?`)) return;
+    if (!confirm(`Salvar as permissões padrão do perfil ${nome}?\n\nIsso vale para os novos cadastros e para ${afetados} usuário(s) que seguem o padrão deste perfil.`)) return;
+    carregando(true, "Salvando...");
+    const { error } = await sb.from("perfis_permissoes").upsert({ papel: papelPadrao, permissoes: perms, atualizado_em: new Date().toISOString() });
+    carregando(false);
+    if (error) return aviso("Não foi possível salvar: " + error.message, true);
+    PERMISSOES_PADRAO[papelPadrao] = perms;
+    aviso(`✅ Permissões do perfil ${nome} salvas.`);
+    renderPadrao();
+    renderUsuarios();
+    // o formulário de cadastro passa a usar o novo padrão
+    const atual = $("#form-usuario").papel.value;
+    renderPermissoes($("#perms-novo"), atual);
+  }
 
   function trocarAba(aba) {
     const permitidas = abasPermitidas();
@@ -490,7 +549,7 @@ const Admin = (() => {
         <td>${esc(p.nome)}${p.id === eu ? " <small>(você)</small>" : ""}</td><td><code>${esc(p.login)}</code></td>
         <td>${nomePapel(p.papel)}</td>
         <td class="perms-celula">${p.papel === "admin" ? `<span class="chip-perm todas">Todas</span>`
-          : PERMISSOES.filter((x) => permissoesDe(p).includes(x.id)).map((x) => `<span class="chip-perm" title="${esc(x.desc)}">${esc(x.nome)}</span>`).join(" ") || `<span class="selo inativo">Nenhuma</span>`}</td>
+          : (Array.isArray(p.permissoes) ? `<span class="chip-perm personalizada">✏️ Personalizada</span> ` : `<span class="chip-perm segue">⚙️ Padrão do perfil</span> `) + PERMISSOES.filter((x) => permissoesDe(p).includes(x.id)).map((x) => `<span class="chip-perm" title="${esc(x.desc)}">${esc(x.nome)}</span>`).join(" ") || `<span class="selo inativo">Nenhuma</span>`}</td>
         <td><span class="selo ${p.ativo ? "ativo" : "inativo"}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
         <td>${"ultimo_acesso" in p ? (p.ultimo_acesso ? fmtDataHora(p.ultimo_acesso) : "Nunca entrou") : "—"}</td>
         <td>${n[p.nome] || 0}</td><td>${fmtData(p.criado_em)}</td>
@@ -544,8 +603,8 @@ const Admin = (() => {
     ev.preventDefault();
     const f = ev.target, msg = $("#usuario-msg");
     const corpo = { acao: "criar", nome: f.nome.value.trim(), login: f.login.value.trim(), senha: f.senha.value, papel: f.papel.value,
-      permissoes: f.papel.value === "admin" ? null : lerPermissoes($("#perms-novo")) };
-    if (corpo.permissoes && !corpo.permissoes.length && !confirm("Nenhuma permissão marcada: este usuário não conseguirá acessar nada. Criar assim mesmo?")) return;
+      permissoes: permissoesParaSalvar(f.papel.value, $("#perms-novo")) };
+    if (Array.isArray(corpo.permissoes) && !corpo.permissoes.length && !confirm("Nenhuma permissão marcada: este usuário não conseguirá acessar nada. Criar assim mesmo?")) return;
     msg.className = "dica"; msg.textContent = "Criando...";
     try {
       await chamarFuncao(corpo);
@@ -572,7 +631,7 @@ const Admin = (() => {
         <p class="dica">Ao trocar o perfil, as permissões voltam para o padrão dele. Depois você pode ajustar.</p>
         <label><input type="checkbox" name="ativo" ${p.ativo ? "checked" : ""} style="display:inline;width:auto" /> Usuário ativo (desmarque para bloquear o acesso)</label>
         <p class="erro" id="editar-erro"></p>
-        <button class="btn primario">Salvar</button>
+        <button class="btn primario">💾 Salvar alterações</button>
       </form>`);
     const fe = $("#form-editar");
     renderPerfis($("#perfis-editar"), p.papel, (papel) => renderPermissoes($("#perms-editar"), papel));
@@ -582,7 +641,7 @@ const Admin = (() => {
       const f = e.target;
       try {
         await chamarFuncao({ acao: "atualizar", id: p.id, nome: f.nome.value.trim(), papel: f.papel.value, ativo: f.ativo.checked,
-          permissoes: f.papel.value === "admin" ? null : lerPermissoes($("#perms-editar")) });
+          permissoes: permissoesParaSalvar(f.papel.value, $("#perms-editar")) });
         fecharModal(); aviso("Usuário atualizado.");
         await carregarPerfis();
       } catch (er) { $("#editar-erro").textContent = er.message; }

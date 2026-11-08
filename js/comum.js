@@ -120,8 +120,17 @@ async function carregarPerfil() {
   const { data, error } = await sb.from("perfis").select("*").eq("id", session.user.id).maybeSingle();
   if (error) throw error;
   Estado.perfil = data;
+  await carregarPadroesPerfil();
   return data;
 }
+
+// Padrões de permissões salvos pelo administrador para cada perfil (tabela perfis_permissoes)
+async function carregarPadroesPerfil() {
+  const { data, error } = await sb.from("perfis_permissoes").select("papel,permissoes");
+  if (error || !Array.isArray(data)) return; // sem a tabela, valem os padrões do sistema
+  data.forEach((r) => { if (Array.isArray(r.permissoes)) PERMISSOES_PADRAO[r.papel] = r.permissoes; });
+}
+const mesmasPermissoes = (a, b) => { const x = [...(a || [])].sort(), y = [...(b || [])].sort(); return x.length === y.length && x.every((v, i) => v === y[i]); };
 
 async function carregarUnidades() {
   const { data, error } = await sb.from("unidades").select("*").order("nome");

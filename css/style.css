@@ -525,3 +525,13 @@ a.lateral-item { text-decoration: none; }
   .entrada-cartao h2 { font-size: 1.35rem; }
   .entrada-sub { margin-bottom: .9rem; }
 }
+
+/* Padrões por perfil */
+.barra-salvar { display: flex; justify-content: flex-end; align-items: center; gap: .8rem; flex-wrap: wrap; margin-top: -.3rem; }
+.barra-salvar .btn:disabled { opacity: .5; cursor: not-allowed; }
+.alterado { color: var(--laranja); }
+.chip-perm.segue { background: #eef0f3; color: #4a5563; }
+.chip-perm.personalizada { background: #fff1d6; color: #8a5a00; }
+.segue-txt { color: var(--suave); font-weight: 600; }
+.personalizada-txt { color: #8a5a00; }
+#cartao-padroes .permissoes-box { margin-bottom: .7rem; }
