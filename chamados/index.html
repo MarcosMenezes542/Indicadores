@@ -33,6 +33,9 @@
 </div>
 <template id="ajustes">
 <style id="ajuste-rodape-celular">
+/* Tela de login: frase sobre a abertura de chamados de manutenção */
+.login-frase{display:flex;gap:10px;align-items:flex-start;margin:-6px 0 20px;padding:11px 13px;border-radius:10px;background:#eef5fb;border-left:4px solid var(--accent,#f68b1f);color:#1f3b57;font-size:13px;line-height:1.45}
+.login-frase svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--brand,#0058a0)}
 /* Celular/tablet: barra lateral estreita. Toque no círculo com as iniciais para ver nome, perfil e informações. */
 @media (max-width:980px){
 .side-foot{padding:12px 6px 14px}
@@ -62,6 +65,15 @@
   document.addEventListener('click', function (e) { if (pe.classList.contains('aberto') && !pe.contains(e.target)) { pe.classList.remove('aberto'); marcar(); } });
   pe.querySelectorAll('.side-2 button').forEach(function (b) { b.addEventListener('click', function () { pe.classList.remove('aberto'); marcar(); }); });
   addEventListener('resize', function () { if (!estreito()) { pe.classList.remove('aberto'); marcar(); } });
+})();
+</script>
+<script>
+(function () {
+  var marca = document.querySelector('.login-card .login-brand'); if (!marca || document.querySelector('.login-frase')) return;
+  var d = document.createElement('div'); d.className = 'login-frase';
+  d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>' +
+    '<span>Registre e acompanhe aqui os <b>chamados de manutenção das unidades CPFL</b>: agilidade no atendimento e segurança em cada instalação.</span>';
+  marca.insertAdjacentElement('afterend', d);
 })();
 </script>
 </template>
