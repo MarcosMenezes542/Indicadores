@@ -693,32 +693,75 @@ const Admin = (() => {
   }
 
   /* ---------- Unidades ---------- */
+  const selecionadas = new Set();
   function renderUnidades() {
     $("#raio-geo").textContent = CFG.RAIO_VERIFICACAO_M;
     $("#qtd-unidades").textContent = Estado.unidades.length;
+    [...selecionadas].forEach((u) => { if (!Estado.unidades.includes(u)) selecionadas.delete(u); });
     const busca = ($("#busca-unidade").value || "").trim().toLowerCase();
     const n = contar(visitas, (v) => v.unidade);
     const lista = Estado.unidades.filter((u) => !busca || u.toLowerCase().includes(busca));
+    const todasMarcadas = lista.length && lista.every((u) => selecionadas.has(u));
     $("#tabela-unidades").innerHTML = `
-      <thead><tr><th>Unidade</th><th>Localização</th><th>Visitas no período</th><th>Ações</th></tr></thead>
+      <thead><tr><th class="col-check"><input type="checkbox" id="marcar-todas-unidades" title="Selecionar todas" ${todasMarcadas ? "checked" : ""} /></th>
+        <th>Unidade</th><th>Localização</th><th>Visitas no período</th><th>Ações</th></tr></thead>
       <tbody>${lista.map((u) => {
         const c = Estado.coordUnidades[u];
-        return `<tr>
-          <td>${esc(u)}</td>
+        return `<tr class="${selecionadas.has(u) ? "selecionada" : ""}">
+          <td class="col-check"><input type="checkbox" data-sel="${esc(u)}" ${selecionadas.has(u) ? "checked" : ""} /></td>
+          <td><b>${esc(u)}</b></td>
           <td>${c ? `<a href="${linkMapa(c)}" target="_blank" rel="noopener">📍 ${fmtCoord(c)}</a> <small>(cadastrada)</small>`
-            : Estado.refAuto?.[u] ? `<a href="${linkMapa(Estado.refAuto[u])}" target="_blank" rel="noopener">🛰️ ${fmtCoord(Estado.refAuto[u])}</a> <small>(automática, ${Estado.refAuto[u].n} visitas)</small>`
-            : `<span class="selo geo-ref">Aguardando visitas com GPS</span>`}</td>
+            : Estado.refAuto?.[u] ? `<a href="${linkMapa(Estado.refAuto[u])}" target="_blank" rel="noopener">🛰️ ${fmtCoord(Estado.refAuto[u])}</a> <small>(automática)</small>`
+            : `<span class="dica">—</span>`}</td>
           <td>${n[u] || 0}</td>
-          <td class="acoes"><button class="btn peq" data-coord="${esc(u)}">📍 ${c ? "Alterar" : "Cadastrar"} localização</button>
-            <button class="btn peq perigo" data-u="${esc(u)}" title="Remover">🗑️</button></td>
-        </tr>`; }).join("") || `<tr><td colspan="4" class="dica">Nenhuma unidade cadastrada.</td></tr>`}</tbody>`;
+          <td class="acoes"><button class="btn peq" data-coord="${esc(u)}" title="${c ? "Alterar" : "Cadastrar"} localização">📍 Localização</button>
+            <button class="btn peq perigo" data-u="${esc(u)}">🗑️ Excluir</button></td>
+        </tr>`; }).join("") || `<tr><td colspan="5" class="dica">${busca ? "Nenhuma unidade encontrada para essa busca." : "Nenhuma unidade cadastrada ainda. Adicione abaixo."}</td></tr>`}</tbody>`;
     $$("#tabela-unidades [data-coord]").forEach((b) => b.onclick = () => editarCoordenadas(b.dataset.coord));
-    $$("#tabela-unidades [data-u]").forEach((b) => b.onclick = async () => {
-      if (!confirm(`Remover a unidade "${b.dataset.u}" da lista? (As visitas já registradas não são afetadas.)`)) return;
-      const { error } = await sb.from("unidades").delete().eq("nome", b.dataset.u);
-      if (error) return aviso(error.message, true);
-      await recarregarUnidades();
-    });
+    $$("#tabela-unidades [data-u]").forEach((b) => b.onclick = () => excluirUnidades([b.dataset.u]));
+    $$("#tabela-unidades [data-sel]").forEach((c) => c.onchange = () => { c.checked ? selecionadas.add(c.dataset.sel) : selecionadas.delete(c.dataset.sel); renderUnidades(); });
+    $("#marcar-todas-unidades").onchange = (e) => { lista.forEach((u) => e.target.checked ? selecionadas.add(u) : selecionadas.delete(u)); renderUnidades(); };
+    $("#qtd-selecionadas").textContent = selecionadas.size;
+    mostrar("#btn-excluir-selecionadas", selecionadas.size > 0);
+  }
+
+  async function excluirUnidades(nomes) {
+    if (!nomes.length) return;
+    const texto = nomes.length === 1 ? `a unidade "${nomes[0]}"` : `${nomes.length} unidades:\n• ${nomes.slice(0, 15).join("\n• ")}${nomes.length > 15 ? "\n• ..." : ""}`;
+    if (!confirm(`Excluir ${texto}?\n\nElas saem da lista de escolha do VMO. As visitas já registradas não são afetadas.`)) return;
+    carregando(true, "Excluindo...");
+    try {
+      for (let i = 0; i < nomes.length; i += 200) {
+        const { error } = await sb.from("unidades").delete().in("nome", nomes.slice(i, i + 200));
+        if (error) throw error;
+      }
+      nomes.forEach((u) => selecionadas.delete(u));
+      aviso(nomes.length === 1 ? "Unidade excluída." : `${nomes.length} unidades excluídas.`);
+    } catch (e) { aviso("Não foi possível excluir: " + e.message, true); }
+    finally { carregando(false); await recarregarUnidades(); }
+  }
+
+  // Lê o que foi copiado de outro lugar (área de transferência)
+  async function colarUnidades() {
+    const caixa = $("#lote-unidades");
+    try {
+      const texto = await navigator.clipboard.readText();
+      if (!texto.trim()) return aviso("A área de transferência está vazia. Copie a lista e tente de novo.", true);
+      caixa.value = (caixa.value.trim() ? caixa.value.trim() + "\n" : "") + normalizarColagem(texto);
+      previaLote();
+      aviso("Lista colada. Confira e clique em Salvar unidades.");
+    } catch {
+      caixa.focus();
+      aviso("O navegador não liberou o acesso. Clique na caixa e use Ctrl+V (no celular: segure e toque em Colar).", true);
+    }
+  }
+  // Ajusta textos colados: listas numa linha só separadas por vírgula/ponto e vírgula, marcadores, numeração
+  function normalizarColagem(texto) {
+    let t = String(texto).replace(/\r\n?/g, "\n");
+    const linhas = t.split("\n").filter((l) => l.trim());
+    const temCoordenadas = /-?\d{1,3}[.,]\d{3,}/.test(t);
+    if (linhas.length === 1 && !temCoordenadas && /[;,]/.test(t)) t = t.split(/[;,]/).join("\n");
+    return t.split("\n").map((l) => l.replace(/^\s*(?:[-•*·▪●]|\d+[.)-])\s+/, "").trim()).filter(Boolean).join("\n");
   }
 
   async function fixarReferenciasAuto() {
@@ -784,9 +827,9 @@ const Admin = (() => {
   function previaLote() {
     const r = lerLote($("#lote-unidades").value);
     const partes = [];
-    if (r.novos.length) partes.push(`<b>${r.novos.length}</b> nova(s)`);
+    if (r.novos.length) partes.push(`<b>${r.novos.length}</b> nova(s) para salvar`);
     if (r.atualizar.length) partes.push(`<b>${r.atualizar.length}</b> já cadastrada(s) terão a localização atualizada`);
-    if (r.repetidos.length) partes.push(`${r.repetidos.length} já cadastrada(s) serão ignoradas`);
+    if (r.repetidos.length) partes.push(`${r.repetidos.length} já cadastrada(s), serão ignoradas: ${r.repetidos.slice(0, 5).map(esc).join(", ")}${r.repetidos.length > 5 ? "..." : ""}`);
     const comCoord = r.novos.filter((x) => x.coord).length + r.atualizar.length;
     if (comCoord) partes.push(`📍 ${comCoord} com coordenadas`);
     $("#lote-previa").innerHTML = (partes.join(" · ") || "") + (r.erros.length ? `<br><span class="erro">${r.erros.map(esc).join("<br>")}</span>` : "");
@@ -914,6 +957,18 @@ const Admin = (() => {
     $("#arquivo-unidades").onchange = importarArquivo;
     $("#btn-modelo-unidades").onclick = baixarModelo;
     $("#busca-unidade").oninput = renderUnidades;
+    $("#btn-colar-unidades").onclick = colarUnidades;
+    $("#btn-limpar-lote").onclick = () => { $("#lote-unidades").value = ""; previaLote(); };
+    $("#btn-excluir-selecionadas").onclick = () => excluirUnidades([...selecionadas]);
+    // Ctrl+V na caixa: ajusta listas separadas por vírgula, marcadores e numeração
+    $("#lote-unidades").addEventListener("paste", (e) => {
+      const texto = e.clipboardData?.getData("text");
+      if (!texto) return;
+      e.preventDefault();
+      const caixa = e.target, ini = caixa.selectionStart, fim = caixa.selectionEnd;
+      caixa.value = caixa.value.slice(0, ini) + normalizarColagem(texto) + caixa.value.slice(fim);
+      previaLote();
+    });
     $("#btn-fixar-auto").onclick = fixarReferenciasAuto;
     $("#btn-copiar").onclick = async () => {
       try { await navigator.clipboard.writeText($("#link-publico").value); } catch { $("#link-publico").select(); document.execCommand("copy"); }

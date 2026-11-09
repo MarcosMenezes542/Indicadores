@@ -591,3 +591,12 @@ a.lateral-item { text-decoration: none; }
 .cartao-periodo label { margin: 0; }
 .cartao-periodo input { background: #fff; }
 @media (max-width: 640px) { .cartao-periodo { grid-column: 1 / -1; } }
+
+/* Aba Unidades */
+.tabela-unidades-wrap { max-height: 55vh; overflow: auto; border: 1px solid var(--borda); border-radius: 10px; }
+.tabela .col-check { width: 36px; text-align: center; }
+.tabela .col-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--azul); }
+.tabela tr.selecionada td { background: #fff4e5; }
+.detalhes-gps summary { cursor: pointer; }
+.detalhes-gps summary small { color: var(--suave); }
+#lote-unidades { min-height: 150px; }

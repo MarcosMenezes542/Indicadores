@@ -149,36 +149,45 @@
       </div>
 
       <div id="aba-unidades" class="aba oculto">
-        <div class="duas-colunas">
-          <div class="cartao">
-            <h3>➕ Adicionar várias unidades de uma vez</h3>
-            <p class="dica">Escreva ou cole <b>uma unidade por linha</b> (pode copiar uma coluna direto do Excel).
-              Para já cadastrar a localização, use <code>Nome ; latitude ; longitude</code>. As coordenadas são opcionais.</p>
-            <textarea id="lote-unidades" rows="10" placeholder="SE Campinas 19&#10;SE Sumaré; -22.8219; -47.2669&#10;SE Hortolândia&#10;SE Boa Vista; -22.9325; -47.0844"></textarea>
-            <p id="lote-previa" class="dica"></p>
-            <div class="filtros-acoes">
-              <button class="btn primario" id="btn-lote" type="button">Adicionar unidades</button>
-              <label class="btn" style="margin:0">📄 Importar planilha (Excel/CSV)<input type="file" id="arquivo-unidades" accept=".xlsx,.xls,.csv,.txt" hidden /></label>
-              <button class="btn" id="btn-modelo-unidades" type="button">⬇️ Baixar modelo</button>
-            </div>
-          </div>
-          <div class="cartao">
-            <h3>📍 Como funciona a conferência por GPS</h3>
-            <p>O app usa a <b>localização do próprio celular do VMO</b> na chegada e na saída. Você vê a posição no mapa de cada visita.</p>
-            <p>Para dizer se ele estava <b>na unidade</b>, o sistema compara com uma referência:</p>
-            <ul class="dica">
-              <li><b>🛰️ Automática:</b> depois de 3 visitas com GPS numa unidade, o sistema aprende o ponto da unidade (onde os VMOs costumam registrar). Visitas longe desse ponto ficam marcadas como ⚠️. <b>Você não precisa cadastrar nada.</b></li>
-              <li><b>📍 Cadastrada (opcional):</b> se quiser mais precisão desde a primeira visita, informe as coordenadas na lista abaixo ou na importação.</li>
-            </ul>
-            <p class="dica">Tolerância: até <b><span id="raio-geo"></span> m</b> da referência.</p>
-            <button class="btn" id="btn-fixar-auto" type="button">🛰️ Gravar as localizações automáticas como oficiais</button>
-          </div>
-        </div>
+        <!-- 1) Unidades já cadastradas -->
         <div class="cartao">
-          <h3>Unidades cadastradas (<span id="qtd-unidades">0</span>)</h3>
-          <input id="busca-unidade" class="busca" placeholder="🔎 Buscar unidade" />
-          <div class="tabela-wrap"><table id="tabela-unidades" class="tabela"></table></div>
+          <div class="linha-titulo">
+            <h3>🏢 Unidades cadastradas (<span id="qtd-unidades">0</span>)</h3>
+            <button type="button" class="btn perigo oculto" id="btn-excluir-selecionadas">🗑️ Excluir selecionadas (<span id="qtd-selecionadas">0</span>)</button>
+          </div>
+          <input id="busca-unidade" class="busca" placeholder="🔎 Buscar unidade cadastrada" />
+          <div class="tabela-wrap tabela-unidades-wrap"><table id="tabela-unidades" class="tabela"></table></div>
+          <p class="dica">Excluir uma unidade a tira da lista de escolha do VMO. As visitas já registradas nela continuam no histórico.</p>
         </div>
+
+        <!-- 2) Adicionar novas unidades -->
+        <div class="cartao">
+          <h3>➕ Adicionar unidades</h3>
+          <p class="dica" style="margin-top:0">Copie a lista de unidades de outro lugar (Excel, Word, e-mail, WhatsApp...) e clique em <b>📋 Colar</b>,
+            ou clique na caixa e use <b>Ctrl+V</b>. Uma unidade por linha; também aceita nomes separados por vírgula ou ponto e vírgula.</p>
+          <div class="filtros-acoes" style="margin-bottom:.6rem">
+            <button class="btn primario" id="btn-colar-unidades" type="button">📋 Colar</button>
+            <label class="btn" style="margin:0">📄 Importar planilha (Excel/CSV)<input type="file" id="arquivo-unidades" accept=".xlsx,.xls,.csv,.txt" hidden /></label>
+            <button class="btn" id="btn-modelo-unidades" type="button">⬇️ Baixar modelo</button>
+            <button class="btn" id="btn-limpar-lote" type="button">🧹 Limpar caixa</button>
+          </div>
+          <textarea id="lote-unidades" rows="8" placeholder="Cole aqui a lista de unidades (Ctrl+V)..."></textarea>
+          <p id="lote-previa" class="dica"></p>
+          <button class="btn sucesso" id="btn-lote" type="button">💾 Salvar unidades</button>
+          <p class="dica" style="margin-bottom:0">Opcional: para já cadastrar a localização, use <code>Nome ; latitude ; longitude</code> na linha.</p>
+        </div>
+
+        <!-- 3) GPS (informativo, recolhido) -->
+        <details class="cartao detalhes-gps">
+          <summary><b>📍 Como funciona a conferência por GPS</b> <small>(clique para ver)</small></summary>
+          <p>O app usa a <b>localização do próprio celular do VMO</b> na chegada e na saída. Você vê a posição no mapa de cada visita.</p>
+          <ul class="dica">
+            <li><b>🛰️ Automática:</b> depois de 3 visitas com GPS numa unidade, o sistema aprende o ponto da unidade. Visitas longe desse ponto ficam marcadas como ⚠️.</li>
+            <li><b>📍 Cadastrada (opcional):</b> informe as coordenadas pelo botão 📍 na lista acima.</li>
+          </ul>
+          <p class="dica">Tolerância: até <b><span id="raio-geo"></span> m</b> da referência.</p>
+          <button class="btn" id="btn-fixar-auto" type="button">🛰️ Gravar as localizações automáticas como oficiais</button>
+        </details>
       </div>
     </section>
   </main>
