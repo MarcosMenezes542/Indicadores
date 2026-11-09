@@ -31,6 +31,40 @@
   <div class="gira" id="gira"></div>
   <div class="erro" id="erro">Não foi possível abrir o sistema. Verifique a internet e tente de novo.<br><button type="button" onclick="abrir()">Tentar de novo</button></div>
 </div>
+<template id="ajustes">
+<style id="ajuste-rodape-celular">
+/* Celular/tablet: barra lateral estreita. Toque no círculo com as iniciais para ver nome, perfil e informações. */
+@media (max-width:980px){
+.side-foot{padding:12px 6px 14px}
+.side-foot .eu{justify-content:center;cursor:pointer}
+.side-foot .eu .av{width:38px;height:38px;font-size:14px;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.side-foot .side-2 button{padding:9px 0;min-height:38px}
+.side-foot svg{width:18px;height:18px;flex:none}
+.side-foot.aberto{position:fixed;left:8px;bottom:8px;width:min(270px,calc(100vw - 16px));z-index:350;background:var(--sidebar,#0058a0);border-radius:14px;padding:16px;box-shadow:0 14px 34px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15)}
+.sidebar.rodape-aberto{z-index:360}
+.side-foot.aberto .txt{display:block}
+.side-foot.aberto button span{display:inline}
+.side-foot.aberto .eu{justify-content:flex-start}
+.side-foot.aberto .eu b{max-width:180px}
+.side-foot.aberto .side-2{flex-direction:column}
+.side-foot.aberto .side-2 button{padding:9px 12px;justify-content:flex-start;font-size:13px}
+}
+</style>
+<script>
+(function () {
+  var pe = document.querySelector('.side-foot'); if (!pe) return;
+  var eu = pe.querySelector('.eu'); if (!eu) return;
+  var lado = pe.closest('.sidebar');
+  var marcar = function () { if (lado) lado.classList.toggle('rodape-aberto', pe.classList.contains('aberto')); };
+  var estreito = function () { return matchMedia('(max-width:980px)').matches; };
+  eu.title = 'Toque para ver seu usuário e as informações';
+  eu.addEventListener('click', function (e) { if (!estreito()) return; e.stopPropagation(); pe.classList.toggle('aberto'); marcar(); });
+  document.addEventListener('click', function (e) { if (pe.classList.contains('aberto') && !pe.contains(e.target)) { pe.classList.remove('aberto'); marcar(); } });
+  pe.querySelectorAll('.side-2 button').forEach(function (b) { b.addEventListener('click', function () { pe.classList.remove('aberto'); marcar(); }); });
+  addEventListener('resize', function () { if (!estreito()) { pe.classList.remove('aberto'); marcar(); } });
+})();
+</script>
+</template>
 <script>
 // Página de abertura: busca a tela do sistema na nuvem e monta. Não depende do notebook.
 addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__bip = e; });
@@ -39,7 +73,12 @@ function abrir() {
   document.getElementById('gira').style.display = '';
   fetch('/site/index.html', { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(function (html) { document.open(); document.write(html); document.close(); })
+    .then(function (html) {
+      var extra = document.getElementById('ajustes').innerHTML;
+      var fim = html.lastIndexOf('</body>');
+      html = fim >= 0 ? html.slice(0, fim) + extra + html.slice(fim) : html + extra;
+      document.open(); document.write(html); document.close();
+    })
     .catch(function () {
       document.getElementById('gira').style.display = 'none';
       document.getElementById('erro').style.display = 'block';
