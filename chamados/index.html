@@ -36,6 +36,9 @@
 /* Tela de login: frase sobre a abertura de chamados de manutenção */
 .login-frase{display:flex;gap:10px;align-items:flex-start;margin:-6px 0 20px;padding:11px 13px;border-radius:10px;background:#eef5fb;border-left:4px solid var(--accent,#f68b1f);color:#1f3b57;font-size:13px;line-height:1.45}
 .login-frase svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--brand,#0058a0)}
+/* Tela de login: lembrar o login (usuário) neste aparelho */
+.lembrar-login{display:flex;align-items:center;gap:8px;margin:-2px 0 14px;font-size:13px;color:var(--ink-2,#4b5563);cursor:pointer;user-select:none}
+.lembrar-login input{width:18px;height:18px;margin:0;accent-color:var(--brand,#0058a0);cursor:pointer}
 /* Celular/tablet: barra lateral estreita. Toque no círculo com as iniciais para ver nome, perfil e informações. */
 @media (max-width:980px){
 .side-foot{padding:12px 6px 14px}
@@ -74,6 +77,33 @@
   d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>' +
     '<span>Registre e acompanhe aqui os <b>chamados de manutenção das unidades CPFL</b>: agilidade no atendimento e segurança em cada instalação.</span>';
   marca.insertAdjacentElement('afterend', d);
+})();
+</script>
+<script>
+(function () {
+  var CH = 'chamados_login_salvo';
+  var form = document.getElementById('lgEntrar'), lg = document.getElementById('lgLogin'), sn = document.getElementById('lgSenha');
+  if (!form || !lg || document.getElementById('lgLembrar')) return;
+  var ler = function () { try { return localStorage.getItem(CH) || ''; } catch (e) { return ''; } };
+  var gravar = function (v) { try { v ? localStorage.setItem(CH, v) : localStorage.removeItem(CH); } catch (e) {} };
+  var rot = document.createElement('label'); rot.className = 'lembrar-login';
+  rot.innerHTML = '<input type="checkbox" id="lgLembrar"> Lembrar meu usuário neste aparelho';
+  var campoSenha = sn ? sn.closest('.campo') : null;
+  (campoSenha || lg.closest('.campo')).insertAdjacentElement('afterend', rot);
+  var cx = document.getElementById('lgLembrar');
+  var preencher = function () {
+    var v = ler(); cx.checked = !!v;
+    if (v && !lg.value) lg.value = v;
+  };
+  preencher();
+  // quando a tela de login aparece, o sistema coloca o cursor no Login; se já estiver salvo, vai direto para a Senha
+  new MutationObserver(function () {
+    if (form.style.display === 'none') return;
+    preencher();
+    if (lg.value && sn) setTimeout(function () { if (document.activeElement === lg || document.activeElement === document.body) sn.focus(); }, 120);
+  }).observe(form, { attributes: true, attributeFilter: ['style'] });
+  form.addEventListener('submit', function () { gravar(cx.checked ? lg.value.trim() : ''); }, true);
+  cx.addEventListener('change', function () { if (!cx.checked) gravar(''); });
 })();
 </script>
 </template>
