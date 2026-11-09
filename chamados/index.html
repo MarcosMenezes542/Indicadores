@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0058a0">
+<link rel="icon" type="image/png" href="/icone-192.png">
+<link rel="apple-touch-icon" href="/icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Chamados SE">
+<title>Segurança Empresarial · Sistema de chamados de fornecedores</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:#1f2937;display:flex;min-height:100vh;align-items:center;justify-content:center}
+  .box{text-align:center;padding:24px;max-width:420px}
+  .box img{width:96px;height:96px;border-radius:20px;border:1px solid #e5e7eb}
+  .box h1{font-size:18px;color:#0058a0;margin:16px 0 6px}
+  .box p{margin:0;color:#4b5563}
+  .gira{width:28px;height:28px;margin:18px auto 0;border:3px solid #dbe7f3;border-top-color:#0058a0;border-radius:50%;animation:g 1s linear infinite}
+  @keyframes g{to{transform:rotate(360deg)}}
+  .erro{display:none;margin-top:16px;padding:12px 14px;border-radius:10px;background:#fbe9e9;color:#9b1c1c}
+  button{margin-top:14px;padding:12px 22px;border:0;border-radius:10px;background:#0058a0;color:#fff;font-size:16px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="box" id="abertura">
+  <img src="/icone-192.png" alt="CPFL Energia">
+  <h1>Segurança Empresarial</h1>
+  <p>Sistema de chamados de fornecedores</p>
+  <div class="gira" id="gira"></div>
+  <div class="erro" id="erro">Não foi possível abrir o sistema. Verifique a internet e tente de novo.<br><button type="button" onclick="abrir()">Tentar de novo</button></div>
+</div>
+<script>
+// Página de abertura: busca a tela do sistema na nuvem e monta. Não depende do notebook.
+addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__bip = e; });
+function abrir() {
+  document.getElementById('erro').style.display = 'none';
+  document.getElementById('gira').style.display = '';
+  fetch('/site/index.html', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function (html) { document.open(); document.write(html); document.close(); })
+    .catch(function () {
+      document.getElementById('gira').style.display = 'none';
+      document.getElementById('erro').style.display = 'block';
+    });
+}
+abrir();
+</script>
+</body>
+</html>
