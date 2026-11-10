@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0058a0">
+<link rel="icon" type="image/png" href="/icone-192.png">
+<link rel="apple-touch-icon" href="/icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Chamados SE">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Segurança Empresarial · Sistema de chamados de fornecedores</title>
+<style>
+:root{
+color-scheme: light;
+/* paleta CPFL (tokens publicados em cpfl.com.br) */
+--cpfl-azul:#0099cc; --cpfl-azul-escuro:#0058a0; --cpfl-azul-dark:#006699; --cpfl-azul-claro:#49aadc; --cpfl-azul-pastel:#b0d1e8;
+--cpfl-laranja:#f68b1f; --cpfl-verde:#53a363; --cpfl-vermelho:#b22c26; --cpfl-chumbo:#333333; --cpfl-cinza:#e6e7e8;
+--page:#f2f2f2; --surface:#ffffff; --surface-2:#f7f8f9; --sidebar:#0058a0; --sidebar-2:#00477f;
+--ink:#222222; --ink-2:#484848; --muted:#7a7a7a; --grid:#e6e7e8; --axis:#bfbfbf; --border:rgba(0,0,0,.09);
+--brand:#0058a0; --brand-2:#00477f; --accent:#f68b1f; --series-1:#0099cc; --series-1-soft:#49aadc; --series-1-pale:#b0d1e8;
+--good:#53a363; --warning:#f68b1f; --serious:#e16845; --critical:#b22c26; --good-text:#2d6e50;
+--good-bg:#eaf5ec; --warning-bg:#fef0e1; --critical-bg:#f8e6e5; --open-bg:#e0f2f9;
+--radius:12px; --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+--font:"Lato",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:var(--page);color:var(--ink);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+svg{display:block}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+/* ---------- sidebar ---------- */
+.sidebar{background:var(--sidebar);color:#e3eef8;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:11px;padding:22px 20px 20px}
+.brand .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0099cc,#0058a0);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px}
+.brand b{display:block;color:#fff;font-size:15px;line-height:1.2}
+.brand small{color:#cfe3f3;font-size:11.5px;line-height:1.3;display:block;margin-top:2px}
+.menu{padding:6px 12px;display:flex;flex-direction:column;gap:2px}
+.menu .sec{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.62);padding:14px 10px 6px}
+.menu button{display:flex;align-items:center;gap:11px;background:none;border:0;color:#e3eef8;padding:9px 11px;border-radius:8px;cursor:pointer;text-align:left;font-weight:500}
+.menu button svg{width:18px;height:18px;flex:none;opacity:.85}
+.menu button:hover{background:rgba(255,255,255,.06);color:#fff}
+.menu button.ativo{background:var(--sidebar-2);color:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+.side-foot{margin-top:auto;padding:16px 20px 20px;font-size:12px;color:#cfe3f3;border-top:1px solid rgba(255,255,255,.07)}
+.side-foot button{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#e3ebf5;padding:8px;border-radius:8px;cursor:pointer}
+.side-foot button:hover{background:rgba(255,255,255,.13)}
+.side-foot svg{width:16px;height:16px}
+/* ---------- topbar ---------- */
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--surface);box-shadow:inset 0 3px 0 var(--accent);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.2px}
+.topbar .sub{color:var(--ink-2);font-size:13px;margin-top:1px}
+.topbar .dir{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gfiltros{display:flex;gap:8px;align-items:center}
+.gfiltros select{min-width:150px}
+.conteudo{padding:24px 28px 40px;max-width:1640px;width:100%}
+/* ---------- controls ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #d4d8de;background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;font-weight:600;font-size:13px}
+.btn svg{width:16px;height:16px}
+.btn:hover{background:#f3f5f8}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand-2)}
+.btn.perigo{color:#b42323;border-color:#efc9c9}
+.btn.perigo:hover{background:var(--critical-bg)}
+.btn.ghost{border-color:transparent;background:none}
+.btn.peq{padding:5px 10px;font-size:12px}
+select,input[type=text],input[type=search],input[type=date],input[type=password],input[type=email],input:not([type]),textarea{border:1px solid #d4d8de;border-radius:8px;padding:7px 10px;background:var(--surface);min-height:36px}
+select:focus,input:focus,textarea:focus{outline:2px solid #b0d1e8;border-color:var(--series-1)}
+.chk{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+/* ---------- cards & grid ---------- */
+.view{display:none}.view.ativo{display:block}
+.grid{display:grid;gap:16px}
+.g-kpi{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:16px}
+.g-kpi.k4,#kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-kpi.k5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1560px){.g-kpi{grid-template-columns:repeat(3,minmax(0,1fr))}.g-kpi.k4{grid-template-columns:repeat(2,minmax(0,1fr))}#kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:1200px){#kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.g-kpi.k5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.g-2,.g-21{margin-bottom:16px}
+@media (max-width:1200px){.g-2,.g-21{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;min-width:0}
+.card-h{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.card-h h3{margin:0;font-size:15px;font-weight:700}
+.card-h .d{color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.card-h .acts{margin-left:auto;display:flex;gap:6px}
+.toggle{border:1px solid #d4d8de;background:var(--surface);border-radius:7px;font-size:12px;padding:4px 9px;cursor:pointer;color:var(--ink-2);font-weight:600}
+.toggle:hover{background:#f3f5f8}
+/* stat tiles */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;cursor:pointer;transition:box-shadow .15s,border-color .15s;min-width:0}
+.kpi:hover{border-color:#b0d1e8;box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.kpi .rot{display:flex;align-items:center;gap:7px;color:var(--ink-2);font-size:12.5px;font-weight:600}
+.kpi .rot svg{width:16px;height:16px;color:var(--muted)}
+.kpi .val{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .sub{color:var(--ink-2);font-size:12.5px;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.kpi.estatico{cursor:default}
+/* status pill: icon + label (never color alone) */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px 2px 7px;border-radius:999px;font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap}
+.pill svg{width:13px;height:13px;flex:none}
+.pill.good{background:var(--good-bg)}.pill.good svg{color:var(--good)}
+.pill.warning{background:var(--warning-bg)}.pill.warning svg{color:var(--warning)}
+.pill.critical{background:var(--critical-bg)}.pill.critical svg{color:var(--critical)}
+.pill.open{background:var(--open-bg)}.pill.open svg{color:var(--series-1)}
+.pill.neutral{background:#eef0f3}.pill.neutral svg{color:var(--muted)}
+.prio{display:inline-flex;align-items:center;gap:6px}
+.prio i{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--axis)}
+.prio.urgente i{background:var(--critical)}.prio.alta i{background:var(--serious)}.prio.media i{background:var(--series-1-soft)}
+.tag{display:inline-block;background:#f3f4f6;border:1px solid #e5e7eb;color:var(--ink-2);border-radius:6px;padding:1px 7px;font-size:12px;white-space:nowrap}
+/* charts */
+.chart{position:relative;width:100%}
+.chart text{font-family:var(--font)}
+.hbars .row{display:grid;grid-template-columns:minmax(110px,190px) 1fr minmax(120px,auto);gap:12px;align-items:center;padding:6px 4px;border-radius:6px;cursor:pointer}
+.hbars .row:hover{background:var(--surface-2)}
+.hbars .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.hbars .tr{height:10px;position:relative}
+.hbars .br{height:10px;background:var(--series-1);border-radius:0 4px 4px 0;min-width:3px}
+.hbars .vl{color:var(--ink-2);font-size:12.5px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hbars .vl b{color:var(--ink);font-weight:600}
+.seg{display:flex;gap:2px;height:40px;border-radius:6px;overflow:hidden;margin:4px 0 16px}
+.seg div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;min-width:0;cursor:pointer}
+.seg div.dark{color:var(--ink)}
+.legenda{display:flex;flex-direction:column;gap:2px}
+.legenda .it{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:7px 6px;border-radius:6px;cursor:pointer}
+.legenda .it:hover{background:var(--surface-2)}
+.legenda .sw{width:12px;height:12px;border-radius:3px}
+.legenda .n{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.legenda .p{color:var(--ink-2);font-size:12.5px;min-width:110px;text-align:right;font-variant-numeric:tabular-nums}
+.chart-leg{display:flex;gap:16px;color:var(--ink-2);font-size:12px;margin-top:6px}
+.chart-leg span{display:inline-flex;align-items:center;gap:6px}
+.chart-leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+#tip{position:fixed;pointer-events:none;background:#0b0b0b;color:#f0efec;padding:8px 11px;border-radius:8px;font-size:12.5px;z-index:200;opacity:0;transition:opacity .08s;max-width:300px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+#tip b{color:#fff}
+#tip .tl{color:#c3c2b7;font-size:11.5px}
+/* tables */
+.tw{overflow:auto;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
+.tw.alta{max-height:calc(100vh - 300px)}
+table{border-collapse:separate;border-spacing:0;width:100%}
+th,td{padding:9px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid #eef0f3}
+th{background:var(--surface-2);color:var(--ink-2);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0;z-index:2}
+th.s{cursor:pointer;user-select:none}
+th.s:hover{color:var(--ink)}
+th.ord::after{content:" ↑";color:var(--series-1)}th.ord.desc::after{content:" ↓"}
+tbody tr:hover td{background:#fafbfd}
+tbody tr.sel td{background:#e0f2f9}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.obs{max-width:260px;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2)}
+tfoot td{background:var(--surface-2);font-weight:700;position:sticky;bottom:0;border-top:1px solid var(--grid)}
+.lk{color:var(--brand);font-weight:600;cursor:pointer}
+.lk:hover{text-decoration:underline}
+.ic{border:0;background:none;cursor:pointer;padding:5px;border-radius:6px;color:var(--ink-2);display:inline-grid;place-items:center}
+.ic:hover{background:#eef1f5;color:var(--ink)}
+.ic svg{width:16px;height:16px}
+.vazio{color:var(--muted);padding:26px;text-align:center}
+/* filtros chamados */
+.fbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fbar label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.fbar select,.fbar input{min-width:150px;max-width:220px}
+.fbar input[type=search]{min-width:260px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 12px;align-items:center}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--ink-2)}
+.chip b{color:var(--ink)}
+.lote{display:none;background:#fffaf0;border:1px solid #f3dca4;border-radius:10px;padding:10px 14px;margin-bottom:12px;align-items:center;gap:10px;flex-wrap:wrap}
+.lote.ativo{display:flex}
+/* modal */
+.fundo{position:fixed;inset:0;background:rgba(11,20,35,.48);display:none;align-items:flex-start;justify-content:center;z-index:100;overflow:auto;padding:36px 12px}
+.fundo.ativo{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:min(1000px,100%);box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.modal.peq{width:min(480px,100%)}
+.modal .mh{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid var(--border)}
+.modal .mh h3{margin:0;font-size:17px}
+.modal .mh .x{margin-left:auto}
+.modal .mb{padding:20px 24px}
+.modal .mf{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;background:var(--surface-2);border-radius:0 0 14px 14px}
+.modal .mf .esq{margin-right:auto;display:flex;gap:10px}
+.secao{margin-bottom:18px}
+.secao h4{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2)}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 16px}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo label{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.campo label .o{color:var(--critical)}
+.campo input,.campo select,.campo textarea{width:100%}
+.campo .calc{min-height:36px;display:flex;align-items:center;gap:8px;font-weight:600}
+.campo.largo{grid-column:1/-1}
+.junto{display:flex;gap:6px}.junto input{flex:1}
+.erro-form{background:var(--critical-bg);color:#8f1d1d;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:none;font-weight:500}
+.hist{max-height:220px;overflow:auto;font-size:12.5px}
+.hist div{padding:8px 0;border-bottom:1px solid #eef0f3}
+.hist .q{color:var(--ink-2)}
+/* importação */
+.drop{border:2px dashed #b7c4d6;border-radius:12px;padding:34px 20px;text-align:center;background:var(--surface-2);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--series-1);background:#f0f6fd}
+.drop svg{width:40px;height:40px;color:var(--series-1);margin:0 auto 10px}
+.drop b{font-size:15px}
+.passos{color:var(--ink-2);font-size:13px;margin:16px 0 0;padding-left:18px}
+.passos li{margin:4px 0}
+.resumo-imp{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.resumo-imp .kpi{cursor:default;padding:12px 14px}
+.resumo-imp .kpi .val{font-size:24px}
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.abas button{background:none;border:0;padding:8px 12px;cursor:pointer;color:var(--ink-2);font-weight:600;border-bottom:2px solid transparent}
+.abas button.ativo{color:var(--brand);border-bottom-color:var(--brand)}
+/* cadastros */
+.cads{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.cad-lista{list-style:none;margin:0 0 12px;padding:0;max-height:360px;overflow:auto}
+.cad-lista li{display:flex;align-items:center;gap:4px;padding:6px 2px;border-bottom:1px solid #f0f2f5}
+.cad-lista li .n{flex:1}
+.cad-lista li small{color:var(--muted);margin-right:6px;white-space:nowrap}
+.add{display:flex;gap:8px}.add input{flex:1}
+/* relatório */
+.rel-acoes{display:flex;gap:10px;justify-content:flex-end;margin-bottom:14px}
+.rel{background:#fff;max-width:1000px;margin:0 auto;padding:44px 52px;border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 24px rgba(16,24,40,.08)}
+.rel-cab{display:flex;align-items:flex-start;gap:16px;border-bottom:3px solid var(--sidebar);padding-bottom:16px;margin-bottom:22px}
+.rel-cab .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#0099cc,#0058a0);display:grid;place-items:center;color:#fff;font-weight:800}
+.rel-cab h2{margin:0;font-size:22px}
+.rel-cab .meta{color:var(--ink-2);font-size:12.5px;margin-top:4px}
+.rel-cab .emit{margin-left:auto;text-align:right;color:var(--ink-2);font-size:12px}
+.rel h3{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--sidebar);margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.rel ul.resumo{margin:0;padding-left:20px}
+.rel ul.resumo li{margin:6px 0}
+.rel-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rel-kpis div{border:1px solid var(--grid);border-radius:8px;padding:10px 12px}
+.rel-kpis small{display:block;color:var(--ink-2);font-size:11.5px}
+.rel-kpis b{font-size:19px}
+.rel table{font-size:12.5px}
+.rel th,.rel td{padding:6px 9px}
+.rel .tw{border-radius:6px}
+.rel-2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.rel-2 > div{min-width:0}
+.rel .hbars .row{cursor:default;grid-template-columns:minmax(90px,150px) 1fr minmax(110px,auto);padding:4px 2px}
+.rel .chart-leg{justify-content:center;margin-bottom:10px}
+.rel svg,.rel .hbars,.rel .seg{break-inside:avoid}
+.rel-rod{margin-top:28px;color:var(--muted);font-size:11.5px;border-top:1px solid var(--grid);padding-top:10px;display:flex;justify-content:space-between}
+/* cartões de filtro (tons CPFL) */
+.card.filtros-card{background:linear-gradient(180deg,#e6f4fb 0%,#f1f8fc 100%);border:1px solid #b0d1e8;border-left:5px solid var(--cpfl-azul)}
+.filtros-card .fbar label{color:var(--cpfl-azul-escuro)}
+.filtros-card .d{color:#3b5f80!important}
+/* barra do topo com fundo (tons CPFL) */
+.topbar{background:linear-gradient(90deg,#d9eef9 0%,#e9f5fb 55%,#f4fafd 100%)!important;border-bottom:1px solid #b0d1e8}
+.topbar h1{color:var(--cpfl-azul-escuro)}
+.topbar .sub{color:#3b5f80}
+.topbar .btn:not(.pri):not(.home){background:#fff;border-color:#b0d1e8}
+.topbar .btn:not(.pri):not(.home):hover{background:#f0f8fc}
+/* campos de filtro com fundo colorido */
+.ss .ss-btn{background:#dff0fa;border-color:#8cc3e3;color:var(--cpfl-azul-escuro);font-weight:600}
+.ss .ss-btn:hover{background:#cfe8f6;border-color:var(--cpfl-azul)}
+.ss .ss-btn svg{color:var(--cpfl-azul-escuro)}
+.ss .ss-btn.filtrado{background:var(--cpfl-azul-escuro);border-color:var(--cpfl-azul-escuro);color:#fff}
+.ss .ss-btn.filtrado svg{color:#fff}
+.app .fbar input[type=search],.app .fbar input[type=date]{background:#dff0fa;border-color:#8cc3e3;color:var(--cpfl-azul-escuro);font-weight:600}
+.app .fbar input[type=search]::placeholder{color:#5b84a6;font-weight:400}
+.app .fbar input[type=search]:focus,.app .fbar input[type=date]:focus{background:#fff}
+/* botão Home */
+.btn.home{background:var(--cpfl-azul-escuro);border-color:var(--cpfl-azul-escuro);color:#fff}
+.btn.home:hover{background:var(--sidebar-2)}
+/* listas de filtro com pesquisa */
+.ss{position:relative;display:inline-block;min-width:150px;max-width:230px;vertical-align:bottom}
+.gfiltros .ss{min-width:170px}
+.ss-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:6px;border:1px solid #c7d6e3;border-radius:8px;padding:7px 10px;background:#fff;min-height:36px;cursor:pointer;text-align:left;font-weight:500;color:var(--ink)}
+.ss-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-btn svg{width:14px;height:14px;flex:none;color:var(--muted)}
+.ss-btn:hover{border-color:var(--cpfl-azul)}
+.ss-btn.filtrado{border-color:var(--cpfl-azul);background:#e0f2f9;color:var(--cpfl-azul-escuro);font-weight:700}
+.ss-pop{position:absolute;z-index:80;top:calc(100% + 4px);left:0;min-width:100%;width:max-content;max-width:360px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 30px rgba(0,0,0,.16);padding:8px;display:none}
+.ss.aberto .ss-pop{display:block}
+.ss-pop input{width:100%;margin-bottom:6px}
+.ss-lista{max-height:290px;overflow:auto}
+.ss-op{padding:7px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;color:var(--ink);font-weight:500;font-size:13.5px}
+.ss-op:hover,.ss-op.foco{background:#e0f2f9}
+.ss-op.sel{font-weight:700;color:var(--cpfl-azul-escuro)}
+.ss-op mark{background:#fde3c4;color:inherit;padding:0 1px;border-radius:2px}
+.ss-op .ss-ck{display:inline-block;width:15px;height:15px;border:1.5px solid #9fb6c9;border-radius:4px;margin-right:8px;vertical-align:-3px;background:#fff;position:relative}
+.ss-op.sel .ss-ck{background:var(--cpfl-azul-escuro);border-color:var(--cpfl-azul-escuro)}
+.ss-op.sel .ss-ck::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.ss-op.ss-todos{border-bottom:1px solid var(--grid);border-radius:6px 6px 0 0;margin-bottom:2px;color:var(--ink-2)}
+.ss-op.ss-todos.sel{color:var(--cpfl-azul-escuro)}
+.ss-vazio{color:var(--muted);padding:8px;font-size:13px}
+.ss-qtd{color:var(--muted);font-size:11.5px;padding:2px 9px 4px}
+.logo-cpfl{width:66px;height:auto;flex:none;background:#fff;border-radius:10px;padding:5px 6px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.login-brand .logo-cpfl,.rel-cab .logo-cpfl{width:78px;box-shadow:none;border:1px solid var(--grid)}
+@media (max-width:980px){.brand .logo-cpfl{width:42px;padding:3px}}
+/* login */
+.login{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center;padding:20px;
+background:radial-gradient(1200px 600px at 85% -10%,rgba(0,153,204,.55),transparent 60%),linear-gradient(160deg,#0058a0 0%,#00477f 60%,#003a69 100%)}
+.login.ativo{display:flex}
+.login::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--accent)}
+.login-card{background:#fff;border-radius:16px;box-shadow:0 30px 70px rgba(0,0,0,.3);width:min(420px,100%);padding:30px 32px 26px;max-height:calc(100vh - 40px);overflow:auto}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--grid)}
+.login-brand .logo{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#0099cc,#0058a0);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+.login-brand b{display:block;font-size:17px;color:var(--brand)}
+.login-brand small{color:var(--ink-2);font-size:12.5px}
+.login-card h2{margin:0 0 14px;font-size:19px}
+.login-card .campo{margin-bottom:12px}
+.btn.grande{width:100%;justify-content:center;padding:11px;font-size:14px;margin-top:6px}
+.lg-nota{color:var(--ink-2);font-size:12.5px;margin:14px 0 0}
+/* usuário logado */
+.eu{display:flex;align-items:center;gap:10px}
+.eu .av{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.eu b{display:block;color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.eu small{color:#cfe3f3}
+.side-2{display:flex;gap:6px}
+.side-2 button{flex:1;font-size:12px;padding:7px 4px;white-space:nowrap}
+/* perfis */
+.perfis{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.perfil{border:1px solid var(--border);border-radius:10px;padding:14px 16px;background:var(--surface-2)}
+.perfil h4{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.perfil .d{color:var(--ink-2);font-size:12.5px;margin:4px 0 10px}
+.perfil .acts{display:flex;gap:6px;margin-top:10px}
+.perms{display:flex;flex-wrap:wrap;gap:5px}
+.perm{font-size:11.5px;background:#fff;border:1px solid var(--grid);border-radius:6px;padding:2px 7px;color:var(--ink-2)}
+.matriz{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.matriz h5{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--brand)}
+.matriz label{display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13px;cursor:pointer}
+.modal.medio{width:min(760px,100%)}
+.senha-gerada{display:flex;gap:6px}.senha-gerada input{flex:1;font-family:Consolas,monospace}
+#toast{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:8px;z-index:300}
+#toast div{background:#1f2937;color:#fff;padding:11px 16px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.2);max-width:440px;font-weight:500}
+#toast div.erro{background:#a12727}
+#toast div.ok{background:#14532d}
+@media (max-width:980px){
+.app{grid-template-columns:64px 1fr}
+.brand div,.menu .sec,.menu button span,.side-foot .txt,.side-foot button span{display:none}
+.side-2{flex-direction:column}
+.brand{padding:18px 13px}.menu button{justify-content:center}
+}
+/* ---------- aviso de prazos (vencidos e a vencer em 8 dias) ---------- */
+.modal.prazos{width:min(1060px,100%)}
+.pz-badge{display:none;min-width:22px;padding:1px 7px;border-radius:999px;font-size:12px;font-weight:800;color:#fff;margin-left:2px;text-align:center}
+.pz-badge.on{display:inline-block}
+/* alerta piscando: chamados que vencem de hoje até 3 dias */
+.pz-urg{display:none;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:800;background:#f68b1f;color:#fff;margin-left:2px;white-space:nowrap}
+.pz-urg svg{width:13px!important;height:13px!important}
+.btn-prazos.pz-piscar .pz-urg{display:inline-flex;animation:pzPisca 1s ease-in-out infinite}
+.btn-prazos.pz-piscar{border-color:#f68b1f!important;animation:pzBorda 1s ease-in-out infinite}
+@keyframes pzPisca{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.92)}}
+@keyframes pzBorda{0%,100%{box-shadow:0 0 0 0 rgba(246,139,31,.55);background:#fff}50%{box-shadow:0 0 0 6px rgba(246,139,31,0);background:#fef0e1}}
+@media (prefers-reduced-motion:reduce){.btn-prazos.pz-piscar,.btn-prazos.pz-piscar .pz-urg{animation-duration:2.4s}}
+.pz-leg{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px;font-size:12.5px;color:var(--ink-2)}
+.pz-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-weight:700;font-size:12.5px;white-space:nowrap;background:var(--bg);color:var(--tx)}
+.pz-chip i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.pz-sec{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:14px;color:var(--ink)}
+.pz-sec:first-of-type{margin-top:0}
+.pz-tab{max-height:min(30vh,330px)}
+.modal.prazos .mb{max-height:calc(100vh - 150px);overflow:auto}
+.pz-tab tbody tr{cursor:pointer}
+.pz-tab tbody tr:hover td{background:#f4f9fc}
+.pz-tab tbody td:first-child{border-left:6px solid var(--c);background:var(--bg)}
+.pz-resumo{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.pz-resumo div{border-radius:10px;padding:10px 12px;background:var(--bg);border-left:5px solid var(--c);color:var(--tx)}
+.pz-resumo b{display:block;font-size:22px;line-height:1.1}
+.pz-resumo span{font-size:12px;font-weight:600}
+@media (max-width:640px){.pz-resumo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---------- modo TV ---------- */
+.tvbar,.tvctl{display:none}
+body.tv .sidebar,body.tv .topbar{display:none}
+body.tv .app{grid-template-columns:1fr}
+body.tv .conteudo{max-width:none;padding:16px 26px 20px}
+body.tv #v-visao .tv-off{display:none!important}
+body.tv #v-visao .grid.tv-um{grid-template-columns:1fr}
+body.tv #v-visao .grid{margin-bottom:16px}
+body.tv #v-visao .card{animation:tvEntra .45s ease}
+body.tv{cursor:none}
+body.tv.tv-mouse{cursor:default}
+@keyframes tvEntra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+body.tv .tvbar{display:flex;align-items:center;gap:18px;padding:12px 26px;background:linear-gradient(90deg,#0058a0,#00477f);color:#fff;position:sticky;top:0;z-index:20;box-shadow:inset 0 -4px 0 var(--accent)}
+.tvbar .logo-cpfl{width:52px;padding:3px;box-shadow:none}
+.tvbar .tvt b{display:block;font-size:20px}
+.tvbar .tvt small,.tvbar .tvrelogio small{color:#cfe3f3;font-size:13px}
+.tvbar .tvslide{margin-left:auto;text-align:right}
+.tvbar .tvslide span{font-weight:700;font-size:16px}
+.tvdots{display:flex;gap:6px;justify-content:flex-end;margin-top:5px}
+.tvdots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35)}
+.tvdots i.on{background:var(--accent)}
+.tvbar .tvrelogio{text-align:right;padding-left:18px;border-left:1px solid rgba(255,255,255,.25)}
+.tvbar .tvrelogio b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.tvprog{position:absolute;left:0;right:0;bottom:0;height:4px}
+.tvprog i{display:block;height:100%;width:0;background:#fff;opacity:.85}
+body.tv .tvctl{display:flex;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;gap:8px;align-items:center;background:rgba(0,40,75,.92);padding:10px 12px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s}
+body.tv.tv-mouse .tvctl{opacity:1;pointer-events:auto}
+.tvctl button{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:600}
+.tvctl svg{width:18px;height:18px;flex:none}
+body.tv #v-visao .card button{display:none}
+/* painel da vez ocupa toda a altura livre da tela */
+body.tv #v-visao > .grid:not(#kpis){height:var(--tvH,60vh);margin-bottom:0}
+body.tv #v-visao > .grid:not(#kpis) > .card{display:flex;flex-direction:column;min-height:0;height:100%;padding:22px 26px}
+body.tv #v-visao > .grid:not(#kpis) > .card > div:last-child:not(.tw){flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+body.tv #v-visao .card-h h3{font-size:22px}
+body.tv #v-visao .card-h .d{font-size:15px}
+body.tv #v-visao .chart-leg{font-size:15px;justify-content:center}
+body.tv #v-visao .chart-leg i{width:14px;height:14px}
+body.tv #v-visao .hbars{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
+body.tv #v-visao .hbars .row{font-size:clamp(15px,1.25vw,22px);grid-template-columns:minmax(160px,32%) 1fr minmax(170px,auto);padding:8px 4px}
+body.tv #v-visao .hbars .tr,body.tv #v-visao .hbars .br{height:clamp(16px,2.2vh,30px)}
+body.tv #v-visao .hbars .vl{font-size:clamp(14px,1.1vw,20px)}
+body.tv #v-visao .seg{height:clamp(60px,12vh,130px);font-size:20px}
+body.tv #v-visao .seg div{font-size:clamp(14px,1.3vw,22px)}
+body.tv #v-visao .legenda{flex:1;justify-content:space-evenly}
+body.tv #v-visao .legenda .it{font-size:clamp(15px,1.3vw,22px);padding:10px 6px}
+body.tv #v-visao .legenda .p{font-size:clamp(13px,1.05vw,18px)}
+body.tv #v-visao .legenda .sw{width:18px;height:18px}
+body.tv #v-visao .tw{flex:1;max-height:none;min-height:0;overflow:hidden}
+body.tv #v-visao table{font-size:clamp(14px,1.05vw,19px)}
+body.tv #v-visao td,body.tv #v-visao th{padding-top:10px;padding-bottom:10px}
+body.tv .kpi .val{font-size:clamp(26px,2.3vw,40px)}
+body.tv .kpi .rot,body.tv .kpi .sub{font-size:clamp(12.5px,.9vw,16px)}
+.tvctl button:hover{background:rgba(255,255,255,.24)}
+.tvctl button.sair{background:var(--accent)}
+.tvctl label{color:#fff;font-size:13px;display:flex;align-items:center;gap:8px;padding:0 6px}
+.tvctl input[type=range]{width:130px;accent-color:var(--accent)}
+.tvctl output{min-width:34px;font-weight:700;font-variant-numeric:tabular-nums}
+/* celular: mesma estrutura, só ajusta espaços para caber na tela */
+@media (max-width:640px){
+.app{grid-template-columns:52px 1fr}
+.brand{padding:12px 6px}.brand .logo-cpfl{width:38px}
+.topbar{padding:10px 12px;gap:8px}
+.topbar h1{font-size:17px}
+.topbar .dir{margin-left:0;width:100%;gap:6px}
+.topbar .dir .btn{padding:7px 10px;font-size:12.5px}
+.gfiltros{flex-wrap:wrap;width:100%}
+.gfiltros>*,.gfiltros .ss{flex:1 1 140px;min-width:0;max-width:none}
+.conteudo{padding:12px 10px 30px}
+.g-kpi,.g-kpi.k4,.g-kpi.k5,#kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi .val{font-size:clamp(17px,5.4vw,24px)}
+.g-2,.g-21{grid-template-columns:1fr}
+.fbar>*,.fbar label{flex:1 1 140px;min-width:0}
+.fbar select,.fbar input,.fbar input[type=search],.fbar .ss{min-width:0;max-width:none;width:100%}
+.modal{border-radius:12px}
+.matriz{grid-template-columns:1fr}
+.perfis{grid-template-columns:1fr}
+#toast{left:10px;right:10px;bottom:10px}
+}
+@media print{
+@page{size:A4;margin:12mm}
+body{background:#fff}
+.sidebar,.topbar,#toast,.nao-imprime,.rel-acoes,.lote,.fbar{display:none!important}
+.app{display:block}.conteudo{padding:0;max-width:none}
+.rel{border:0;box-shadow:none;padding:0;max-width:none}
+.tw,.tw.alta{max-height:none;overflow:visible;border:0}
+th,tfoot td{position:static}
+.card,.kpi{box-shadow:none;break-inside:avoid}
+.rel h3{break-after:avoid}
+.rel table tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<!-- ======================= LOGIN ======================= -->
+<div class="login" id="login">
+<div class="login-card">
+<div class="login-brand"><img class="logo-cpfl" src="/logo-cpfl.png" alt="CPFL Energia"><div><b>Segurança Empresarial</b><small>Sistema de chamados de fornecedores</small></div></div>
+<div class="erro-form" id="lgErro"></div>
+<form id="lgEntrar" onsubmit="entrar(event)" style="display:none">
+<h2>Entrar</h2>
+<div class="campo"><label>Login</label><input id="lgLogin" autocomplete="username"></div>
+<div class="campo"><label>Senha</label><input id="lgSenha" type="password" autocomplete="current-password"></div>
+<button class="btn pri grande" type="submit">Entrar</button>
+<p class="lg-nota">Esqueceu a senha? Peça ao administrador do sistema para redefini-la.</p>
+<button class="btn ghost btn-instalar" type="button" onclick="instalarApp()" style="display:none;width:100%;justify-content:center;margin-top:10px"><svg data-i="download"></svg>Instalar aplicativo</button>
+</form>
+<form id="lgSetup" onsubmit="primeiroAcesso(event)" style="display:none">
+<h2>Primeiro acesso</h2>
+<p class="lg-nota" style="margin-top:0">Crie o usuário <b>administrador</b>. Ele terá acesso total e poderá cadastrar os demais usuários e perfis.</p>
+<div class="campo"><label>Seu nome</label><input id="stNome" autocomplete="name"></div>
+<div class="campo"><label>Login</label><input id="stLogin" autocomplete="username" placeholder="ex.: marcos.edson"></div>
+<div class="campo"><label>E-mail (opcional)</label><input id="stEmail" autocomplete="email"></div>
+<div class="campo"><label>Senha (mín. 8 caracteres, com letras e números)</label><input id="stSenha" type="password" autocomplete="new-password"></div>
+<div class="campo"><label>Confirme a senha</label><input id="stSenha2" type="password" autocomplete="new-password"></div>
+<button class="btn pri grande" type="submit">Criar administrador e entrar</button>
+</form>
+<form id="lgTroca" onsubmit="trocarProvisoria(event)" style="display:none">
+<h2>Crie sua senha</h2>
+<p class="lg-nota" style="margin-top:0">Você entrou com uma senha provisória. Defina uma senha pessoal para continuar.</p>
+<div class="campo"><label>Senha provisória</label><input id="trAtual" type="password" autocomplete="current-password"></div>
+<div class="campo"><label>Nova senha (mín. 8 caracteres, com letras e números)</label><input id="trNova" type="password" autocomplete="new-password"></div>
+<div class="campo"><label>Confirme a nova senha</label><input id="trNova2" type="password" autocomplete="new-password"></div>
+<button class="btn pri grande" type="submit">Salvar e continuar</button>
+<button class="btn ghost" type="button" onclick="sair()" style="width:100%;justify-content:center;margin-top:6px">Sair</button>
+</form>
+</div>
+</div>
+<div class="app" id="appRoot" style="visibility:hidden">
+<!-- ======================= MENU LATERAL ======================= -->
+<aside class="sidebar">
+<div class="brand"><img class="logo-cpfl" src="/logo-cpfl.png" alt="CPFL Energia"><div><b>Segurança Empresarial</b><small>Sistema de chamados de fornecedores</small></div></div>
+<nav class="menu" id="menu">
+<div class="sec" data-perm="ver_painel|ver_relatorio|ver_faturamento">Análise</div>
+<button data-v="visao" class="ativo" data-perm="ver_painel"><svg data-i="grid"></svg><span>Visão geral</span></button>
+<button data-v="relatorio" data-perm="ver_relatorio"><svg data-i="doc"></svg><span>Relatório gerencial</span></button>
+<button data-v="faturamento" data-perm="ver_faturamento"><svg data-i="money"></svg><span>Faturamento</span></button>
+<div class="sec" data-perm="ver_chamados|ver_proprios|gerenciar_cadastros|ver_historico|gerenciar_backups">Operação</div>
+<button data-v="chamados" data-perm="ver_chamados|ver_proprios"><svg data-i="list"></svg><span>Chamados</span></button>
+<button data-v="cadastros" data-perm="gerenciar_cadastros"><svg data-i="tag"></svg><span>Cadastros</span></button>
+<button data-v="historico" data-perm="ver_historico|gerenciar_backups"><svg data-i="clock"></svg><span>Histórico e backups</span></button>
+<div class="sec" data-perm="gerenciar_usuarios">Administração</div>
+<button data-v="usuarios" data-perm="gerenciar_usuarios"><svg data-i="users"></svg><span>Usuários e perfis</span></button>
+</nav>
+<div class="side-foot">
+<div class="eu"><div class="av" id="euAv"></div><div class="txt"><b id="euNome"></b><small id="euPerfil"></small></div></div>
+<div class="txt" id="sideInfo" style="margin-top:10px">Carregando...</div>
+<div class="side-2"><button onclick="trocarMinhaSenha()" title="Trocar minha senha"><svg data-i="key"></svg><span>Minha senha</span></button><button onclick="sair()" title="Sair do sistema"><svg data-i="logout"></svg><span>Sair</span></button></div>
+</div>
+</aside>
+<div class="main">
+<!-- ======================= BARRA SUPERIOR ======================= -->
+<header class="topbar">
+<button class="btn home" onclick="irHome()" title="Voltar à tela principal e limpar todos os filtros"><svg data-i="home"></svg>Home</button>
+<div><h1 id="tTitulo">Visão geral</h1><div class="sub" id="tSub"></div></div>
+<div class="dir">
+<div class="gfiltros" id="gfiltros">
+<select id="gPeriodo" title="Período (data do chamado)"></select>
+<select id="gMes" title="Mês (data do chamado)"></select>
+<select id="gEmpresa" title="Fornecedor"></select>
+<select id="gUnidade" title="Unidade"></select>
+<button class="btn btn-limpar" onclick="limparGlobais()" title="Voltar para todo o período, todos os fornecedores e todas as unidades"><svg data-i="x"></svg>Limpar filtros</button>
+</div>
+<button class="btn btn-prazos" id="btnPrazos" onclick="abrirPrazos()" data-perm="campos_gestao" title="Chamados vencidos e que vencem nos próximos 8 dias"><svg data-i="clock"></svg>Prazos<span class="pz-badge" id="pzBadge"></span><span class="pz-urg" id="pzUrg"></span></button>
+<button class="btn" id="btnTv" onclick="abrirTV()" title="Apresentar a Visão geral em tela cheia, alternando os painéis automaticamente"><svg data-i="tv"></svg>Modo TV</button>
+<button class="btn btn-instalar" onclick="instalarApp()" style="display:none" title="Instalar o sistema como aplicativo neste aparelho"><svg data-i="download"></svg>Instalar app</button>
+<button class="btn" onclick="compartilharLink()" data-perm="gerenciar_usuarios" title="Enviar o link do sistema por WhatsApp, e-mail ou copiar"><svg data-i="share"></svg>Compartilhar link</button>
+<button class="btn" onclick="abrirImport()" data-perm="importar"><svg data-i="upload"></svg>Importar planilha</button>
+<button class="btn" onclick="abrirExcel()" data-perm="abrir_excel" title="Abrir no Excel os chamados desta tela, com os filtros aplicados (neste computador)"><svg data-i="sheet"></svg>Abrir no Excel</button>
+<button class="btn pri" onclick="abrirForm()" data-perm="criar_chamado"><svg data-i="plus"></svg>Novo chamado</button>
+</div>
+</header>
+<!-- ======================= MODO TV (cabeçalho) ======================= -->
+<div class="tvbar" id="tvBar">
+<img class="logo-cpfl" src="/icone-192.png" alt="CPFL Energia">
+<div class="tvt"><b>Segurança Empresarial · Visão geral</b><small id="tvFiltro"></small></div>
+<div class="tvslide"><span id="tvNome"></span><div class="tvdots" id="tvDots"></div></div>
+<div class="tvrelogio"><b id="tvHora"></b><small id="tvData"></small></div>
+<div class="tvprog"><i id="tvProg"></i></div>
+</div>
+<div class="conteudo">
+<!-- ======================= VISÃO GERAL ======================= -->
+<section class="view ativo" id="v-visao">
+<div class="grid g-kpi" id="kpis"></div>
+<div class="grid g-21">
+<div class="card" id="c-fat"></div>
+<div class="card" id="c-sit"></div>
+</div>
+<div class="grid" style="margin-bottom:16px">
+<div class="card" id="c-abertos"></div>
+</div>
+<div class="grid g-2">
+<div class="card" id="c-emp"></div>
+<div class="card" id="c-uni"></div>
+</div>
+<div class="grid g-2">
+<div class="card" id="c-orc"></div>
+<div class="card" id="c-pend"></div>
+</div>
+<div class="grid" style="margin-bottom:16px">
+<div class="card" id="c-aten"></div>
+<div class="card" id="c-desemp"></div>
+</div>
+</section>
+<!-- ======================= RELATÓRIO ======================= -->
+<section class="view" id="v-relatorio">
+<div class="rel-acoes">
+<button class="btn" onclick="window.print()" data-perm="exportar"><svg data-i="print"></svg>Imprimir / Salvar em PDF</button>
+</div>
+<div class="rel" id="rel"></div>
+</section>
+<!-- ======================= FATURAMENTO ======================= -->
+<section class="view" id="v-faturamento">
+<div class="card filtros-card" style="margin-bottom:16px">
+<div class="fbar">
+<label>Mês de faturamento<select id="fatMes"></select></label>
+<label>Fornecedor<select id="fatEmpresa"></select></label>
+<button class="btn btn-limpar nao-imprime" onclick="limparFat()" title="Voltar para todos os meses e todos os fornecedores"><svg data-i="x"></svg>Limpar filtros</button>
+<div style="margin-left:auto;display:flex;gap:8px" class="nao-imprime" data-perm="exportar">
+<button class="btn" onclick="exportarCSV(fatLista(),'faturamento_'+(vals('fatMes').join('_') || 'todos_os_meses'))"><svg data-i="download"></svg>Exportar</button>
+<button class="btn" onclick="window.print()"><svg data-i="print"></svg>Imprimir</button>
+</div>
+</div>
+<div class="d" style="color:var(--ink-2);font-size:12.5px;margin-top:10px">Regra da planilha: chamado concluído até o dia 25 fatura no mês seguinte; concluído após o dia 25 fatura dois meses depois.</div>
+</div>
+<div class="grid g-kpi k5" id="fatKpis"></div>
+<div class="grid g-21">
+<div class="card" id="c-fatmeses"></div>
+<div class="card" id="c-fatemp"></div>
+</div>
+<div class="card">
+<div class="card-h"><div><h3>Chamados a faturar</h3><div class="d" id="fatTabSub"></div></div></div>
+<div class="tw"><table id="fatTab"></table></div>
+</div>
+</section>
+<!-- ======================= CHAMADOS ======================= -->
+<section class="view" id="v-chamados">
+<div class="card filtros-card">
+<div class="fbar">
+<label>Buscar<input type="search" id="fBusca" placeholder="Nº, fornecedor, OS, observação...  ( / )"></label>
+<label>Origem<select id="fOrigem"><option value="">Todas</option><option value="portal">Portal CPFL (nº)</option><option value="interno">Patrimonial / registro interno</option></select></label>
+<label data-perm="campos_gestao">Situação<select id="fStatus"></select></label>
+<label>Unidade<select id="fUnidade"></select></label>
+<label>Fornecedor<select id="fEmpresa"></select></label>
+<label>Prioridade<select id="fPrioridade"></select></label>
+<label data-perm="campos_gestao">Orçamento<select id="fOrc"></select></label>
+<label data-perm="campos_gestao">Pendência<select id="fPend"></select></label>
+<label data-perm="campos_gestao">Mês faturamento<select id="fMes"></select></label>
+<label>Aberto de<input type="date" id="fDe"></label>
+<label>até<input type="date" id="fAte"></label>
+<button class="btn btn-limpar" onclick="limparFiltros()" title="Remover todos os filtros desta lista"><svg data-i="x"></svg>Limpar filtros</button>
+</div>
+</div>
+<div class="chips" id="chips"></div>
+<div class="lote" id="lote">
+<b id="loteQtd"></b><span data-perm="alterar_lote" style="display:contents"><span>Alterar</span>
+<select id="loteCampo" onchange="montarLoteValor()">
+<option value="dataReal">Data real de conclusão</option>
+<option value="statusChamado">Status do chamado</option>
+<option value="statusOrcamento">Status do orçamento</option>
+<option value="pendencia">Pendência</option>
+<option value="prioridade">Prioridade</option>
+<option value="dataPrevista">Data prevista</option>
+<option value="empresa">Fornecedor</option>
+<option value="unidade">Unidade</option>
+</select>
+<span>para</span><span id="loteValorWrap"></span>
+<button class="btn pri peq" onclick="aplicarLote()">Aplicar</button></span>
+<button class="btn peq" data-perm="exportar" onclick="exportarCSV(D.chamados.filter(c=>sel.has(c.id)),'chamados_selecionados')">Exportar</button>
+<button class="btn perigo peq" data-perm="excluir_chamado" onclick="excluirLote()">Excluir</button>
+<button class="btn ghost peq" onclick="sel.clear();renderChamados()">Limpar seleção</button>
+</div>
+<div class="tw alta"><table id="tab"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+</section>
+<!-- ======================= CADASTROS ======================= -->
+<section class="view" id="v-cadastros">
+<div class="grid cads" id="cads"></div>
+</section>
+<!-- ======================= HISTÓRICO ======================= -->
+<section class="view" id="v-historico">
+<div class="grid g-21" id="histGrid">
+<div class="card" data-perm="ver_historico">
+<div class="card-h"><div><h3>Histórico de alterações</h3><div class="d">Toda criação, alteração, exclusão e importação fica registrada aqui e na aba HISTORICO da planilha.</div></div>
+<div class="acts"><input type="search" id="hBusca" placeholder="Filtrar..." oninput="renderHist()"></div></div>
+<div class="tw alta"><table id="histTab"></table></div>
+</div>
+<div class="card" data-perm="gerenciar_backups">
+<div class="card-h"><div><h3>Backups da planilha</h3><div class="d">Feito automaticamente antes de cada gravação (60 mais recentes). A cópia de antes do sistema fica como <b>00_copia_intacta_antes_do_sistema.xlsx</b>.</div></div></div>
+<div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn" onclick="criarBackup()">Criar backup agora</button><button class="btn" onclick="baixarBaseExcel()">Baixar base completa (Excel)</button></div>
+<div class="tw alta"><table id="bkTab"></table></div>
+</div>
+</div>
+</section>
+<!-- ======================= USUÁRIOS E PERFIS ======================= -->
+<section class="view" id="v-usuarios">
+<div class="card" style="margin-bottom:16px" id="redeCard"></div>
+<div class="card" style="margin-bottom:16px">
+<div class="card-h"><div><h3>Usuários</h3><div class="d">Cada usuário entra com login e senha próprios. A senha definida aqui é provisória: no primeiro acesso o sistema pede que a pessoa crie a dela.</div></div>
+<div class="acts"><button class="btn pri" onclick="formUsuario()"><svg data-i="plus"></svg>Novo usuário</button></div></div>
+<div class="tw"><table id="usrTab"></table></div>
+</div>
+<div class="card">
+<div class="card-h"><div><h3>Perfis de acesso</h3><div class="d">Defina o que cada perfil pode ver e fazer. Mudanças valem imediatamente para todos os usuários do perfil.</div></div>
+<div class="acts"><button class="btn" onclick="formPerfil()"><svg data-i="plus"></svg>Novo perfil</button></div></div>
+<div class="grid perfis" id="perfis"></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+<!-- ======================= MODAL CHAMADO ======================= -->
+<div class="fundo" id="modal">
+<div class="modal">
+<div class="mh"><h3 id="mTitulo">Novo chamado</h3><span id="mStatusTopo"></span><button class="ic x" onclick="fecharForm()" title="Fechar (Esc)"><svg data-i="x"></svg></button></div>
+<div class="mb">
+<div class="erro-form" id="mErro"></div>
+<div class="erro-form" id="mAviso" style="background:var(--open-bg);color:var(--cpfl-azul-escuro)"></div>
+<form id="form" autocomplete="off" onsubmit="return false">
+<div class="secao"><h4>Identificação</h4><div class="campos">
+<div class="campo"><label>Nº chamado CPFL ou "Patrimonial" <span class="o">*</span></label><input name="numero" list="dlNumero" placeholder="Nº do portal CPFL ou Patrimonial"></div>
+<div class="campo"><label>Unidade <span class="o">*</span></label><input name="unidade" list="dlUnidades"></div>
+<div class="campo"><label>Responsável pelo chamado</label><input name="responsavel" autocomplete="off" placeholder="Nome de quem abriu / acompanha"></div>
+<div class="campo"><label>Contato do responsável</label><input name="contatoResponsavel" autocomplete="off" inputmode="tel" placeholder="Telefone, ramal ou e-mail"></div>
+<div class="campo"><label>Prioridade</label><select name="prioridade"></select></div>
+<div class="campo"><label>Fornecedor (empresa) <span class="o">*</span></label><input name="empresa" list="dlEmpresas"></div>
+<div class="campo"><label>Chamado fornecedor</label><input name="chamadoFornecedor"></div>
+<div class="campo"><label>OS fornecedor</label><input name="osFornecedor"></div>
+</div></div>
+<div class="secao"><h4>Prazos</h4><div class="campos">
+<div class="campo"><label>Data do chamado <span class="o">*</span></label><input type="date" name="dataChamado"></div>
+<div class="campo"><label>Data prevista de conclusão</label><input type="date" name="dataPrevista"></div>
+<div class="campo"><label>Data real de conclusão</label><div class="junto"><input type="date" name="dataReal"><button type="button" class="btn peq" onclick="hojeReal()">Hoje</button></div></div>
+<div class="campo"><label>Situação (automática)</label><div class="calc" id="mStatus"></div></div>
+<div class="campo"><label>Mês de faturamento (automático)</label><div class="calc" id="mFat"></div></div>
+</div></div>
+<div class="secao"><h4>Valores e orçamento</h4><div class="campos">
+<div class="campo"><label>Valor material (R$)</label><input name="valorMaterial" inputmode="decimal" placeholder="0,00"></div>
+<div class="campo"><label>Mão de obra / deslocamento (R$)</label><input name="valorMaoObra" inputmode="decimal" placeholder="0,00"></div>
+<div class="campo"><label>Valor total (automático)</label><div class="calc" id="mTotal" style="font-size:16px"></div></div>
+<div class="campo"><label>Status do chamado</label><select name="statusChamado"></select></div>
+<div class="campo"><label>Status do orçamento</label><select name="statusOrcamento"></select></div>
+<div class="campo"><label>Pendência</label><input name="pendencia" list="dlPendencias" placeholder="(nenhuma)"></div>
+<div class="campo largo"><label>Observação</label><textarea name="observacao" rows="3"></textarea></div>
+</div></div>
+<div class="secao" id="mHistBox" style="display:none;margin-bottom:0"><h4>Histórico deste chamado</h4><div class="hist" id="mHist"></div></div>
+</form>
+</div>
+<div class="mf">
+<div class="esq"><button class="btn perigo" id="mExcluir" onclick="excluirAtual()">Excluir</button><button class="btn" id="mDuplicar" onclick="duplicarAtual()">Duplicar</button></div>
+<button class="btn" onclick="fecharForm()">Cancelar</button>
+<button class="btn" id="mSalvarNovo" onclick="salvar(true)">Salvar e novo</button>
+<button class="btn pri" id="mSalvar" onclick="salvar(false)">Salvar</button>
+</div>
+</div>
+</div>
+<!-- ======================= MODAL IMPORTAÇÃO ======================= -->
+<div class="fundo" id="imp">
+<div class="modal">
+<div class="mh"><h3>Importar planilha</h3><button class="ic x" onclick="fecharImport()"><svg data-i="x"></svg></button></div>
+<div class="mb" id="impPasso1">
+<input type="file" id="impArq" accept=".xlsx,.csv" style="display:none">
+<div class="drop" id="drop" onclick="$('impArq').click()">
+<svg data-i="upload"></svg>
+<b>Clique para escolher a planilha ou arraste o arquivo aqui</b>
+<div style="color:var(--ink-2);margin-top:4px">Aceita Excel (.xlsx) ou CSV</div>
+</div>
+<ul class="passos">
+<li>A planilha precisa ter uma linha de títulos com <b>Nº CHAMADO CPFL</b> e as demais colunas (mesmos nomes da planilha GITEL; maiúsculas e acentos não importam).</li>
+<li>Chamado com Nº do portal CPFL que <b>já existe</b> é <b>atualizado</b>; Nº <b>novo</b> é <b>cadastrado</b>. Chamados que não estão no arquivo continuam no sistema.</li><li>Chamados <b>Patrimoniais</b> (Nº em texto, podem se repetir) são reconhecidos pela coluna <b>ID SISTEMA</b> — use “Baixar base atual para editar” — ou pela combinação Nº + unidade + fornecedor + data do chamado.</li>
+<li>Status, valor total e mês de faturamento são recalculados automaticamente. Você verá uma prévia antes de confirmar, e um backup é feito antes de gravar.</li>
+</ul>
+<label class="chk" style="margin-top:14px"><input type="checkbox" id="impApagar"><span>Células <b>vazias</b> na planilha importada <b>apagam</b> o valor no sistema<br><small style="color:var(--ink-2)">Deixe desmarcado para que células vazias mantenham o que já está cadastrado.</small></span></label>
+<div style="margin-top:16px;display:flex;gap:8px"><button class="btn" onclick="baixarModelo()"><svg data-i="download"></svg>Baixar modelo vazio</button><button class="btn" onclick="exportarCSV(D.chamados,'base_completa')"><svg data-i="download"></svg>Baixar base atual para editar</button></div>
+</div>
+<div class="mb" id="impPasso2" style="display:none"></div>
+<div class="mf" id="impRod" style="display:none">
+<button class="btn" onclick="voltarImport()">Escolher outro arquivo</button>
+<button class="btn pri" id="impAplicar" onclick="aplicarImport()">Importar</button>
+</div>
+</div>
+</div>
+<!-- ======================= DIÁLOGO ======================= -->
+<div class="fundo" id="dlg">
+<div class="modal peq">
+<div class="mh"><h3 id="dlgT"></h3></div>
+<div class="mb" id="dlgB"></div>
+<div class="mf"><button class="btn" id="dlgN">Cancelar</button><button class="btn pri" id="dlgS">Confirmar</button></div>
+</div>
+</div>
+<datalist id="dlNumero"><option value="Patrimonial"></datalist><datalist id="dlUnidades"></datalist><datalist id="dlEmpresas"></datalist><datalist id="dlPendencias"></datalist>
+<div id="tip"></div>
+<div id="toast"></div>
+<!-- controles do modo TV (aparecem ao mexer o mouse ou tocar na tela) -->
+<div class="tvctl" id="tvCtl">
+<button onclick="tvIr(-1)" title="Painel anterior (←)"><svg data-i="prev"></svg></button>
+<button onclick="tvPausar()" id="tvPlay" title="Pausar / continuar (espaço)"><svg data-i="pause"></svg>Pausar</button>
+<button onclick="tvIr(1)" title="Próximo painel (→)"><svg data-i="next"></svg></button>
+<label>Tempo por painel <input type="range" id="tvSeg" min="5" max="20" step="1" oninput="tvTempo(this.value)"><output id="tvSegTxt"></output></label>
+<button onclick="tvTelaCheia()" title="Tela cheia"><svg data-i="expand"></svg>Tela cheia</button>
+<button class="sair" onclick="sairTV()" title="Sair do modo TV (Esc)"><svg data-i="x"></svg>Sair</button>
+</div>
+<script>
+// ===================================================================== ícones
+const ICONS = {
+grid: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+money: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>',
+list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+tag: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+sheet: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+plus: '<path d="M12 5v14M5 12h14"/>',
+x: '<path d="M6 6l12 12M18 6 6 18"/>',
+print: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
+edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+check: '<path d="m5 12 5 5 9-10"/>',
+up: '<path d="m6 15 6-6 6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+s_good: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="m7.5 12.5 3 3 6-6.5" stroke="#fff" stroke-width="2.4"/>',
+s_warning: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M12 7v5.5l3.2 2" stroke="#0b0b0b" stroke-width="2.2"/>',
+s_critical: '<path d="M12 2.5 22 20.5H2z" fill="currentColor" stroke="none"/><path d="M12 9.5v5M12 17.3v.2" stroke="#fff" stroke-width="2.4"/>',
+s_open: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.4" fill="none"/><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/>',
+users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.5 3.5 5.2"/>',
+key: '<circle cx="7.5" cy="15.5" r="4"/><path d="m10.5 12.5 9-9M16.5 6.5l2.5 2.5M14 9l2 2"/>',
+logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/>',
+home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h5v-6h3v6h5V10"/>',
+share: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/>',
+whats: '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c.3 2 2.5 4.2 4.5 4.6l1.2-1.2 1.8.8c-.2 1-1 1.8-2 1.8-3.4-.2-6.6-3.4-6.8-6.8 0-1 .8-1.8 1.8-2l.8 1.8z"/>',
+mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+tv: '<rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+play: '<path d="M7 4.5v15l12-7.5z"/>',
+pause: '<path d="M8 5v14M16 5v14"/>',
+box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+truck: '<path d="M2 6h11v10H2zM13 9h4l4 4v3h-8z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+prev: '<path d="M15 5l-7 7 7 7"/>',
+next: '<path d="M9 5l7 7-7 7"/>',
+expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+s_neutral: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.4" fill="none"/>'
+};
+const ico = (n, cls = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}">${ICONS[n] || ''}</svg>`;
+function pintarIcones(root = document) { root.querySelectorAll('svg[data-i]').forEach(s => { s.outerHTML = ico(s.dataset.i, s.getAttribute('class') || ''); }); }
+// ===================================================================== estado
+let D = { chamados: [], cadastros: {}, statusChamado: [], hoje: '' };
+let sort = { key: 'dataChamado', desc: true };
+const sel = new Set();
+let editId = null, editBase = '', HIST = [], IMP = null;
+const META_PRAZO = 0.8;
+const VIEW_INFO = {
+visao: ['Visão geral', 'Indicadores de prazo, volume e faturamento'],
+relatorio: ['Relatório gerencial', 'Resumo para apresentação, impressão ou PDF'],
+faturamento: ['Faturamento', 'Valores a faturar por mês e fornecedor'],
+chamados: ['Chamados', 'Cadastro, consulta e atualização dos chamados'],
+cadastros: ['Cadastros', 'Listas de unidades, fornecedores, prioridades, orçamento e pendências'],
+historico: ['Histórico e backups', 'Rastreabilidade das alterações e cópias de segurança'],
+usuarios: ['Usuários e perfis', 'Quem acessa o sistema e o que cada perfil pode fazer']
+};
+// situação -> papel de status (cor + ícone + rótulo)
+const ST = {
+'Concluído':            { cls: 'good',     cor: 'var(--good)',     hex: '#53a363', ic: 's_good',     dark: false },
+'Concluído com atraso': { cls: 'warning',  cor: 'var(--warning)',  hex: '#f68b1f', ic: 's_warning',  dark: true },
+'Atrasado':             { cls: 'critical', cor: 'var(--critical)', hex: '#b22c26', ic: 's_critical', dark: false },
+'Em aberto':            { cls: 'open',     cor: 'var(--series-1)', hex: '#0099cc', ic: 's_open',     dark: false }
+};
+const ORDEM_ST = ['Concluído', 'Concluído com atraso', 'Atrasado', 'Em aberto'];
+const COLS = [
+{ k: 'numero', t: 'Nº CPFL' }, { k: 'unidade', t: 'Unidade' }, { k: 'empresa', t: 'Fornecedor' },
+{ k: 'dataChamado', t: 'Aberto em', f: 'd' }, { k: 'dataPrevista', t: 'Previsto', f: 'd' }, { k: 'dataReal', t: 'Concluído', f: 'd' },
+{ k: 'status', t: 'Situação', f: 's' }, { k: 'prioridade', t: 'Prioridade', f: 'p' }, { k: 'statusOrcamento', t: 'Orçamento' },
+{ k: 'statusChamado', t: 'Status do chamado' },
+{ k: 'pendencia', t: 'Pendência', f: 'tag' }, { k: 'chamadoFornecedor', t: 'Ch. fornec.' }, { k: 'osFornecedor', t: 'OS fornec.' },
+{ k: 'responsavel', t: 'Responsável' }, { k: 'contatoResponsavel', t: 'Contato' },
+{ k: 'valorMaterial', t: 'Material', f: 'm' }, { k: 'valorMaoObra', t: 'Mão de obra', f: 'm' }, { k: 'valorTotal', t: 'Total', f: 'm' },
+{ k: 'mesFaturamento', t: 'Faturamento', f: 'mes' }, { k: 'observacao', t: 'Observação', f: 'obs' }, { k: 'criadoPor', t: 'Cadastrado por' }
+];
+const CSV_COLS = [
+['numero','Nº CHAMADO CPFL'],['unidade','UNIDADE'],['empresa','EMPRESA'],['valorMaterial','VALOR MATERIAL (R$)'],['valorMaoObra','VALOR MÃO DE OBRA / DESLOC. (R$)'],
+['valorTotal','VALOR TOTAL DO SERVIÇO (R$)'],['dataChamado','DATA DO CHAMADO'],['dataPrevista','DATA PREVISTA DE CONCLUSÃO'],['prioridade','PRIORIDADE'],
+['dataReal','DATA REAL DE CONCLUSÃO'],['status','STATUS DO CHAMADO'],['chamadoFornecedor','CHAMADO FORNECEDOR'],['osFornecedor','OS FORNECEDOR'],
+['statusOrcamento','STATUS DO ORÇAMENTO'],['mesFaturamento','MÊS /ANO DE FATURAMENTO'],['pendencia','PENDÊNCIA'],['observacao','OBSERVAÇÃO'],['criadoPor','CADASTRADO POR'],['id','ID SISTEMA'],
+['responsavel','RESPONSÁVEL PELO CHAMADO'],['contatoResponsavel','CONTATO DO RESPONSÁVEL'],['statusChamado','STATUS DO CHAMADO (LISTA)']
+];
+// campos que dependem de permissão (o servidor também não envia esses dados a quem não pode ver)
+const CAMPOS_VALOR = ['valorMaterial', 'valorMaoObra', 'valorTotal', 'mesFaturamento'];
+const CAMPOS_GESTAO = ['dataPrevista', 'dataReal', 'status', 'chamadoFornecedor', 'osFornecedor', 'statusOrcamento', 'pendencia', 'mesFaturamento', 'statusChamado'];
+const campoVisivel = k => (!CAMPOS_VALOR.includes(k) || pode('ver_valores')) && (!CAMPOS_GESTAO.includes(k) || pode('campos_gestao'));
+const colsVisiveis = () => COLS.filter(c => campoVisivel(c.k));
+const csvVisiveis = () => CSV_COLS.filter(([k]) => campoVisivel(k));
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESES_L = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+// ===================================================================== utilidades
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const semValores = () => typeof ME !== 'undefined' && ME && !PERMS.has('ver_valores');
+const money = v => semValores() ? '—' : brl.format(Number(v) || 0);
+const numBR = v => semValores() ? '—' : (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const int = v => (Number(v) || 0).toLocaleString('pt-BR');
+const pct = v => Math.round(v * 100) + '%';
+function moneyK(v) { if (semValores()) return '—'; v = Number(v) || 0; if (Math.abs(v) >= 1e6) return 'R$ ' + (v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi'; if (Math.abs(v) >= 1e3) return 'R$ ' + (v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil'; return 'R$ ' + Math.round(v); }
+const fd = iso => iso ? iso.split('-').reverse().join('/') : '';
+const fmes = m => m ? MESES[+m.slice(5, 7) - 1] + '/' + m.slice(0, 4) : '';
+const fmesC = m => m ? MESES[+m.slice(5, 7) - 1] + '/' + m.slice(2, 4) : '';
+const fmesL = m => m ? MESES_L[+m.slice(5, 7) - 1] + ' de ' + m.slice(0, 4) : '';
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const slug = s => norm(s).replace(/\s+/g, '-');
+const soma = (L, k) => L.reduce((s, c) => s + (Number(c[k]) || 0), 0);
+function pill(s) { const m = ST[s]; return s ? `<span class="pill ${m ? m.cls : 'neutral'}">${ico(m ? m.ic : 's_neutral')}${esc(s)}</span>` : ''; }
+function pillPct(v, txt) { const cls = v >= META_PRAZO ? 'good' : v >= 0.6 ? 'warning' : 'critical'; const ic = { good: 's_good', warning: 's_warning', critical: 's_critical' }[cls]; return `<span class="pill ${cls}">${ico(ic)}${txt}</span>`; }
+const prio = p => p ? `<span class="prio ${slug(p)}"><i></i>${esc(p)}</span>` : '';
+function parseBR(s) {
+if (typeof s === 'number') return s;
+s = String(s || '').replace(/R\$|\s/g, '');
+if (!s) return 0;
+if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+else if (s.includes(',')) s = s.replace(',', '.');
+const n = Number(s); return isNaN(n) ? NaN : Math.round(n * 100) / 100;
+}
+function toast(msg, tipo = '') { const d = document.createElement('div'); d.className = tipo; d.textContent = msg; $('toast').appendChild(d); setTimeout(() => d.remove(), tipo === 'erro' ? 7000 : 3800); return d; }
+async function api(method, url, body) {
+const r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+let j = null; try { j = await r.json(); } catch {}
+if (r.status === 401 && j && j.login) { mostrarLogin('entrar', j.erro); throw new Error(j.erro); }
+if (r.status === 403 && j && j.trocarSenha) { mostrarLogin('troca'); throw new Error(j.erro); }
+if (!r.ok) throw new Error((j && j.erro) || ('Erro ' + r.status));
+return j;
+}
+function addMes(m, n) { const d = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function statusDe(c, hoje) {
+if (!c.numero) return '';
+if (c.dataReal) return (!c.dataPrevista || c.dataReal <= c.dataPrevista) ? 'Concluído' : 'Concluído com atraso';
+if (c.dataPrevista && hoje > c.dataPrevista) return 'Atrasado';
+return 'Em aberto';
+}
+function fatDe(dr) { if (!dr) return ''; return addMes(dr.slice(0, 7), +dr.slice(8, 10) <= 25 ? 1 : 2); }
+const dias = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+function opts(el, lista, todos, atual) {
+el.innerHTML = (todos ? `<option value="">${todos}</option>` : '') + lista.map(v => { const [val, txt] = Array.isArray(v) ? v : [v, v]; return `<option value="${esc(val)}">${esc(txt)}</option>`; }).join('');
+if (Array.isArray(atual)) {   // filtro de múltipla escolha: mantém tudo o que estava marcado
+[...el.options].forEach(o => o.selected = atual.includes(o.value));
+if (!el.selectedOptions.length && el.options.length) el.options[0].selected = true;
+} else if (atual !== undefined && [...el.options].some(o => o.value === atual)) el.value = atual;
+}
+// ---- filtros de múltipla escolha
+const MULTI = ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fOrc', 'fPend', 'fMes', 'fatMes', 'fatEmpresa'];
+function vals(id) { const s = $(id); return s ? [...s.selectedOptions].map(o => o.value).filter(v => v !== '') : []; }
+function setVals(id, v) {
+const s = $(id); if (!s) return;
+const arr = [].concat(v ?? []).map(String).filter(x => x !== '');
+[...s.options].forEach(o => o.selected = arr.includes(o.value));
+if (!s.selectedOptions.length) { const vz = [...s.options].find(o => o.value === ''); if (vz) vz.selected = true; else if (s.options.length) s.options[0].selected = true; }
+atualizarRotulo(s);
+}
+const algum = (arr, x) => !arr.length || arr.includes(x);
+function tabelaHTML(cab, linhas, rodape) {
+return `<div class="tw"><table><thead><tr>${cab.map(c => `<th class="${c.num ? 'num' : ''}">${c.t}</th>`).join('')}</tr></thead><tbody>${linhas.length ? linhas.map(l => `<tr>${l.map((v, i) => `<td class="${cab[i].num ? 'num' : ''}">${v}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cab.length}" class="vazio">Sem dados.</td></tr>`}</tbody>${rodape ? `<tfoot><tr>${rodape.map((v, i) => `<td class="${cab[i].num ? 'num' : ''}">${v}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`;
+}
+// diálogo simples (substitui confirm/prompt do navegador)
+function dialogo(titulo, html, { ok = 'Confirmar', perigo = false, foco, largo = false } = {}) {
+return new Promise(res => {
+$('dlg').querySelector('.modal').className = 'modal ' + (largo ? 'medio' : 'peq');
+$('dlgT').textContent = titulo; $('dlgB').innerHTML = html;
+$('dlgS').textContent = ok; $('dlgS').className = 'btn ' + (perigo ? 'perigo' : 'pri');
+$('dlg').classList.add('ativo');
+const fim = v => { $('dlg').classList.remove('ativo'); $('dlgS').onclick = $('dlgN').onclick = null; res(v); };
+$('dlgS').onclick = () => fim(true); $('dlgN').onclick = () => fim(false);
+setTimeout(() => (foco ? $(foco) : $('dlgS')).focus(), 30);
+});
+}
+// tooltip
+document.addEventListener('mousemove', e => {
+const t = e.target.closest && e.target.closest('[data-tip]'); const tip = $('tip');
+if (!t) { tip.style.opacity = 0; return; }
+tip.innerHTML = t.dataset.tip; tip.style.opacity = 1;
+const w = tip.offsetWidth, h = tip.offsetHeight;
+let x = e.clientX + 14, y = e.clientY - h - 10;
+if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y < 8) y = e.clientY + 16;
+tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+// ===================================================================== carga
+async function carregar(aviso) {
+try {
+D = await api('GET', '/api/dados');
+D.chamados = D.chamados || [];
+for (const k in D.cadastros) D.cadastros[k] = [].concat(D.cadastros[k] || []);
+for (const c of D.chamados) for (const k of ['numero','unidade','empresa','prioridade','statusOrcamento','pendencia','observacao','chamadoFornecedor','osFornecedor','dataChamado','dataPrevista','dataReal','mesFaturamento','criadoPor','atualizadoEm','responsavel','contatoResponsavel','statusChamado']) c[k] = c[k] ?? '';
+for (const id of [...sel]) if (!D.chamados.some(c => c.id === id)) sel.delete(id);
+montarSelects(); renderTudo();
+const agora = new Date();
+$('sideInfo').innerHTML = `<b style="color:#e3ebf5">${int(D.chamados.length)}</b> ${pode('ver_chamados') ? 'chamados na base' : 'chamado(s) aberto(s) por você'}<br>Atualizado às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+if (aviso) toast('Dados atualizados.');
+atualizarBadgePrazos(); avisoPrazosAuto();
+} catch (e) { toast('Não foi possível carregar: ' + e.message, 'erro'); }
+}
+const anos = () => [...new Set(D.chamados.map(c => c.dataChamado.slice(0, 4)).filter(Boolean))].sort().reverse();
+const mesesFat = () => [...new Set(D.chamados.map(c => c.mesFaturamento).filter(Boolean))].sort().reverse();
+function montarSelects() {
+const C = D.cadastros, k = id => MULTI.includes(id) ? vals(id) : $(id).value;
+opts($('gPeriodo'), [['', 'Todo o período'], ['12m', 'Últimos 12 meses'], ...anos().map(a => ['ano:' + a, 'Ano ' + a])], null, k('gPeriodo'));
+const mesesAb = [...new Set(D.chamados.map(c => (c.dataChamado || '').slice(0, 7)).filter(Boolean))].sort().reverse();
+opts($('gMes'), mesesAb.map(m => [m, fmesL(m)]), 'Todos os meses', k('gMes'));
+opts($('gEmpresa'), C.empresas, 'Todos os fornecedores', k('gEmpresa'));
+opts($('gUnidade'), C.unidades, 'Todas as unidades', k('gUnidade'));
+opts($('fStatus'), [['__pend', 'Não concluídos'], ...D.statusChamado], 'Todas', k('fStatus'));
+opts($('fUnidade'), C.unidades, 'Todas', k('fUnidade'));
+opts($('fEmpresa'), C.empresas, 'Todos', k('fEmpresa'));
+opts($('fPrioridade'), C.prioridades, 'Todas', k('fPrioridade'));
+opts($('fOrc'), [['__vazio', '(sem status)'], ...C.statusOrcamento], 'Todos', k('fOrc'));
+opts($('fPend'), [['__com', '(com pendência)'], ['__sem', '(sem pendência)'], ...C.pendencias], 'Todas', k('fPend'));
+opts($('fMes'), [['__sem', '(sem faturamento)'], ...mesesFat().map(m => [m, fmes(m)])], 'Todos', k('fMes'));
+const atual = D.hoje.slice(0, 7);
+const ms = [...new Set([atual, addMes(atual, 1), ...mesesFat()])].sort().reverse();
+opts($('fatMes'), ms.map(m => [m, fmesL(m) + (m === atual ? ' (atual)' : '')]), 'Todos os meses', k('fatMes'));
+opts($('fatEmpresa'), C.empresas, 'Todos', k('fatEmpresa'));
+$('dlUnidades').innerHTML = C.unidades.map(v => `<option value="${esc(v)}">`).join('');
+$('dlEmpresas').innerHTML = C.empresas.map(v => `<option value="${esc(v)}">`).join('');
+$('dlPendencias').innerHTML = C.pendencias.map(v => `<option value="${esc(v)}">`).join('');
+syncPesquisaveis();
+}
+['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].forEach(id => $(id).onchange = () => { renderVisao(); renderRelatorio(); });
+function renderTudo() {
+renderVisao(); renderChamados(); renderFat(); renderCads(); renderRelatorio();
+if (vistaAtual() === 'historico') carregarHist();
+}
+// ===================================================================== navegação
+const vistaAtual = () => document.querySelector('#menu button.ativo').dataset.v;
+document.querySelectorAll('#menu button').forEach(b => b.onclick = () => irPara(b.dataset.v));
+function irPara(v) {
+if (ME && !podeAlgum(VIEW_PERM[v])) { toast('Seu perfil não tem acesso a esta área.', 'erro'); return; }
+if (v !== 'visao' && TV && TV.on) sairTV();   // clicar num indicador durante o modo TV sai dele
+if (v === 'usuarios') carregarUsuarios();
+document.querySelectorAll('#menu button').forEach(x => x.classList.toggle('ativo', x.dataset.v === v));
+document.querySelectorAll('.view').forEach(x => x.classList.toggle('ativo', x.id === 'v-' + v));
+$('tTitulo').textContent = VIEW_INFO[v][0]; $('tSub').textContent = VIEW_INFO[v][1];
+$('gfiltros').style.display = (v === 'visao' || v === 'relatorio') ? '' : 'none';
+$('btnTv').style.display = v === 'visao' ? '' : 'none';
+if (v === 'historico') carregarHist();
+if (v === 'visao') renderVisao();       // gráficos medem a largura visível
+if (v === 'faturamento') renderFat();
+if (v === 'relatorio') renderRelatorio();
+window.scrollTo(0, 0);
+}
+function verChamados(f) { if (!pode('ver_chamados')) return; limparFiltros(true); for (const k in f) { if (MULTI.includes(k)) setVals(k, f[k]); else $(k).value = f[k]; } syncPesquisaveis(); irPara('chamados'); renderChamados(); }
+// ===================================================================== recorte global (Visão geral / Relatório)
+function recorte() {
+const ps = vals('gPeriodo'), emp = vals('gEmpresa'), uni = vals('gUnidade');
+const atual = D.hoje.slice(0, 7);
+// períodos marcados (pode ser mais de um: ex. Ano 2024 + Ano 2026)
+const faixas = ps.map(p => {
+if (p === '12m') return { de: addMes(atual, -11) + '-01', ate: D.hoje, meses: Array.from({ length: 13 }, (_, i) => addMes(atual, i - 11)), rot: 'Últimos 12 meses' };
+if (p.startsWith('ano:')) { const a = p.slice(4); return { de: a + '-01-01', ate: a + '-12-31', meses: Array.from({ length: 12 }, (_, i) => `${a}-${String(i + 1).padStart(2, '0')}`), rot: 'Ano ' + a }; }
+return null;
+}).filter(Boolean);
+let de = '', ate = '', meses, rotulo = 'Todo o período';
+if (faixas.length) { de = faixas.map(f => f.de).sort()[0]; ate = faixas.map(f => f.ate).sort().slice(-1)[0]; meses = [...new Set(faixas.flatMap(f => f.meses))].sort(); rotulo = faixas.map(f => f.rot).join(' + '); }
+const B = D.chamados.filter(c => algum(emp, c.empresa) && algum(uni, c.unidade));
+// filtro Mês (data do chamado): soma-se ao Período — o chamado precisa estar no período E num dos meses marcados
+const mesesSel = vals('gMes').sort();
+const Lp = B.filter(c => !faixas.length || faixas.some(f => c.dataChamado >= f.de && c.dataChamado <= f.ate));   // só período (base dos gráficos mensais)
+const L = Lp.filter(c => algum(mesesSel, (c.dataChamado || '').slice(0, 7)));
+if (mesesSel.length) {
+const ini = mesesSel[0] + '-01', fimM = mesesSel[mesesSel.length - 1], [yy, mm] = fimM.split('-').map(Number);
+const fim = fimM + '-' + String(new Date(yy, mm, 0).getDate()).padStart(2, '0');
+if (!de || ini > de) de = ini; if (!ate || fim < ate) ate = fim;
+const rm = mesesSel.length <= 3 ? mesesSel.map(fmesL).join(', ') : `${mesesSel.length} meses (${fmes(mesesSel[0])} a ${fmes(fimM)})`;
+rotulo = faixas.length ? rotulo + ' · ' + rm : rm;
+}
+if (!meses) { const ms = [...new Set(B.map(c => c.mesFaturamento).filter(Boolean))].sort(); meses = []; if (ms.length) { let m = ms[Math.max(0, ms.length - 18)]; const fim = ms[ms.length - 1]; while (m <= fim) { meses.push(m); m = addMes(m, 1); } } }
+const filtroCh = {}; if (de) { filtroCh.fDe = de; filtroCh.fAte = ate; } if (emp.length) filtroCh.fEmpresa = emp; if (uni.length) filtroCh.fUnidade = uni;
+return { L, Lp, B, meses, de, ate, emp, uni, rotulo, filtroCh, atual, mesesSel, temPeriodo: faixas.length > 0 };
+}
+function indicadores(R) {
+const { L, B, atual } = R;
+const by = s => L.filter(c => c.status === s);
+const ok = by('Concluído'), okA = by('Concluído com atraso'), atr = by('Atrasado'), ab = by('Em aberto');
+const conc = [...ok, ...okA];
+const taxa = conc.length ? ok.length / conc.length : 0;
+const prazoMed = conc.length ? conc.reduce((s, c) => s + dias(c.dataChamado, c.dataReal), 0) / conc.length : 0;
+const atrasoMax = atr.reduce((m, c) => Math.max(m, dias(c.dataPrevista, D.hoje)), 0);
+const vence3 = ab.filter(c => c.dataPrevista && dias(D.hoje, c.dataPrevista) <= 3).length;
+const fatMes = soma(B.filter(c => c.mesFaturamento === atual), 'valorTotal');
+const fatProx = soma(B.filter(c => c.mesFaturamento === addMes(atual, 1)), 'valorTotal');
+const fatPeriodo = soma(B.filter(c => R.meses.includes(c.mesFaturamento)), 'valorTotal');
+return { ok, okA, atr, ab, conc, taxa, prazoMed, atrasoMax, vence3, fatMes, fatProx, fatPeriodo, total: soma(L, 'valorTotal') };
+}
+function desempenho(L) {
+return [...new Set(L.map(c => c.empresa))].map(e => {
+const g = L.filter(c => c.empresa === e), cs = g.filter(c => c.dataReal);
+const no = cs.filter(c => c.status === 'Concluído').length;
+const atrs = cs.filter(c => c.status === 'Concluído com atraso').map(c => dias(c.dataPrevista, c.dataReal));
+return { nome: e, qtd: g.length, conc: cs.length, taxa: cs.length ? no / cs.length : 0, prazo: cs.length ? cs.reduce((s, c) => s + dias(c.dataChamado, c.dataReal), 0) / cs.length : 0,
+atraso: atrs.length ? atrs.reduce((a, b) => a + b, 0) / atrs.length : 0, andamento: g.filter(c => !c.dataReal).length, atrasados: g.filter(c => c.status === 'Atrasado').length, valor: soma(g, 'valorTotal') };
+}).sort((a, b) => b.taxa - a.taxa || b.conc - a.conc);
+}
+function agrupa(L, campo, vazio = '(não informado)') {
+const m = new Map();
+for (const c of L) { const k = c[campo] || vazio; const g = m.get(k) || { nome: k, qtd: 0, valor: 0 }; g.qtd++; g.valor += c.valorTotal; m.set(k, g); }
+return [...m.values()];
+}
+// ===================================================================== componentes de gráfico
+function cardChart(el, titulo, desc, chartHTML, tabHTML, after) {
+const id = el.id;
+const modoTab = el.dataset.tab === '1';
+el.innerHTML = `<div class="card-h"><div><h3>${titulo}</h3>${desc ? `<div class="d">${desc}</div>` : ''}</div>
+${tabHTML ? `<div class="acts"><button class="toggle" onclick="alternarTab('${id}')">${modoTab ? 'Ver gráfico' : 'Ver tabela'}</button></div>` : ''}</div>
+<div>${modoTab ? tabHTML : chartHTML}</div>`;
+if (!modoTab && after) after(el);
+}
+function alternarTab(id) { const el = $(id); el.dataset.tab = el.dataset.tab === '1' ? '' : '1'; renderVisao(); renderFat(); }
+// legenda dos gráficos de colunas: com meses escolhidos no filtro, explica o destaque laranja
+function legSel(pts, normal) {
+const temSel = pts.some(p => p.sel === true) && pts.some(p => p.sel === false);
+const n = pts.filter(p => p.sel === true).length;
+return `<div class="chart-leg">${temSel ? `<span><i style="background:#0099cc"></i>Demais meses</span><span><i style="background:#f68b1f"></i>${n > 1 ? 'Meses selecionados' : 'Mês selecionado'} no filtro (valor em cima)</span>` : normal}</div>`;
+}
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+// colunas verticais (série única). pts: [{k, rot, v, tip, futuro, sel}]
+function colunasSVG(pts, { W = 680, H = 250, onClick, mostrarRotulos = true, inteiro = false, todosRotulos = false, maiorLaranja = false } = {}) {
+const padL = inteiro ? 44 : 64, padR = 10, padT = 24, padB = 30, iw = W - padL - padR, ih = H - padT - padB;
+const bruto = Math.max(1, ...pts.map(p => p.v));
+let max = niceMax(bruto); if (inteiro && max % 4) max = Math.max(4, Math.ceil(bruto / 4) * 4);   // contagem: eixo só com números inteiros
+const moneyK = inteiro ? (v => int(v)) : window.moneyK;
+const n = Math.max(1, pts.length), band = iw / n, bw = Math.max(6, Math.min(40, band * 0.62));
+const y = v => padT + ih - (v / max) * ih;
+const passo = Math.ceil(n / Math.max(1, Math.floor(iw / 52)));
+let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">`;
+for (let i = 0; i <= 4; i++) { const v = max * i / 4, yy = y(v); s += `<line x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" stroke="${i ? '#e6e7e8' : '#bfbfbf'}" stroke-width="1"/><text x="${padL - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="#7a7a7a" style="font-variant-numeric:tabular-nums">${moneyK(v).replace('R$ ', '')}</text>`; }
+const iMax = pts.reduce((b, p, i) => p.v > pts[b].v ? i : b, 0);
+const temSel = pts.some(p => p.sel === true) && pts.some(p => p.sel === false);   // há meses escolhidos no filtro (e outros não)
+pts.forEach((p, i) => {
+const cx = padL + band * i + band / 2, x = cx - bw / 2, yy = y(p.v), y0 = padT + ih, h = y0 - yy, r = Math.min(4, h, bw / 2);
+// com meses selecionados no filtro: eles ficam em laranja (destaque) com o valor em cima; os demais em azul CPFL
+const maior = maiorLaranja && !temSel && p.v > 0 && p.v === pts[iMax].v;   // sem seleção: mês com o maior número (empates também)
+// gráfico com seleção (Faturamento): demais meses em azul CPFL vivo, selecionado em azul-escuro CPFL
+const cor = temSel ? (p.sel ? '#f68b1f' : '#0099cc') : maior ? '#f68b1f' : p.sel === false ? '#0099cc' : p.futuro ? '#0099cc' : '#0058a0';
+if (p.v > 0) s += `<path d="M${x},${y0} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${y0} Z" fill="${cor}"/>`;
+const rot = todosRotulos || (temSel ? p.sel : p.v > 0 && (i === iMax || p.destaque));
+if (mostrarRotulos && rot) s += `<text x="${cx}" y="${yy - 6}" text-anchor="middle" font-size="${temSel && p.sel ? 12 : 11}" font-weight="${temSel && p.sel ? 700 : 600}" fill="${temSel && p.sel ? '#9a4f00' : '#222222'}">${moneyK(p.v)}</text>`;
+if (i === n - 1 || (i % passo === 0 && n - 1 - i >= Math.max(1, Math.ceil(passo * 0.75)))) s += `<text x="${cx}" y="${H - 10}" text-anchor="middle" font-size="11" fill="#484848">${p.rot}</text>`;
+s += `<rect x="${padL + band * i}" y="${padT}" width="${band}" height="${ih}" fill="transparent" data-tip="${esc(p.tip)}" ${onClick ? `style="cursor:pointer" onclick="${onClick}('${p.k}')"` : ''}/>`;
+});
+return s + '</svg>';
+}
+// barras horizontais ranqueadas (série única)
+function hbarsHTML(itens, { valor = 'valor', onClick, max: maxN = 8 } = {}) {
+let L = [...itens].sort((a, b) => b[valor] - a[valor]);
+if (L.length > maxN) { const resto = L.slice(maxN - 1); L = L.slice(0, maxN - 1); L.push({ nome: `Outros (${resto.length})`, qtd: soma(resto, 'qtd'), valor: soma(resto, 'valor'), outros: true }); }
+if (!L.length) return '<div class="vazio">Sem dados no recorte.</div>';
+const mx = Math.max(1, ...L.map(i => i[valor]));
+return `<div class="hbars">${L.map(i => `<div class="row" ${onClick && !i.outros ? `onclick="${onClick}(this.dataset.n)"` : ''} data-n="${esc(i.nome)}" data-tip="<b>${esc(i.nome)}</b><br>${int(i.qtd)} chamado(s) · ${money(i.valor)}">
+<span class="nm">${esc(i.nome)}</span><div class="tr"><div class="br" style="width:${(i[valor] / mx * 100).toFixed(1)}%"></div></div>
+<span class="vl">${valor === 'valor' ? `<b>${money(i.valor)}</b> · ${int(i.qtd)}` : `<b>${int(i.qtd)}</b> · ${money(i.valor)}`}</span></div>`).join('')}</div>`;
+}
+// barra segmentada de situação (parte do todo, status com ícone + rótulo)
+function situacaoHTML(L, onClick) {
+const tot = L.length || 1;
+const g = ORDEM_ST.map(s => { const x = L.filter(c => c.status === s); return { s, n: x.length, v: soma(x, 'valorTotal') }; });
+const seg = g.filter(x => x.n).map(x => { const w = x.n / tot * 100; return `<div style="flex:${x.n};background:${ST[x.s].hex}" class="${ST[x.s].dark ? 'dark' : ''}" data-tip="<b>${x.s}</b><br>${x.n} chamado(s) · ${pct(x.n / tot)}<br>${money(x.v)}" ${onClick ? `onclick="${onClick}('${x.s}')"` : ''}>${w >= 9 ? pct(x.n / tot) : ''}</div>`; }).join('');
+const leg = g.map(x => `<div class="it" ${onClick ? `onclick="${onClick}('${x.s}')"` : ''}><span class="sw" style="background:${ST[x.s].hex}"></span><span>${pill(x.s)}</span><span class="n">${x.n}</span><span class="p">${pct(x.n / tot)} · ${moneyK(x.v)}</span></div>`).join('');
+return `<div class="seg">${seg || '<div style="flex:1;background:#eef0f3"></div>'}</div><div class="legenda">${leg}</div>`;
+}
+// ===================================================================== VISÃO GERAL
+function renderVisao() {
+if (!D.statusChamado.length) return;
+const R = recorte(), I = indicadores(R), L = R.L, F = R.filtroCh;
+// modo TV: gráficos ocupam a altura toda do painel e ficam ampliados (k) para leitura à distância
+if (TV.on) tvAltura();
+const k = TV.on ? 1.45 : 1;
+const hA = el => TV.on && !el.classList.contains('tv-off') && el.clientHeight > 200 ? Math.max(200, (el.clientHeight - 130) / k) : 250;
+const tiles = [
+{ r: 'Chamados no período', ic: 'list', v: int(L.length), s: `${money(I.total)} em serviços`, f: {} },
+{ r: 'Cumprimento de prazo', ic: 'clock', v: I.conc.length ? pct(I.taxa) : '—', s: `${pillPct(I.taxa, I.taxa >= META_PRAZO ? 'Dentro da meta' : 'Abaixo da meta')} meta ${pct(META_PRAZO)} · ${I.ok.length} de ${I.conc.length}`, f: { fStatus: 'Concluído' } },
+{ r: 'Atrasados', ic: 'tag', v: int(I.atr.length), s: I.atr.length ? `${pill('Atrasado')} ${money(soma(I.atr, 'valorTotal'))} · até ${I.atrasoMax} dias` : `${pill('Concluído').replace('Concluído', 'Nenhum atraso')}`, f: { fStatus: 'Atrasado' } },
+{ r: 'Em andamento no prazo', ic: 'grid', v: int(I.ab.length), s: `${I.vence3} vencem em até 3 dias`, f: { fStatus: 'Em aberto' } },
+{ r: 'A faturar em ' + fmes(R.atual), ic: 'money', v: money(I.fatMes), s: `Próximo mês: ${money(I.fatProx)}`, f: { fMes: R.atual }, semPeriodo: true },
+{ r: 'Material utilizado', ic: 'box', v: money(soma(L, 'valorMaterial')), s: I.total ? `${pct(soma(L, 'valorMaterial') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
+{ r: 'Mão de obra / deslocamento', ic: 'truck', v: money(soma(L, 'valorMaoObra')), s: I.total ? `${pct(soma(L, 'valorMaoObra') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
+{ r: 'Prazo médio de atendimento', ic: 'clock', v: I.conc.length ? I.prazoMed.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' dias' : '—', s: 'da abertura à conclusão', f: { fStatus: '' } }
+];
+$('kpis').innerHTML = tiles.map((t, i) => `<div class="kpi" data-i="${i}" title="Ver chamados"><div class="rot">${ico(t.ic)}${t.r}</div><div class="val">${t.v}</div><div class="sub">${t.s}</div></div>`).join('');
+$('kpis').querySelectorAll('.kpi').forEach(el => el.onclick = () => { const t = tiles[+el.dataset.i]; const f = { ...F, ...t.f }; if (t.semPeriodo) { delete f.fDe; delete f.fAte; } verChamados(f); });
+// faturamento mensal
+const elF = $('c-fat'), W = Math.max(420, ((elF.clientWidth || 800) - 40) / k);
+const temMes = R.mesesSel.length > 0;
+const pts = R.meses.map(m => { const g = R.B.filter(c => c.mesFaturamento === m); const v = soma(g, 'valorTotal'); return { k: m, rot: fmesC(m), v, futuro: m >= R.atual, destaque: m === R.atual, sel: temMes ? R.mesesSel.includes(m) : undefined, tip: `<b>${fmesL(m)}</b><br>${money(v)}<br><span class='tl'>${g.length} chamado(s)${m >= R.atual ? ' · previsto' : ''}</span>` }; });
+cardChart(elF, 'Faturamento mensal', `Valor total dos serviços por mês de faturamento · ${R.rotulo === 'Todo o período' ? 'últimos meses' : R.rotulo.toLowerCase()} · total ${money(I.fatPeriodo)}`,
+(pts.length ? colunasSVG(pts, { W, H: hA(elF), onClick: 'abrirFat', maiorLaranja: true }) : '<div class="vazio">Nenhum chamado concluído no recorte.</div>') +
+legSel(pts, `<span><i style="background:#0058a0"></i>Meses anteriores</span><span><i style="background:#0099cc"></i>Mês atual e previsão</span><span><i style="background:#f68b1f"></i>Maior faturamento</span>`),
+tabelaHTML([{ t: 'Mês' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], pts.map(p => [fmes(p.k), R.B.filter(c => c.mesFaturamento === p.k).length, money(p.v)]), ['Total', '', money(I.fatPeriodo)]));
+// chamados abertos por mês (pela data do chamado; segue os filtros de período, fornecedor e unidade)
+const elA = $('c-abertos'), WA = Math.max(420, ((elA.clientWidth || 1000) - 40) / k);
+const ptsA = abertosPorMes(R);
+const baseA = temMes ? ptsA.filter(p => p.sel) : ptsA;   // totais só dos meses escolhidos
+const totA = soma(baseA, 'v'), medA = baseA.length ? totA / baseA.length : 0;
+cardChart(elA, 'Chamados abertos por mês', `Quantidade de chamados pela data de abertura · ${int(totA)} ${temMes ? 'no(s) mês(es) selecionado(s)' : 'no período'} · média de ${medA.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por mês`,
+(ptsA.length ? colunasSVG(ptsA, { W: WA, H: hA(elA), inteiro: true, todosRotulos: true, maiorLaranja: true, onClick: 'verAbertosMes' }) : '<div class="vazio">Nenhum chamado no recorte.</div>') +
+legSel(ptsA, `<span><i style="background:#0058a0"></i>Meses anteriores</span><span><i style="background:#0099cc"></i>Mês atual</span><span><i style="background:#f68b1f"></i>Mês com mais chamados</span>`),
+tabelaHTML([{ t: 'Mês' }, { t: 'Abertos', num: 1 }, { t: 'Concluídos', num: 1 }, { t: 'Em andamento', num: 1 }],
+ptsA.map(p => { const g = L.filter(c => (c.dataChamado || '').startsWith(p.k)); const cc = g.filter(c => c.dataReal).length; return [fmes(p.k), g.length, cc, g.length - cc]; }), ['Total', totA, '', '']));
+cardChart($('c-sit'), 'Situação dos chamados', `${int(L.length)} chamados no recorte`, situacaoHTML(L, 'verSituacao'),
+tabelaHTML([{ t: 'Situação' }, { t: 'Qtd', num: 1 }, { t: '%', num: 1 }, { t: 'Valor', num: 1 }], ORDEM_ST.map(s => { const x = L.filter(c => c.status === s); return [pill(s), x.length, pct(x.length / (L.length || 1)), money(soma(x, 'valorTotal'))]; })));
+const emp = agrupa(L, 'empresa'), uni = agrupa(L, 'unidade'), orc = agrupa(L, 'statusOrcamento', '(sem status)'), pend = agrupa(L.filter(c => c.pendencia && !c.dataReal), 'pendencia');
+const tabG = (g, nome) => tabelaHTML([{ t: nome }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], [...g].sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)]), ['Total', soma(g, 'qtd'), money(soma(g, 'valor'))]);
+cardChart($('c-emp'), 'Valor por fornecedor', 'Soma dos serviços no recorte', hbarsHTML(emp, { onClick: 'verEmpresa' }), tabG(emp, 'Fornecedor'));
+cardChart($('c-uni'), 'Chamados por unidade', 'Quantidade de chamados no recorte', hbarsHTML(uni, { valor: 'qtd', onClick: 'verUnidade' }), tabG(uni, 'Unidade'));
+cardChart($('c-orc'), 'Status do orçamento', 'Quantidade de chamados por etapa do orçamento', hbarsHTML(orc, { valor: 'qtd', onClick: 'verOrc' }), tabG(orc, 'Status do orçamento'));
+cardChart($('c-pend'), 'Pendências em aberto', 'Chamados não concluídos com pendência registrada', hbarsHTML(pend, { valor: 'qtd', onClick: 'verPend' }), tabG(pend, 'Pendência'));
+const dp = desempenho(L);
+$('c-desemp').innerHTML = `<div class="card-h"><div><h3>Desempenho por fornecedor</h3><div class="d">Concluídos no recorte · meta de prazo ${pct(META_PRAZO)}</div></div></div>` +
+tabelaHTML([{ t: 'Fornecedor' }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atraso médio', num: 1 }, { t: 'Em andamento', num: 1 }],
+dp.map(e => [`<span class="lk" onclick="verEmpresa('${esc(e.nome)}')">${esc(e.nome)}</span>`, e.conc, e.conc ? pillPct(e.taxa, pct(e.taxa)) : '—', e.conc ? e.prazo.toFixed(1) + ' d' : '—', e.atraso ? e.atraso.toFixed(1) + ' d' : '—', e.andamento + (e.atrasados ? ` <span style="color:var(--ink-2)">(${e.atrasados} atras.)</span>` : '')]));
+const aten = L.filter(c => !c.dataReal && c.dataPrevista && dias(D.hoje, c.dataPrevista) <= 3).sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevista));
+$('c-aten').innerHTML = `<div class="card-h"><div><h3>Precisa de atenção</h3><div class="d">Atrasados e vencendo nos próximos 3 dias · ${aten.length} chamado(s)</div></div></div>` +
+(aten.length ? `<div class="tw" style="max-height:340px"><table><thead><tr><th>Nº</th><th>Unidade</th><th>Fornecedor</th><th>Situação</th><th></th></tr></thead><tbody>${aten.map(c => { const d = dias(D.hoje, c.dataPrevista); return `<tr>
+<td><span class="lk" onclick="abrirForm(${c.id})">${esc(c.numero)}</span></td><td>${esc(c.unidade)}</td><td>${esc(c.empresa)}</td>
+<td>${d < 0 ? `<span class="pill critical">${ico('s_critical')}${-d} dia(s) de atraso</span>` : `<span class="pill warning">${ico('s_warning')}${d === 0 ? 'vence hoje' : `vence em ${d} dia(s)`}</span>`}</td>
+<td>${podeConcluirC(c) ? `<button class="btn peq" onclick="concluirHoje(${c.id})">${ico('check')}Concluir</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : `<div class="vazio">${pill('Concluído').replace('Concluído', 'Tudo em dia')}<br><br>Nenhum chamado atrasado ou vencendo nos próximos 3 dias.</div>`);
+}
+function verSituacao(s) { verChamados({ ...recorte().filtroCh, fStatus: s }); }
+function verEmpresa(n) { verChamados({ ...recorte().filtroCh, fEmpresa: n }); }
+function verAbertosMes(m) { const [y, mo] = m.split('-').map(Number); const fim = new Date(y, mo, 0).getDate(); verChamados({ ...recorte().filtroCh, fDe: m + '-01', fAte: m + '-' + String(fim).padStart(2, '0') }); }
+function verUnidade(n) { verChamados({ ...recorte().filtroCh, fUnidade: n }); }
+function verOrc(n) { verChamados({ ...recorte().filtroCh, fOrc: n === '(sem status)' ? '__vazio' : n }); }
+function verPend(n) { verChamados({ ...recorte().filtroCh, fPend: n, fStatus: '__pend' }); }
+// ===================================================================== RELATÓRIO GERENCIAL
+// chamados abertos por mês (pela data do chamado; segue os filtros). Usado na Visão geral, no Modo TV e no relatório.
+function abertosPorMes(R) {
+// com meses escolhidos no filtro Mês, mostra todos os meses do período e destaca os escolhidos
+const sel = R.mesesSel || [], L = sel.length ? (R.Lp || R.L) : R.L;
+const ms = [...L.map(c => (c.dataChamado || '').slice(0, 7)).filter(Boolean), ...sel].sort(); if (!ms.length) return [];
+let ini = ms[0], fim = ms[ms.length - 1];
+if (!R.temPeriodo) { const hoje = D.hoje.slice(0, 7); if (fim < hoje) fim = hoje; if (ini < addMes(fim, -17)) ini = addMes(fim, -17); }   // todo o período: últimos 18 meses
+if (sel.length && sel[0] < ini) ini = sel[0];
+const mesHoje = D.hoje.slice(0, 7), pts = [];
+for (let m = ini; m <= fim; m = addMes(m, 1)) {
+const g = L.filter(c => (c.dataChamado || '').startsWith(m)), conc = g.filter(c => c.dataReal).length;
+pts.push({ k: m, rot: fmesC(m), v: g.length, conc, futuro: m === mesHoje, destaque: m === mesHoje, sel: sel.length ? sel.includes(m) : undefined,
+tip: `<b>${fmesL(m)}</b><br>${int(g.length)} chamado(s) aberto(s)<br><span class='tl'>${int(conc)} concluído(s) · ${int(g.length - conc)} em andamento</span>` });
+}
+return pts;
+}
+function renderRelatorio() {
+if (!D.statusChamado.length) return;
+const R = recorte(), I = indicadores(R), L = R.L;
+const dp = desempenho(L);
+const atrs = [...I.atr].sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevista));
+const pend = agrupa(L.filter(c => c.pendencia && !c.dataReal), 'pendencia').sort((a, b) => b.qtd - a.qtd);
+const melhor = dp.filter(e => e.conc >= 3)[0], pior = dp.filter(e => e.conc >= 3).slice(-1)[0];
+const maisAntigo = atrs[0];
+const filtrosTxt = [R.rotulo, R.emp.length ? 'Fornecedor: ' + R.emp.join(', ') : 'Todos os fornecedores', R.uni.length ? 'Unidade: ' + R.uni.join(', ') : 'Todas as unidades'].join(' · ');
+const resumo = [
+`Foram registrados <b>${int(L.length)} chamados</b> no recorte, somando <b>${money(I.total)}</b> em serviços.`,
+I.conc.length ? `Dos ${I.conc.length} chamados concluídos, <b>${pct(I.taxa)} foram entregues no prazo</b> — ${I.taxa >= META_PRAZO ? 'dentro' : 'abaixo'} da meta de ${pct(META_PRAZO)}. O prazo médio de atendimento foi de ${I.prazoMed.toFixed(1).replace('.', ',')} dias.` : 'Nenhum chamado foi concluído no recorte.',
+I.atr.length ? `Há <b>${I.atr.length} chamado(s) atrasado(s)</b>, somando ${money(soma(I.atr, 'valorTotal'))}; o mais antigo (Nº ${esc(maisAntigo.numero)}, ${esc(maisAntigo.unidade)}) está ${dias(maisAntigo.dataPrevista, D.hoje)} dias além do prazo.` : 'Não há chamados atrasados.',
+I.ab.length ? `${I.ab.length} chamado(s) seguem em andamento dentro do prazo${I.vence3 ? `, dos quais ${I.vence3} vencem nos próximos 3 dias` : ''}.` : '',
+melhor && pior && melhor.nome !== pior.nome ? `Melhor cumprimento de prazo: <b>${esc(melhor.nome)}</b> (${pct(melhor.taxa)}); menor: <b>${esc(pior.nome)}</b> (${pct(pior.taxa)}).` : '',
+`Previsão de faturamento: <b>${money(I.fatMes)}</b> em ${fmesL(R.atual)} e ${money(I.fatProx)} em ${fmesL(addMes(R.atual, 1))}.`,
+pend.length ? `Pendência mais frequente entre os não concluídos: <b>${esc(pend[0].nome)}</b> (${pend[0].qtd} chamado(s)).` : ''
+].filter(Boolean);
+const temMes = R.mesesSel.length > 0;
+const pts = R.meses.map(m => { const v = soma(R.B.filter(c => c.mesFaturamento === m), 'valorTotal'); return { k: m, rot: fmesC(m), v, futuro: m >= R.atual, destaque: m === R.atual, sel: temMes ? R.mesesSel.includes(m) : undefined, tip: `<b>${fmesL(m)}</b><br>${money(v)}` }; });
+const uni = agrupa(L, 'unidade').sort((a, b) => b.qtd - a.qtd);
+const ptsA = abertosPorMes(R), emp = agrupa(L, 'empresa'), orc = agrupa(L, 'statusOrcamento', '(sem status)');
+const stCh = L.some(c => c.statusChamado) ? agrupa(L, 'statusChamado', '(sem status)') : [];
+const k = [['Chamados', int(L.length)], ['Valor dos serviços', money(I.total)], ['Cumprimento de prazo', I.conc.length ? pct(I.taxa) : '—'],
+['Atrasados', `${I.atr.length} · ${moneyK(soma(I.atr, 'valorTotal'))}`], ['Em andamento no prazo', int(I.ab.length)], ['A faturar em ' + fmes(R.atual), money(I.fatMes)],
+['Material utilizado', money(soma(L, 'valorMaterial'))], ['Mão de obra / deslocamento', money(soma(L, 'valorMaoObra'))], ['Prazo médio de atendimento', I.conc.length ? I.prazoMed.toFixed(1).replace('.', ',') + ' dias' : '—']];
+$('rel').innerHTML = `
+<div class="rel-cab"><img class="logo-cpfl" src="/logo-cpfl.png" alt="CPFL Energia"><div><h2>Relatório Gerencial de Chamados</h2><div class="meta">Segurança Empresarial · Sistema de chamados de fornecedores<br>${esc(filtrosTxt)}</div></div>
+<div class="emit">Emitido em<br><b>${new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</b></div></div>
+<h3 style="margin-top:0">Resumo executivo</h3><ul class="resumo">${resumo.map(r => `<li>${r}</li>`).join('')}</ul>
+<h3>Indicadores</h3><div class="rel-kpis">${k.map(x => `<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
+<h3>Situação dos chamados</h3>${situacaoHTML(L)}
+<h3>Faturamento mensal</h3>${pts.length ? colunasSVG(pts, { W: 880, H: 220, maiorLaranja: true }) : '<div class="vazio">Sem faturamento no recorte.</div>'}
+${pts.length ? legSel(pts, `<span><i style="background:#0058a0"></i>Meses anteriores</span><span><i style="background:#0099cc"></i>Mês atual e previsão</span><span><i style="background:#f68b1f"></i>Maior faturamento</span>`) : ''}
+${tabelaHTML([{ t: 'Mês' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], pts.filter(p => p.v).map(p => [fmesL(p.k), R.B.filter(c => c.mesFaturamento === p.k).length, money(p.v)]), ['Total', '', money(I.fatPeriodo)])}
+<h3>Chamados abertos por mês</h3>${ptsA.length ? colunasSVG(ptsA, { W: 880, H: 220, inteiro: true, todosRotulos: true, maiorLaranja: true }) +
+legSel(ptsA, `<span><i style="background:#0058a0"></i>Meses anteriores</span><span><i style="background:#0099cc"></i>Mês atual</span><span><i style="background:#f68b1f"></i>Mês com mais chamados</span>`) : '<div class="vazio">Nenhum chamado no recorte.</div>'}
+${(() => { const tA = temMes ? ptsA.filter(p => p.sel) : ptsA.filter(p => p.v); return tabelaHTML([{ t: 'Mês' }, { t: 'Abertos', num: 1 }, { t: 'Concluídos', num: 1 }, { t: 'Em andamento', num: 1 }], tA.map(p => [fmesL(p.k), p.v, p.conc, p.v - p.conc]), ['Total', soma(tA, 'v'), soma(tA, 'conc'), soma(tA, 'v') - soma(tA, 'conc')]); })()}
+<div class="rel-2">
+<div><h3>Valor por fornecedor</h3>${hbarsHTML(emp, { max: 12 })}</div>
+<div><h3>Chamados por unidade</h3>${hbarsHTML(uni, { valor: 'qtd', max: 12 })}</div>
+</div>
+<h3>Desempenho por fornecedor</h3>
+${tabelaHTML([{ t: 'Fornecedor' }, { t: 'Chamados', num: 1 }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atrasados', num: 1 }, { t: 'Valor', num: 1 }],
+dp.map(e => [esc(e.nome), e.qtd, e.conc, e.conc ? pillPct(e.taxa, pct(e.taxa)) : '—', e.conc ? e.prazo.toFixed(1) + ' d' : '—', e.atrasados, money(e.valor)]), ['Total', L.length, I.conc.length, I.conc.length ? pct(I.taxa) : '', '', I.atr.length, money(I.total)])}
+<h3>Chamados por unidade (detalhe)</h3>
+${tabelaHTML([{ t: 'Unidade' }, { t: 'Chamados', num: 1 }, { t: 'Atrasados', num: 1 }, { t: 'Valor', num: 1 }], uni.map(u => [esc(u.nome), u.qtd, L.filter(c => c.unidade === u.nome && c.status === 'Atrasado').length, money(u.valor)]))}
+<div class="rel-2">
+<div><h3>Status do orçamento</h3>${hbarsHTML(orc, { valor: 'qtd', max: 12 })}</div>
+<div><h3>Pendências em aberto</h3>${pend.length ? hbarsHTML(pend, { valor: 'qtd', max: 12 }) : '<div class="vazio">Nenhuma pendência em aberto.</div>'}</div>
+</div>
+${stCh.length ? `<h3>Status do chamado</h3>${hbarsHTML(stCh, { valor: 'qtd', max: 12 })}` : ''}
+<h3>Chamados atrasados (${atrs.length})</h3>
+${tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Fornecedor' }, { t: 'Previsto' }, { t: 'Dias de atraso', num: 1 }, { t: 'Pendência' }, { t: 'Valor', num: 1 }],
+atrs.map(c => [esc(c.numero), esc(c.unidade), esc(c.empresa), fd(c.dataPrevista), dias(c.dataPrevista, D.hoje), esc(c.pendencia || '—'), money(c.valorTotal)]))}
+${pend.length ? `<h3>Pendências em aberto (detalhe)</h3>${tabelaHTML([{ t: 'Pendência' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], pend.map(p => [esc(p.nome), p.qtd, money(p.valor)]))}` : ''}
+<div class="rel-rod"><span>Segurança Empresarial · Sistema de chamados de fornecedores · situação calculada em ${fd(D.hoje)}</span><span>Meta de prazo: ${pct(META_PRAZO)}</span></div>`;
+}
+// ===================================================================== CHAMADOS
+const FILTROS = ['fBusca', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fOrc', 'fPend', 'fMes', 'fDe', 'fAte'];
+FILTROS.forEach(id => $(id).addEventListener(id === 'fBusca' ? 'input' : 'change', () => renderChamados()));
+function limparFiltros(sil) { FILTROS.forEach(id => $(id).value = ''); syncPesquisaveis(); if (!sil) renderChamados(); }
+function filtrados() {
+const v = id => $(id).value, q = norm(v('fBusca')).trim();
+return D.chamados.filter(c => {
+if (q && !norm([c.numero, c.unidade, c.empresa, c.chamadoFornecedor, c.osFornecedor, c.observacao, c.pendencia, c.statusOrcamento, c.criadoPor, c.responsavel, c.contatoResponsavel, c.statusChamado].join(' ')).includes(q)) return false;
+// cada filtro aceita várias opções: o chamado passa se combinar com QUALQUER uma delas
+const portal = /^\d+$/.test(c.numero);
+const og = vals('fOrigem'); if (og.length && !og.some(o => o === 'portal' ? portal : !portal)) return false;
+const st = vals('fStatus'); if (st.length && !st.some(s => s === '__pend' ? !c.dataReal : c.status === s)) return false;
+if (!algum(vals('fUnidade'), c.unidade)) return false;
+if (!algum(vals('fEmpresa'), c.empresa)) return false;
+if (!algum(vals('fPrioridade'), c.prioridade)) return false;
+const o = vals('fOrc'); if (o.length && !o.some(x => x === '__vazio' ? !c.statusOrcamento : c.statusOrcamento === x)) return false;
+const p = vals('fPend'); if (p.length && !p.some(x => x === '__com' ? !!c.pendencia : x === '__sem' ? !c.pendencia : c.pendencia === x)) return false;
+const m = vals('fMes'); if (m.length && !m.some(x => x === '__sem' ? !c.mesFaturamento : c.mesFaturamento === x)) return false;
+if (v('fDe') && c.dataChamado < v('fDe')) return false;
+if (v('fAte') && c.dataChamado > v('fAte')) return false;
+return true;
+});
+}
+function ordenar(L) {
+const col = COLS.find(c => c.k === sort.key) || {};
+const r = [...L].sort((a, b) => {
+let x = a[sort.key], y = b[sort.key];
+if (col.f === 'm') return x - y;
+if (sort.key === 'numero' && /^\d+$/.test(x) && /^\d+$/.test(y)) return x - y;
+if (col.f === 'p') { const P = D.cadastros.prioridades; return P.indexOf(x) - P.indexOf(y); }
+if (col.f === 's') return ORDEM_ST.indexOf(x) - ORDEM_ST.indexOf(y);
+x = x || ''; y = y || ''; if (!x && y) return 1; if (x && !y) return -1;
+return String(x).localeCompare(String(y), 'pt-BR', { numeric: true });
+});
+return sort.desc ? r.reverse() : r;
+}
+function celula(c, col) {
+const v = c[col.k];
+switch (col.f) {
+case 'd': return `<td>${fd(v)}</td>`;
+case 'm': return `<td class="num">${numBR(v)}</td>`;
+case 's': return `<td>${pill(v)}</td>`;
+case 'p': return `<td>${prio(v)}</td>`;
+case 'tag': return `<td>${v ? `<span class="tag">${esc(v)}</span>` : ''}</td>`;
+case 'mes': return `<td>${fmes(v)}</td>`;
+case 'obs': return `<td class="obs" title="${esc(v)}">${esc(v)}</td>`;
+default: return col.k === 'numero' ? `<td><span class="lk" onclick="abrirForm(${c.id})">${esc(v)}</span></td>` : `<td>${esc(v)}</td>`;
+}
+}
+function renderChamados() {
+const L = ordenar(filtrados()), tab = $('tab'), CV = colsVisiveis();
+const todos = L.length > 0 && L.every(c => sel.has(c.id));
+tab.tHead.innerHTML = `<tr><th class="nao-imprime"><input type="checkbox" id="selTodos" ${todos ? 'checked' : ''} title="Selecionar todos os filtrados"></th>` +
+CV.map(c => `<th data-k="${c.k}" class="s ${c.f === 'm' ? 'num ' : ''}${sort.key === c.k ? 'ord' + (sort.desc ? ' desc' : '') : ''}">${c.t}</th>`).join('') + '<th class="nao-imprime"></th></tr>';
+tab.tBodies[0].innerHTML = L.length ? L.map(c => `<tr class="${sel.has(c.id) ? 'sel' : ''}">
+<td class="nao-imprime"><input type="checkbox" data-id="${c.id}" ${sel.has(c.id) ? 'checked' : ''}></td>${CV.map(col => celula(c, col)).join('')}
+<td class="nao-imprime" style="white-space:nowrap">
+<button class="ic" title="${podeEditarC(c) ? 'Editar' : 'Ver detalhes'}" onclick="abrirForm(${c.id})">${ico(podeEditarC(c) ? 'edit' : 'doc')}</button>
+${c.dataReal || !podeConcluirC(c) ? '' : `<button class="ic" title="Concluir" onclick="concluirHoje(${c.id})">${ico('check')}</button>`}
+${pode('criar_chamado') ? `<button class="ic" title="Duplicar" onclick="abrirForm(${c.id}, true)">${ico('copy')}</button>` : ''}
+${pode('excluir_chamado') ? `<button class="ic" title="Excluir" onclick="excluir(${c.id})">${ico('trash')}</button>` : ''}</td></tr>`).join('')
+: `<tr><td colspan="${CV.length + 2}" class="vazio">Nenhum chamado encontrado com esses filtros.</td></tr>`;
+tab.tFoot.innerHTML = `<tr><td class="nao-imprime"></td>${CV.map((c, i) => c.f === 'm' ? `<td class="num">${numBR(soma(L, c.k))}</td>` : `<td>${i === 0 ? L.length + ' chamado(s)' : ''}</td>`).join('')}<td class="nao-imprime"></td></tr>`;
+const n = s => L.filter(c => c.status === s).length;
+tab.tBodies[0].querySelectorAll('tr').forEach((tr, i) => { if (L[i]) tr.ondblclick = e => { if (!e.target.closest('button,input')) abrirForm(L[i].id); }; });
+syncPesquisaveis();
+$('chips').innerHTML = `<span class="chip">Exibindo <b>${L.length}</b> de ${D.chamados.length}</span>${pode('campos_gestao') ? ORDEM_ST.map(s => `<span class="chip">${pill(s)} <b>${n(s)}</b></span>`).join('') : ''}${pode('ver_valores') ? `<span class="chip">Total <b>${money(soma(L, 'valorTotal'))}</b></span>` : ''}
+<span style="margin-left:auto;gap:8px;display:${pode('exportar') ? 'flex' : 'none'}" class="nao-imprime"><button class="btn" onclick="exportarCSV(filtrados(),'chamados_gitel')">${ico('download')}Exportar</button><button class="btn" onclick="window.print()">${ico('print')}Imprimir</button></span>`;
+tab.tHead.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => { if (sort.key === th.dataset.k) sort.desc = !sort.desc; else { sort.key = th.dataset.k; sort.desc = false; } renderChamados(); });
+$('selTodos').onchange = e => { L.forEach(c => e.target.checked ? sel.add(c.id) : sel.delete(c.id)); renderChamados(); };
+tab.tBodies[0].querySelectorAll('input[data-id]').forEach(cb => cb.onchange = () => { const id = +cb.dataset.id; cb.checked ? sel.add(id) : sel.delete(id); cb.closest('tr').classList.toggle('sel', cb.checked); atualizarLote(); });
+atualizarLote();
+}
+function atualizarLote() { $('lote').classList.toggle('ativo', sel.size > 0 && (pode('alterar_lote') || pode('exportar'))); $('loteQtd').textContent = sel.size + ' selecionado(s)'; if (!$('loteValorWrap').firstChild) montarLoteValor(); }
+function montarLoteValor() {
+const campo = $('loteCampo').value, C = D.cadastros;
+const listas = { statusChamado: C.statusChamado || [], statusOrcamento: C.statusOrcamento, pendencia: C.pendencias, prioridade: C.prioridades, empresa: C.empresas, unidade: C.unidades };
+$('loteValorWrap').innerHTML = campo.startsWith('data') ? `<input type="date" id="loteValor" value="${D.hoje}">`
+: `<select id="loteValor">${campo === 'pendencia' || campo === 'statusOrcamento' || campo === 'statusChamado' ? '<option value="">(limpar campo)</option>' : ''}${(listas[campo] || []).map(v => `<option>${esc(v)}</option>`).join('')}</select>`;
+}
+async function aplicarLote() {
+const campo = $('loteCampo').value, valor = $('loteValor').value, nome = $('loteCampo').selectedOptions[0].text;
+if (!await dialogo('Alterar em lote', `Alterar <b>${esc(nome)}</b> para <b>${esc(campo.startsWith('data') ? fd(valor) || '(vazio)' : valor || '(vazio)')}</b> em ${sel.size} chamado(s)?`)) return;
+try { const r = await api('POST', '/api/lote', { ids: [...sel], campo, valor }); toast(`${r.alterados} chamado(s) alterado(s).`, 'ok'); sel.clear(); await carregar(); } catch (e) { toast(e.message, 'erro'); }
+}
+async function excluirLote() {
+if (!await dialogo('Excluir chamados', `Excluir <b>${sel.size} chamado(s)</b>? Um backup da planilha é feito antes.`, { ok: 'Excluir', perigo: true })) return;
+try { const r = await api('POST', '/api/lote', { ids: [...sel], campo: 'excluir' }); toast(`${r.alterados} chamado(s) excluído(s).`, 'ok'); sel.clear(); await carregar(); } catch (e) { toast(e.message, 'erro'); }
+}
+async function concluirHoje(id) {
+const c = D.chamados.find(x => x.id === id); if (!c) return;
+const ok = await dialogo('Concluir chamado ' + c.numero, `<div class="campo"><label>Data real de conclusão</label><input type="date" id="dlgData" value="${D.hoje}"></div><p style="color:var(--ink-2);margin:12px 0 0" id="dlgInfo"></p>`, { ok: 'Concluir', foco: 'dlgData' });
+if (!ok) return;
+const iso = $('dlgData').value;
+if (!iso) { toast('Informe a data.', 'erro'); return; }
+try { await api('PUT', '/api/chamados/' + id, { ...c, dataReal: iso }); toast(`Chamado ${c.numero} concluído em ${fd(iso)} · fatura em ${fmes(fatDe(iso))}.`, 'ok'); await carregar(); } catch (e) { toast(e.message, 'erro'); }
+}
+async function excluir(id) {
+const c = D.chamados.find(x => x.id === id); if (!c) return;
+if (!await dialogo('Excluir chamado', `Excluir o chamado <b>${esc(c.numero)}</b> (${esc(c.unidade)} · ${esc(c.empresa)})?`, { ok: 'Excluir', perigo: true })) return;
+try { await api('DELETE', '/api/chamados/' + id); toast('Chamado excluído.', 'ok'); sel.delete(id); fecharForm(); await carregar(); } catch (e) { toast(e.message, 'erro'); }
+}
+// ===================================================================== FORMULÁRIO
+const F = () => $('form').elements;
+function abrirForm(id, duplicar) {
+const c = id ? D.chamados.find(x => x.id === id) : null;
+editId = c && !duplicar ? c.id : null;
+editBase = editId ? c.atualizadoEm || '' : '';
+opts(F().prioridade, D.cadastros.prioridades, '—'); opts(F().statusOrcamento, D.cadastros.statusOrcamento, '—');
+opts(F().statusChamado, D.cadastros.statusChamado || [], (D.cadastros.statusChamado || []).length ? '—' : '— (cadastre as opções em Cadastros)');
+$('form').reset(); $('mErro').style.display = 'none';
+const base = c || { dataChamado: D.hoje, prioridade: 'Média' };
+for (const el of F()) { if (!el.name) continue; let v = base[el.name] ?? ''; if (el.name === 'valorMaterial' || el.name === 'valorMaoObra') v = c ? numBR(v) : ''; el.value = v; }
+if (duplicar) { F().numero.value = ''; F().dataReal.value = ''; F().chamadoFornecedor.value = ''; F().osFornecedor.value = ''; F().dataChamado.value = D.hoje; }
+$('mTitulo').textContent = editId ? `Chamado ${c.numero}` : duplicar ? `Novo chamado (cópia de ${c.numero})` : 'Novo chamado';
+// permissões: quem não edita vê os dados; quem só conclui altera apenas a data real
+const podeEd = !editId || podeEditarC(c), soConclui = editId && !podeEditarC(c) && pode('concluir_chamado');
+$('mAviso').style.display = editId && !podeEd ? 'block' : 'none';
+$('mAviso').textContent = soConclui ? 'Seu perfil permite apenas concluir este chamado (data real de conclusão).' : pode('editar_proprios') && !ehMeu(c) ? 'Somente leitura: você pode editar apenas os chamados que você cadastrou.' : 'Somente leitura: seu perfil não permite editar chamados.';
+for (const el of F()) if (el.name || el.tagName === 'BUTTON') el.disabled = !podeEd && !(soConclui && (el.name === 'dataReal' || el.textContent === 'Hoje'));
+// campos conforme o perfil: quem só abre chamados vê apenas os campos de abertura
+const verVal = pode('ver_valores'), verGes = pode('campos_gestao');
+const mostrar = (el, ok) => { const c = el && el.closest('.campo'); if (c) c.style.display = ok ? '' : 'none'; };
+['dataPrevista', 'dataReal', 'chamadoFornecedor', 'osFornecedor', 'statusChamado', 'statusOrcamento', 'pendencia'].forEach(n => mostrar(F()[n], verGes));
+mostrar($('mStatus'), verGes); mostrar($('mFat'), verGes && verVal);
+['valorMaterial', 'valorMaoObra'].forEach(n => mostrar(F()[n], verVal)); mostrar($('mTotal'), verVal);
+const h4 = document.querySelectorAll('#form .secao h4');
+h4[1].textContent = verGes ? 'Prazos' : 'Data do chamado';
+h4[2].textContent = verVal || verGes ? 'Valores e orçamento' : 'Descrição do chamado';
+$('mStatusTopo').style.display = verGes ? '' : 'none';
+$('mExcluir').style.display = editId && pode('excluir_chamado') ? '' : 'none';
+$('mDuplicar').style.display = editId && pode('criar_chamado') ? '' : 'none';
+$('mSalvarNovo').style.display = editId ? 'none' : '';
+$('mSalvar').style.display = podeEd || soConclui ? '' : 'none';
+$('mHistBox').style.display = 'none';
+if (editId) carregarHistChamado(editId);
+previa(); $('modal').classList.add('ativo');
+setTimeout(() => (editId ? F().dataReal : F().numero).focus(), 50);
+}
+function fecharForm() { $('modal').classList.remove('ativo'); editId = null; }
+function hojeReal() { F().dataReal.value = D.hoje; previa(); }
+function previa() {
+const e = F(), mat = parseBR(e.valorMaterial.value), mo = parseBR(e.valorMaoObra.value);
+$('mTotal').textContent = isNaN(mat) || isNaN(mo) ? 'valor inválido' : money(mat + mo);
+const st = statusDe({ numero: 'x', dataPrevista: e.dataPrevista.value, dataReal: e.dataReal.value }, D.hoje);
+$('mStatus').innerHTML = pill(st); $('mStatusTopo').innerHTML = editId ? pill(st) : '';
+const f = fatDe(e.dataReal.value);
+$('mFat').innerHTML = f ? fmesL(f) : '<span style="color:var(--muted);font-weight:400">preencha a data real de conclusão</span>';
+}
+$('form').addEventListener('input', previa);
+function dadosForm() {
+const o = {}; for (const el of F()) if (el.name) o[el.name] = el.value.trim();
+for (const k of ['valorMaterial', 'valorMaoObra']) { const n = parseBR(o[k]); if (isNaN(n)) throw new Error('Valor inválido em ' + (k === 'valorMaterial' ? 'Valor material' : 'Mão de obra') + '. Ex.: 1.234,56'); o[k] = n; }
+return o;
+}
+let salvando = false;
+async function salvar(novo) {
+if (salvando) return;
+const btns = document.querySelectorAll('#modal .mf button'); salvando = true; btns.forEach(b => b.disabled = true);
+const aviso = toast('Salvando na planilha...');
+try {
+const o = dadosForm();
+if (editId) o.atualizadoEm = editBase;
+if (editId) await api('PUT', '/api/chamados/' + editId, o); else await api('POST', '/api/chamados', o);
+toast(editId ? `Chamado ${o.numero} atualizado.` : `Chamado ${o.numero} cadastrado.`, 'ok');
+await carregar(); if (novo) abrirForm(); else fecharForm();
+} catch (e) { $('mErro').textContent = e.message; $('mErro').style.display = 'block'; }
+finally { salvando = false; btns.forEach(b => b.disabled = false); aviso.remove(); }
+}
+function excluirAtual() { if (editId) excluir(editId); }
+function duplicarAtual() { abrirForm(editId, true); }
+async function carregarHistChamado(id) {
+try { const h = await api('GET', '/api/historico?id=' + id); if (editId !== id) return;
+$('mHistBox').style.display = h.length ? '' : 'none';
+$('mHist').innerHTML = h.map(x => `<div><b>${esc(x.acao)}</b> <span class="q">· ${esc(x.quando)}${x.usuario ? ' · ' + esc(x.usuario) : ''}</span><br>${esc(x.detalhes)}</div>`).join(''); } catch {}
+}
+document.addEventListener('keydown', e => {
+const aberto = $('modal').classList.contains('ativo');
+if (e.key === 'Escape') { if ($('dlg').classList.contains('ativo')) $('dlgN').click(); else if ($('imp').classList.contains('ativo')) fecharImport(); else if (aberto) fecharForm(); }
+if (e.key === 'Enter' && $('dlg').classList.contains('ativo') && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); $('dlgS').click(); return; }
+if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && aberto) salvar(false);
+if (e.key === '/' && !aberto && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); irPara('chamados'); $('fBusca').focus(); }
+});
+$('modal').addEventListener('mousedown', e => { if (e.target === $('modal')) fecharForm(); });
+// ===================================================================== FATURAMENTO
+function abrirFat(m) { if (!pode('ver_faturamento')) return; setVals('fatMes', m); irPara('faturamento'); }
+function fatLista() { const ms = vals('fatMes'), emps = vals('fatEmpresa'); return D.chamados.filter(c => (ms.length ? ms.includes(c.mesFaturamento) : !!c.mesFaturamento) && algum(emps, c.empresa)).sort((a, b) => a.empresa.localeCompare(b.empresa) || a.dataReal.localeCompare(b.dataReal)); }
+['fatMes', 'fatEmpresa'].forEach(id => $(id).onchange = renderFat);
+function renderFat() {
+const ms = vals('fatMes').sort(); if (!D.statusChamado.length) return;
+const m = ms[ms.length - 1], um = ms.length === 1;   // vários meses: soma todos os marcados; nenhum = todos os meses
+const rotM = !ms.length ? 'todos os meses' : um ? fmesL(m) : ms.length <= 3 ? ms.map(fmes).join(', ') : `${ms.length} meses (${fmes(ms[0])} a ${fmes(m)})`;
+const L = fatLista(), emps = vals('fatEmpresa'), emp = emps.join(', ');
+const orcPend = L.filter(c => c.statusOrcamento && c.statusOrcamento !== 'Aprovado').length, comPend = L.filter(c => c.pendencia).length;
+const ant = um ? soma(D.chamados.filter(c => c.mesFaturamento === addMes(m, -1) && algum(emps, c.empresa)), 'valorTotal') : 0;
+const tot = soma(L, 'valorTotal'), var_ = ant ? (tot - ant) / ant : null;
+$('fatKpis').innerHTML = [
+['money', 'Valor a faturar', money(tot), var_ === null ? rotM : `${var_ >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(var_ * 100))}% vs ${fmes(addMes(m, -1))} (${moneyK(ant)})`],
+['list', um ? 'Chamados no mês' : ms.length ? 'Chamados nos meses' : 'Chamados (todos os meses)', int(L.length), `${new Set(L.map(c => c.empresa)).size} fornecedor(es)`],
+['box', 'Material', money(soma(L, 'valorMaterial')), tot ? `${pct(soma(L, 'valorMaterial') / tot)} do valor a faturar` : 'sem valor no filtro'],
+['truck', 'Mão de obra / deslocamento', money(soma(L, 'valorMaoObra')), tot ? `${pct(soma(L, 'valorMaoObra') / tot)} do valor a faturar` : 'sem valor no filtro'],
+['doc', 'Conferir antes de faturar', int(orcPend + comPend), orcPend + comPend ? `${pill('Concluído com atraso').replace('Concluído com atraso', 'Atenção')} ${orcPend} orç. não aprovado · ${comPend} com pendência` : `${pill('Concluído').replace('Concluído', 'Tudo certo')}`]
+].map(k => `<div class="kpi estatico"><div class="rot">${ico(k[0])}${k[1]}</div><div class="val">${k[2]}</div><div class="sub">${k[3]}</div></div>`).join('');
+const todos = [...new Set([...ms, ...mesesFat()])].sort().slice(-18);
+const W = Math.max(420, ($('c-fatmeses').clientWidth || 800) - 40);
+const pts = todos.map(mm => { const g = D.chamados.filter(c => c.mesFaturamento === mm && algum(emps, c.empresa)); const v = soma(g, 'valorTotal'); return { k: mm, rot: fmesC(mm), v, sel: ms.includes(mm), destaque: ms.includes(mm), tip: `<b>${fmesL(mm)}</b><br>${money(v)}<br><span class='tl'>${g.length} chamado(s) · clique para abrir</span>` }; });
+cardChart($('c-fatmeses'), 'Faturamento por mês', 'Clique em um mês para ver o detalhe · mês selecionado em destaque', colunasSVG(pts, { W, onClick: 'abrirFat', maiorLaranja: true }) +
+legSel(pts, `<span><i style="background:#0099cc"></i>Meses</span><span><i style="background:#f68b1f"></i>Maior faturamento</span>`),
+tabelaHTML([{ t: 'Mês' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], [...pts].reverse().map(p => [`<span class="lk" onclick="abrirFat('${p.k}')">${fmesL(p.k)}</span>`, D.chamados.filter(c => c.mesFaturamento === p.k && algum(emps, c.empresa)).length, money(p.v)])));
+const ge = agrupa(L, 'empresa');
+cardChart($('c-fatemp'), 'Por fornecedor', rotM, hbarsHTML(ge, { onClick: 'fatEmp' }),
+tabelaHTML([{ t: 'Fornecedor' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], ge.sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)])));
+$('fatTabSub').textContent = `${L.length} chamado(s) faturando em ${rotM}${emp ? ' · ' + emp : ''}`;
+$('fatTab').innerHTML = `<thead><tr><th>Nº CPFL</th><th>Fornecedor</th><th>Unidade</th><th>Concluído</th><th>Situação</th><th>Ch. fornec.</th><th>OS fornec.</th><th>Orçamento</th><th>Pendência</th><th class="num">Material</th><th class="num">Mão de obra</th><th class="num">Total</th></tr></thead>
+<tbody>${L.length ? L.map(c => `<tr><td><span class="lk" onclick="abrirForm(${c.id})">${esc(c.numero)}</span></td><td>${esc(c.empresa)}</td><td>${esc(c.unidade)}</td><td>${fd(c.dataReal)}</td><td>${pill(c.status)}</td><td>${esc(c.chamadoFornecedor)}</td><td>${esc(c.osFornecedor)}</td>
+<td>${c.statusOrcamento && c.statusOrcamento !== 'Aprovado' ? `<span class="pill warning">${ico('s_warning')}${esc(c.statusOrcamento)}</span>` : esc(c.statusOrcamento)}</td><td>${c.pendencia ? `<span class="tag">${esc(c.pendencia)}</span>` : ''}</td>
+<td class="num">${numBR(c.valorMaterial)}</td><td class="num">${numBR(c.valorMaoObra)}</td><td class="num"><b>${numBR(c.valorTotal)}</b></td></tr>`).join('') : '<tr><td colspan="12" class="vazio">Nenhum chamado fatura neste mês.</td></tr>'}</tbody>
+<tfoot><tr><td colspan="9">${L.length} chamado(s)</td><td class="num">${numBR(soma(L, 'valorMaterial'))}</td><td class="num">${numBR(soma(L, 'valorMaoObra'))}</td><td class="num">${numBR(tot)}</td></tr></tfoot>`;
+}
+function limparFat() { setVals('fatMes', []); setVals('fatEmpresa', []); renderFat(); toast('Filtros do faturamento limpos · todos os meses e fornecedores.'); }
+function limparGlobais() { ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].forEach(id => setVals(id, [])); renderVisao(); renderRelatorio(); toast('Filtros limpos · todo o período, fornecedores e unidades.'); }
+function fatEmp(n) { setVals('fatEmpresa', n); renderFat(); }
+// ===================================================================== CADASTROS
+const CADS = [['unidades', 'Unidades', 'unidade'], ['empresas', 'Fornecedores (empresas)', 'empresa'], ['prioridades', 'Prioridades', 'prioridade'], ['statusChamado', 'Status do chamado', 'statusChamado'], ['statusOrcamento', 'Status do orçamento', 'statusOrcamento'], ['pendencias', 'Pendências', 'pendencia']];
+function renderCads() {
+$('cads').innerHTML = CADS.map(([k, t, campo]) => `<div class="card"><div class="card-h"><div><h3>${t}</h3><div class="d">${D.cadastros[k].length} item(ns) · renomear atualiza os chamados</div></div></div>
+<ul class="cad-lista">${D.cadastros[k].map((v, i) => { const uso = D.chamados.filter(c => c[campo] === v).length; return `<li><span class="n">${esc(v)}</span><small>${uso} chamado(s)</small>
+<button class="ic" title="Subir" ${i === 0 ? 'disabled' : ''} onclick="cadOrdem('${k}',${i},-1)">${ico('up')}</button>
+<button class="ic" title="Descer" ${i === D.cadastros[k].length - 1 ? 'disabled' : ''} onclick="cadOrdem('${k}',${i},1)">${ico('down')}</button>
+<button class="ic" title="Renomear" onclick="cadRenomear('${k}',${i})">${ico('edit')}</button>
+<button class="ic" title="Remover" onclick="cadRemover('${k}',${i})">${ico('trash')}</button></li>`; }).join('') || '<li class="vazio">Lista vazia.</li>'}</ul>
+<div class="add"><input id="add-${k}" placeholder="Novo item..." onkeydown="if(event.key==='Enter')cadAdd('${k}')"><button class="btn pri" onclick="cadAdd('${k}')">Adicionar</button></div>
+<button class="btn" style="width:100%;justify-content:center;margin-top:8px" onclick="colarVarios('${k}')">${ico('copy')}Colar vários (do Excel)</button></div>`).join('');
+}
+async function cadReq(body, msg) { try { const r = await api('PUT', '/api/cadastros', body); toast(msg + (r.afetados ? ` (${r.afetados} chamado(s) atualizados)` : ''), 'ok'); await carregar(); } catch (e) { toast(e.message, 'erro'); } }
+// ---- colar vários itens de uma vez (copiados de uma coluna do Excel)
+function itensColados(k) {
+const txt = ($('cvTexto') || {}).value || '', soPrimeira = $('cvPrimeira').checked, pularTitulo = $('cvTitulo').checked;
+let linhas = txt.replace(/\r/g, '').split('\n');
+if (soPrimeira) linhas = linhas.map(l => l.split('\t')[0]);
+linhas = linhas.map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+if (pularTitulo && linhas.length) linhas = linhas.slice(1);
+const ja = new Set(D.cadastros[k].map(v => v.toUpperCase())), vistos = new Set(), novos = [], existentes = [], repetidos = [];
+for (const l of linhas) {
+const u = l.toUpperCase();
+if (ja.has(u)) existentes.push(l); else if (vistos.has(u)) repetidos.push(l); else { vistos.add(u); novos.push(l); }
+}
+return { linhas, novos, existentes, repetidos };
+}
+function previaColar(k) {
+const txt = $('cvTexto').value;
+// detecta título na 1ª linha (ex.: "UNIDADE", "Unidades")
+const prim = (txt.replace(/\r/g, '').split('\n')[0] || '').split('\t')[0].trim();
+if (!$('cvTitulo').dataset.mexido) $('cvTitulo').checked = /^(unidades?|empresas?|fornecedor(es)?|prioridades?|status( do or[çc]amento)?|pend[êe]ncias?|nome|descri[çc][ãa]o)$/i.test(prim);
+const r = itensColados(k);
+$('cvPrev').innerHTML = !r.linhas.length ? '<span style="color:var(--muted)">Cole a lista acima para ver a prévia.</span>' :
+`<b>${r.novos.length}</b> novo(s) serão adicionados · ${r.existentes.length} já cadastrado(s) · ${r.repetidos.length} repetido(s) no texto
+${r.novos.length ? `<div style="margin-top:8px;max-height:150px;overflow:auto;border:1px solid var(--grid);border-radius:8px;padding:6px 10px">${r.novos.slice(0, 300).map(v => `<div>+ ${esc(v)}</div>`).join('')}${r.novos.length > 300 ? `<div style="color:var(--muted)">... e mais ${r.novos.length - 300}</div>` : ''}</div>` : ''}`;
+}
+async function colarVarios(k) {
+const nome = (CADS.find(c => c[0] === k) || [k, k])[1];
+const ok = await dialogo('Colar vários: ' + nome, `
+<p style="margin-top:0;color:var(--ink-2)">No Excel, selecione a coluna com os nomes, copie (Ctrl+C) e cole aqui (Ctrl+V). Um item por linha. Itens já cadastrados e repetidos são ignorados automaticamente.</p>
+<textarea id="cvTexto" rows="9" style="width:100%" placeholder="Agência Campinas&#10;Agência Sorocaba&#10;..." oninput="previaColar('${k}')"></textarea>
+<div style="display:flex;gap:18px;flex-wrap:wrap;margin:10px 0">
+<label class="chk"><input type="checkbox" id="cvPrimeira" checked onchange="previaColar('${k}')"> Usar só a 1ª coluna (se copiar várias colunas)</label>
+<label class="chk"><input type="checkbox" id="cvTitulo" onchange="this.dataset.mexido=1;previaColar('${k}')"> Ignorar a 1ª linha (título)</label>
+<label class="chk"><input type="checkbox" id="cvOrdenar"> Organizar a lista inteira em ordem alfabética</label>
+</div>
+<div id="cvPrev" style="font-size:13px"><span style="color:var(--muted)">Cole a lista acima para ver a prévia.</span></div>`, { ok: 'Adicionar à lista', largo: true, foco: 'cvTexto' });
+if (!ok) return;
+const r = itensColados(k), ordenarTudo = $('cvOrdenar').checked;
+if (!r.novos.length && !ordenarTudo) { toast('Nenhum item novo para adicionar.', 'erro'); return; }
+try {
+const res = await api('PUT', '/api/cadastros', { lista: k, acao: 'adicionar-varios', itens: r.novos, ordenarTudo });
+toast(`${res.adicionados} item(ns) adicionado(s) em ${nome}${res.ignorados ? ` · ${res.ignorados} já existia(m)` : ''}${ordenarTudo ? ' · lista em ordem alfabética' : ''}.`, 'ok');
+await carregar();
+} catch (e) {
+toast(/Ação inválida/.test(e.message) ? 'Esta função ainda não está ativa. Atualize a página e tente de novo.' : e.message, 'erro');
+}
+}
+function cadAdd(k) { const v = $('add-' + k).value.trim(); if (v) cadReq({ lista: k, acao: 'adicionar', valor: v }, `"${v}" adicionado.`); }
+async function cadRenomear(k, i) {
+const v = D.cadastros[k][i];
+if (!await dialogo('Renomear', `<div class="campo"><label>Novo nome para “${esc(v)}”</label><input id="dlgTxt" value="${esc(v)}"></div><p style="color:var(--ink-2);margin:10px 0 0">Todos os chamados com esse valor serão atualizados.</p>`, { ok: 'Renomear', foco: 'dlgTxt' })) return;
+const novo = $('dlgTxt').value.trim(); if (novo && novo !== v) cadReq({ lista: k, acao: 'renomear', valor: v, novo }, 'Renomeado.');
+}
+async function cadRemover(k, i) { const v = D.cadastros[k][i]; if (await dialogo('Remover item', `Remover <b>${esc(v)}</b> da lista?`, { ok: 'Remover', perigo: true })) cadReq({ lista: k, acao: 'remover', valor: v }, 'Removido.'); }
+function cadOrdem(k, i, d) { const l = [...D.cadastros[k]], j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; cadReq({ lista: k, acao: 'ordenar', itens: l }, 'Ordem atualizada.'); }
+// ===================================================================== HISTÓRICO / BACKUPS
+async function carregarHist() {
+try {
+if (pode('ver_historico')) { HIST = await api('GET', '/api/historico'); renderHist(); }
+if (!pode('gerenciar_backups')) return;
+const b = await api('GET', '/api/backups');
+$('bkTab').innerHTML = `<thead><tr><th>Arquivo</th><th>Data</th><th class="num">KB</th><th></th></tr></thead><tbody>${b.length ? b.map(x => `<tr><td>${esc(x.nome)}</td><td>${esc(x.data)}</td><td class="num">${x.tamanho}</td><td><button class="btn peq" onclick="restaurar('${esc(x.nome)}')">Restaurar</button></td></tr>`).join('') : '<tr><td colspan="4" class="vazio">Nenhum backup ainda.</td></tr>'}</tbody>`;
+} catch (e) { toast(e.message, 'erro'); }
+}
+function renderHist() {
+const q = norm($('hBusca').value), L = HIST.filter(h => !q || norm([h.quando, h.numero, h.acao, h.detalhes, h.usuario].join(' ')).includes(q));
+$('histTab').innerHTML = `<thead><tr><th>Quando</th><th>Nº CPFL</th><th>Ação</th><th>Detalhes</th><th>Usuário</th></tr></thead><tbody>${L.length ? L.map(h => `<tr><td>${esc(h.quando)}</td><td>${h.id && D.chamados.some(c => c.id === h.id) ? `<span class="lk" onclick="abrirForm(${h.id})">${esc(h.numero)}</span>` : esc(h.numero)}</td><td><b>${esc(h.acao)}</b></td><td style="white-space:normal;min-width:320px;color:var(--ink-2)">${esc(h.detalhes)}</td><td>${esc(h.usuario || '')}</td></tr>`).join('') : '<tr><td colspan="5" class="vazio">Sem registros.</td></tr>'}</tbody>`;
+}
+async function criarBackup() { try { const r = await api('POST', '/api/backups'); toast('Backup criado: ' + r.nome, 'ok'); carregarHist(); } catch (e) { toast(e.message, 'erro'); } }
+async function restaurar(nome) {
+if (!await dialogo('Restaurar backup', `Restaurar <b>${esc(nome)}</b>?<br><br>O estado atual será salvo antes em um novo backup.`, { ok: 'Restaurar' })) return;
+try { await api('POST', '/api/backups/restaurar', { nome }); toast('Backup restaurado.', 'ok'); await carregar(); carregarHist(); } catch (e) { toast(e.message, 'erro'); }
+}
+// ===================================================================== IMPORTAÇÃO
+function abrirImport() { voltarImport(); $('imp').classList.add('ativo'); }
+function fecharImport() { $('imp').classList.remove('ativo'); IMP = null; }
+function voltarImport() { $('impPasso1').style.display = ''; $('impPasso2').style.display = 'none'; $('impRod').style.display = 'none'; $('impArq').value = ''; IMP = null; }
+$('impArq').onchange = e => { if (e.target.files[0]) lerArquivo(e.target.files[0]); };
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) lerArquivo(f); });
+function csvParse(txt) {
+txt = txt.replace(/^﻿/, '');
+const prim = txt.split(/\r?\n/)[0] || ''; const sep = (prim.match(/;/g) || []).length >= (prim.match(/,/g) || []).length ? ';' : ',';
+const rows = []; let row = [], cur = '', q = false;
+for (let i = 0; i < txt.length; i++) {
+const ch = txt[i];
+if (q) { if (ch === '"') { if (txt[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+else if (ch === '"') q = true; else if (ch === sep) { row.push(cur); cur = ''; }
+else if (ch === '\n' || ch === '\r') { if (ch === '\r' && txt[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+else cur += ch;
+}
+if (cur || row.length) { row.push(cur); rows.push(row); }
+const cab = rows.shift() || [];
+return rows.filter(r => r.some(v => v.trim())).map(r => Object.fromEntries(cab.map((h, i) => [h.trim() || ('col' + i), (r[i] || '').trim()])));
+}
+async function lerArquivo(f) {
+const nome = f.name, ext = nome.split('.').pop().toLowerCase();
+if (!['xlsx', 'csv'].includes(ext)) { toast('Use um arquivo .xlsx ou .csv. Se for .xls antigo, abra no Excel e salve como .xlsx.', 'erro'); return; }
+if (f.size > 20 * 1024 * 1024) { toast('Arquivo maior que 20 MB.', 'erro'); return; }
+const aviso = toast('Lendo a planilha...');
+try {
+const body = { nome, apagarVazios: $('impApagar').checked };
+if (ext === 'csv') {
+let txt = await f.text(); if (txt.includes('�')) { txt = new TextDecoder('windows-1252').decode(await f.arrayBuffer()); }
+body.linhas = csvParse(txt);
+} else {
+const bytes = new Uint8Array(await f.arrayBuffer()); let bin = '';
+for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+body.base64 = btoa(bin);
+}
+IMP = await api('POST', '/api/importar/previa', body);
+mostrarPrevia();
+} catch (e) { toast(e.message, 'erro'); } finally { aviso.remove(); }
+}
+function mostrarPrevia(aba = 'novos') {
+const P = IMP, nAlt = P.novos.length + P.atualizados.length;
+const abas = [['novos', `Novos (${P.novos.length})`], ['atualizados', `Atualizados (${P.atualizados.length})`], ['erros', `Com erro (${P.erros.length})`]];
+let corpo = '';
+if (aba === 'novos') corpo = tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Fornecedor' }, { t: 'Aberto em' }, { t: 'Situação' }, { t: 'Valor', num: 1 }], P.novos.map(n => [esc(n.numero), esc(n.unidade), esc(n.empresa), fd(n.dataChamado), pill(n.status), money(n.valorTotal)]));
+if (aba === 'atualizados') corpo = tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'O que muda' }], P.atualizados.map(a => [esc(a.numero), esc(a.unidade), `<div style="white-space:normal;min-width:380px;color:var(--ink-2)">${esc(a.mudancas).split(' | ').join('<br>')}</div>`]));
+if (aba === 'erros') corpo = tabelaHTML([{ t: 'Linha', num: 1 }, { t: 'Nº CPFL' }, { t: 'Problema (linha não será importada)' }], P.erros.map(e => [e.linha, esc(e.numero), `<span style="white-space:normal">${esc(e.erro)}</span>`]));
+$('impPasso2').innerHTML = `
+<div style="color:var(--ink-2);margin-bottom:14px">Arquivo <b style="color:var(--ink)">${esc(P.arquivo)}</b> · aba ${esc(P.aba)} · ${P.linhasLidas} linha(s) lida(s) · ${P.colunas.length} coluna(s) reconhecida(s)</div>
+<div class="resumo-imp">
+<div class="kpi"><div class="rot">${ico('plus')}Novos chamados</div><div class="val">${P.novos.length}</div></div>
+<div class="kpi"><div class="rot">${ico('edit')}Serão atualizados</div><div class="val">${P.atualizados.length}</div></div>
+<div class="kpi"><div class="rot">${ico('check')}Sem alteração</div><div class="val">${P.iguais}</div></div>
+<div class="kpi"><div class="rot">${ico('s_critical')}Com erro</div><div class="val">${P.erros.length}</div></div>
+</div>
+${P.avisos.length ? `<div class="erro-form" style="display:block;background:var(--warning-bg);color:var(--ink)">${P.avisos.map(esc).join('<br>')}</div>` : ''}
+<div class="abas">${abas.map(([k, t]) => `<button class="${k === aba ? 'ativo' : ''}" onclick="mostrarPrevia('${k}')">${t}</button>`).join('')}</div>
+<div style="max-height:340px;overflow:auto">${corpo}</div>
+<div style="color:var(--ink-2);font-size:12.5px;margin-top:12px">Colunas reconhecidas: ${P.colunas.map(esc).join(', ')}</div>`;
+$('impPasso1').style.display = 'none'; $('impPasso2').style.display = ''; $('impRod').style.display = '';
+$('impAplicar').disabled = nAlt === 0;
+$('impAplicar').textContent = nAlt ? `Importar ${nAlt} alteração(ões)` : 'Nada a importar';
+}
+async function aplicarImport() {
+if (!IMP) return;
+const b = $('impAplicar'); b.disabled = true; b.textContent = 'Importando...';
+try {
+const r = await api('POST', '/api/importar/aplicar', { token: IMP.token });
+toast(`Importação concluída: ${r.novos} novo(s), ${r.atualizados} atualizado(s)${r.erros ? `, ${r.erros} linha(s) com erro ignorada(s)` : ''}.`, 'ok');
+fecharImport(); await carregar();
+} catch (e) { toast(e.message, 'erro'); b.disabled = false; b.textContent = 'Tentar novamente'; }
+}
+function baixarModelo() {
+const cab = CSV_COLS.filter(([k]) => !['valorTotal', 'status', 'mesFaturamento', 'criadoPor', 'id'].includes(k)).map(c => c[1]);
+const blob = new Blob(['﻿' + cab.join(';') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'modelo_importacao_chamados_gitel.csv'; a.click();
+}
+// ===================================================================== ATUALIZAÇÃO AUTOMÁTICA
+// Cada tela aberta pergunta ao servidor, a cada 10 s, se os dados mudaram (outro usuário salvou,
+// importou ou alguém salvou a planilha no Excel). Se mudaram, recarrega sem perder os filtros.
+// Com uma janela de edição aberta, espera ela ser fechada para não atrapalhar o preenchimento.
+let checando = false;
+async function checarAtualizacao() {
+if (checando || !ME || !VER.some(pode) || !D.versao || document.visibilityState !== 'visible') return;
+checando = true;
+try {
+const r = await fetch('/api/versao'); if (r.status === 401) { mostrarLogin('entrar', 'Sua sessão expirou. Entre novamente.'); return; }
+if (!r.ok) return;
+const v = await r.json();
+if (v.versao === D.versao) return;
+if (['modal', 'imp', 'dlg'].some(id => $(id).classList.contains('ativo'))) return;   // tenta de novo no próximo ciclo
+const antes = D.chamados.length;
+await carregar();
+const quem = v.ultima && v.ultima.usuario && v.ultima.usuario.indexOf('(' + ME.login + ')') < 0 ? ` por ${v.ultima.usuario}` : '';
+const dif = D.chamados.length - antes;
+toast(`Dados atualizados automaticamente${quem}${dif > 0 ? ` · ${dif} chamado(s) novo(s)` : ''}.`);
+if (vistaAtual() === 'historico') carregarHist();
+} catch {} finally { checando = false; }
+}
+setInterval(checarAtualizacao, 20000);   // nuvem: confere novidades a cada 20 s
+document.addEventListener('visibilitychange', checarAtualizacao);
+// ===================================================================== FILTROS COM PESQUISA
+// Transforma um <select> em lista com caixa de pesquisa. O <select> continua existindo (escondido),
+// então todo o resto do sistema segue lendo .value normalmente.
+function tornarPesquisavel(sel) {
+if (!sel || sel.dataset.ss) return; sel.dataset.ss = '1';
+const w = document.createElement('div'); w.className = 'ss';
+sel.parentNode.insertBefore(w, sel); w.appendChild(sel); sel.style.display = 'none';
+w.insertAdjacentHTML('beforeend', `<button type="button" class="ss-btn" title="${esc(sel.title || '')}"><span></span>${ico('down')}</button><div class="ss-pop"><input type="search" placeholder="Pesquisar..." autocomplete="off"><div class="ss-qtd"></div><div class="ss-lista"></div></div>`);
+const btn = w.querySelector('.ss-btn'), inp = w.querySelector('input'), lista = w.querySelector('.ss-lista'), qtd = w.querySelector('.ss-qtd');
+let foco = 0, vis = [];
+const multi = sel.multiple;
+const desenhar = () => {
+const q = norm(inp.value).trim();
+vis = [...sel.options].filter(o => !q || norm(o.text).includes(q));
+foco = Math.max(0, Math.min(foco, vis.length - 1));
+const marcar = t => { if (!q) return esc(t); const n = norm(t), i = n.indexOf(q); return i < 0 ? esc(t) : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length)); };
+const nSel = [...sel.selectedOptions].filter(o => o.value !== '').length;
+qtd.textContent = q ? `${vis.length} de ${sel.options.length}` : multi ? (nSel ? `${nSel} marcado(s) · clique para marcar ou desmarcar` : 'Marque uma ou mais opções') : '';
+lista.innerHTML = vis.length ? vis.map((o, i) => `<div class="ss-op${o.selected ? ' sel' : ''}${i === foco ? ' foco' : ''}${multi && o.value === '' ? ' ss-todos' : ''}" data-i="${i}">${multi && o.value !== '' ? '<span class="ss-ck"></span>' : ''}${marcar(o.text)}</div>`).join('') : '<div class="ss-vazio">Nada encontrado.</div>';
+const f = lista.querySelector('.foco'); if (f) f.scrollIntoView({ block: 'nearest' });
+};
+const escolher = o => {
+if (!o) return;
+if (!multi) { fechar(); if (sel.value !== o.value) { sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); } atualizarRotulo(sel); return; }
+// múltipla escolha: "Todos" limpa; as demais opções marcam/desmarcam e a lista continua aberta
+const vazio = [...sel.options].find(x => x.value === '');
+if (o.value === '') { [...sel.options].forEach(x => x.selected = x === o); }
+else {
+const ficaria = [...sel.selectedOptions].filter(x => x.value !== '' && x !== o).length;
+if (o.selected && !ficaria && !vazio) return;   // filtro sem "Todos" (ex.: mês de faturamento): mantém ao menos um
+o.selected = !o.selected;
+if (vazio) vazio.selected = ![...sel.selectedOptions].some(x => x.value !== '');
+}
+sel.dispatchEvent(new Event('change', { bubbles: true }));
+atualizarRotulo(sel); desenhar();
+};
+const abrir = () => { document.querySelectorAll('.ss.aberto').forEach(x => x !== w && x.classList.remove('aberto')); w.classList.add('aberto'); inp.value = ''; foco = Math.max(0, [...sel.options].findIndex(o => o.selected)); desenhar(); setTimeout(() => inp.focus(), 10); };
+const fechar = () => w.classList.remove('aberto');
+btn.addEventListener('click', e => { e.preventDefault(); w.classList.contains('aberto') ? fechar() : abrir(); });
+inp.addEventListener('input', () => { foco = 0; desenhar(); });
+inp.addEventListener('keydown', e => {
+if (e.key === 'ArrowDown') { e.preventDefault(); foco = Math.min(foco + 1, vis.length - 1); desenhar(); }
+else if (e.key === 'ArrowUp') { e.preventDefault(); foco = Math.max(foco - 1, 0); desenhar(); }
+else if (e.key === 'Enter') { e.preventDefault(); escolher(vis[foco]); }
+else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fechar(); btn.focus(); }
+});
+lista.addEventListener('mousedown', e => { const d = e.target.closest('.ss-op'); if (d) { e.preventDefault(); escolher(vis[+d.dataset.i]); } });
+w.addEventListener('click', e => e.stopPropagation());
+atualizarRotulo(sel);
+}
+function atualizarRotulo(sel) {
+const w = sel.closest('.ss'); if (!w) return;
+const marc = [...sel.selectedOptions].filter(o => o.value !== '');
+const btn = w.querySelector('.ss-btn');
+let txt;
+if (!marc.length) { const o = sel.options[sel.selectedIndex] || sel.options[0]; txt = o ? o.text : ''; }
+else if (marc.length === 1) txt = marc[0].text;
+else txt = `${marc[0].text} +${marc.length - 1}`;
+btn.querySelector('span').textContent = txt;
+btn.title = marc.length > 1 ? marc.map(o => o.text).join('\n') : (sel.title || '');
+btn.classList.toggle('filtrado', marc.length > 0);
+}
+function syncPesquisaveis() { document.querySelectorAll('select[data-ss]').forEach(atualizarRotulo); }
+document.addEventListener('click', () => document.querySelectorAll('.ss.aberto').forEach(x => x.classList.remove('aberto')));
+function prepararFiltros() {
+MULTI.forEach(id => { const s = $(id); if (s) s.multiple = true; });   // todos os filtros aceitam várias opções
+document.querySelectorAll('.fbar select, .gfiltros select').forEach(tornarPesquisavel);
+}
+// ===================================================================== HOME E EXCEL
+function irHome() {
+limparFiltros(true);
+['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade', 'fatEmpresa'].forEach(id => $(id).value = '');
+$('fatMes').value = '';   // todos os meses
+if ($('hBusca')) $('hBusca').value = '';
+sel.clear(); sort = { key: 'dataChamado', desc: true };
+document.querySelectorAll('.card[data-tab]').forEach(c => c.dataset.tab = '');
+const primeira = Object.keys(VIEW_PERM).find(v => podeAlgum(VIEW_PERM[v])) || 'visao';
+renderTudo(); irPara(primeira); syncPesquisaveis();
+toast('Tela inicial · todos os filtros foram limpos.');
+}
+// Abrir no Excel: gera uma planilha com os chamados da tela atual (respeitando os filtros)
+// e só com as colunas que têm informação. A planilha do sistema não é alterada.
+function txtSel(id) { const s = $(id); return s ? [...s.selectedOptions].filter(o => o.value !== '').map(o => o.text).join(', ') : ''; }
+function filtrosDaTela(v) {
+const out = [];
+if (v === 'chamados') {
+document.querySelectorAll('#v-chamados .fbar label').forEach(l => {
+if (getComputedStyle(l).display === 'none') return;   // filtro oculto pelo perfil
+const el = l.querySelector('select,input'); if (!el) return;
+const val = el.tagName === 'SELECT' ? txtSel(el.id) : el.type === 'date' ? fd(el.value) : el.value;
+if (!val) return;
+const nome = (l.firstChild && l.firstChild.textContent || '').trim();
+out.push(`${nome}: ${val}`);
+});
+} else if (v === 'visao' || v === 'relatorio') {
+[['gPeriodo', 'Período'], ['gMes', 'Mês'], ['gEmpresa', 'Fornecedor'], ['gUnidade', 'Unidade']].forEach(([id, n]) => { const t = txtSel(id); if (t) out.push(`${n}: ${t}`); });
+} else if (v === 'faturamento') {
+if (vals('fatMes').length) out.push('Mês de faturamento: ' + vals('fatMes').sort().map(fmesL).join(', '));
+const t = txtSel('fatEmpresa'); if (t) out.push('Fornecedor: ' + t);
+}
+return out;
+}
+async function abrirExcel() {
+const v = vistaAtual();
+let L;
+if (v === 'chamados') L = ordenar(filtrados());
+else if (v === 'visao' || v === 'relatorio') L = [...recorte().L].sort((a, b) => (a.dataChamado || '').localeCompare(b.dataChamado || '') || a.id - b.id);
+else if (v === 'faturamento') L = fatLista();
+else L = [...D.chamados].sort((a, b) => (a.dataChamado || '').localeCompare(b.dataChamado || '') || a.id - b.id);
+if (!L.length) { toast('Nenhum chamado com os filtros atuais.', 'erro'); return; }
+await baixarExcel(L.map(c => c.id), filtrosDaTela(v), VIEW_INFO[v] ? VIEW_INFO[v][0] : v);
+}
+// na nuvem: o servidor gera a planilha e o navegador baixa (abre no Excel do computador ou no app do celular)
+async function baixarExcel(ids, filtros, tela) {
+const t = toast(`Gerando planilha com ${int(ids.length)} chamado(s)...`);
+try {
+const r = await fetch('/api/abrir-excel-filtrado', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, filtros, tela }) });
+if (!r.ok) { let j = null; try { j = await r.json(); } catch {} throw new Error(j && j.erro || 'Não foi possível gerar a planilha.'); }
+const blob = await r.blob();
+const cd = r.headers.get('Content-Disposition') || ''; const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+const nome = m ? decodeURIComponent(m[1]) : 'chamados.xlsx';
+const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+t.remove(); toast(`Planilha baixada: ${nome}. Abra o arquivo para ver no Excel.`, 'ok');
+} catch (e) { t.remove(); toast(e.message, 'erro'); }
+}
+function baixarBaseExcel() { baixarExcel([...D.chamados].sort((a, b) => (a.dataChamado || '').localeCompare(b.dataChamado || '') || a.id - b.id).map(c => c.id), [], 'Base completa'); }
+// ===================================================================== SESSÃO E PERMISSÕES
+let ME = null, PERMS = new Set(), USR = { usuarios: [], perfis: [], catalogo: [] };
+const pode = p => PERMS.has(p);
+const podeConcluir = () => pode('editar_chamado') || pode('editar_proprios') || pode('concluir_chamado');
+// edição por chamado: 'Editar chamados (todos)' ou 'Editar só os chamados que cadastrou'
+const ehMeu = c => !!(c && ME && String(c.criadoPor || '').endsWith('(' + ME.login + ')'));
+const podeEditarC = c => pode('editar_chamado') || (pode('editar_proprios') && ehMeu(c));
+const podeConcluirC = c => podeEditarC(c) || pode('concluir_chamado');
+const VER = ['ver_painel', 'ver_relatorio', 'ver_faturamento', 'ver_chamados', 'ver_proprios'];
+const VIEW_PERM = { visao: 'ver_painel', relatorio: 'ver_relatorio', faturamento: 'ver_faturamento', chamados: 'ver_chamados|ver_proprios', cadastros: 'gerenciar_cadastros', historico: 'ver_historico|gerenciar_backups', usuarios: 'gerenciar_usuarios' };
+const podeAlgum = s => String(s).split('|').some(pode);
+function aplicarPermissoes(root = document) {
+root.querySelectorAll('[data-perm]').forEach(el => {
+if (!el.dataset.d0) el.dataset.d0 = el.style.display || '-';
+el.style.display = podeAlgum(el.dataset.perm) ? (el.dataset.d0 === '-' ? '' : el.dataset.d0) : 'none';
+});
+$('histGrid').style.gridTemplateColumns = pode('ver_historico') && pode('gerenciar_backups') ? '' : '1fr';
+}
+function mostrarLogin(modo, msg) {
+$('login').classList.add('ativo'); $('appRoot').style.visibility = 'hidden';
+['lgEntrar', 'lgSetup', 'lgTroca'].forEach(id => $(id).style.display = 'none');
+$({ entrar: 'lgEntrar', setup: 'lgSetup', troca: 'lgTroca' }[modo]).style.display = '';
+$('lgErro').style.display = msg ? 'block' : 'none'; $('lgErro').textContent = msg || '';
+setTimeout(() => ($({ entrar: 'lgLogin', setup: 'stNome', troca: 'trAtual' }[modo])).focus(), 50);
+}
+function erroLogin(m) { $('lgErro').textContent = m; $('lgErro').style.display = 'block'; }
+async function iniciar() {
+let s; try { s = await (await fetch('/api/sessao')).json(); } catch { mostrarLogin('entrar', 'Sem conexão com o sistema. Verifique a internet e tente de novo.'); return; }
+if (!s.logado) { if (s.primeiroAcesso && !s.local) mostrarLogin('entrar', 'O sistema ainda não foi configurado. O administrador precisa fazer o primeiro acesso no computador onde o sistema está instalado.'); else mostrarLogin(s.primeiroAcesso ? 'setup' : 'entrar'); return; }
+if (s.usuario.trocarSenha) { mostrarLogin('troca'); return; }
+ME = s.usuario; PERMS = new Set(s.permissoes);
+if (!s.local && !s.nuvem) PERMS.delete('abrir_excel');   // na nuvem, "Abrir no Excel" baixa a planilha
+// servidor de versão anterior (sem as permissões de valores/gestão): mantém o comportamento antigo (tudo visível)
+if (!s.versaoPerms) { PERMS.add('ver_valores'); PERMS.add('campos_gestao'); }
+$('login').classList.remove('ativo'); $('appRoot').style.visibility = '';
+$('euNome').textContent = ME.nome; $('euPerfil').textContent = ME.perfil;
+$('euAv').textContent = ME.nome.split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+aplicarPermissoes();
+const primeira = Object.keys(VIEW_PERM).find(v => podeAlgum(VIEW_PERM[v]));
+if (!primeira) { $('tTitulo').textContent = 'Sem acesso'; $('tSub').textContent = 'Seu perfil ainda não tem permissões. Peça a liberação ao administrador.'; return; }
+irPara(podeAlgum(VIEW_PERM[vistaAtual()]) ? vistaAtual() : primeira);
+if (VER.some(pode)) await carregar(); else $('sideInfo').textContent = '';
+}
+async function entrar(e) {
+e.preventDefault();
+try { await api('POST', '/api/login', { login: $('lgLogin').value, senha: $('lgSenha').value }); $('lgSenha').value = ''; await iniciar(); }
+catch (er) { erroLogin(er.message); }
+}
+async function primeiroAcesso(e) {
+e.preventDefault();
+if ($('stSenha').value !== $('stSenha2').value) { erroLogin('As senhas não conferem.'); return; }
+try { await api('POST', '/api/primeiro-acesso', { nome: $('stNome').value, login: $('stLogin').value, email: $('stEmail').value, senha: $('stSenha').value }); await iniciar(); toast('Administrador criado. Bem-vindo!', 'ok'); }
+catch (er) { erroLogin(er.message); }
+}
+async function trocarProvisoria(e) {
+e.preventDefault();
+if ($('trNova').value !== $('trNova2').value) { erroLogin('As senhas não conferem.'); return; }
+try { await api('POST', '/api/minha-senha', { atual: $('trAtual').value, nova: $('trNova').value }); ['trAtual', 'trNova', 'trNova2'].forEach(id => $(id).value = ''); await iniciar(); toast('Senha criada com sucesso.', 'ok'); }
+catch (er) { erroLogin(er.message); }
+}
+async function sair() { try { await api('POST', '/api/logout'); } catch {} ME = null; PERMS = new Set(); D.chamados = []; mostrarLogin('entrar'); }
+async function trocarMinhaSenha() {
+const ok = await dialogo('Trocar minha senha', `<div class="campo" style="margin-bottom:10px"><label>Senha atual</label><input type="password" id="msA"></div>
+<div class="campo" style="margin-bottom:10px"><label>Nova senha (mín. 8, com letras e números)</label><input type="password" id="msN"></div>
+<div class="campo"><label>Confirme a nova senha</label><input type="password" id="msN2"></div>`, { ok: 'Salvar', foco: 'msA' });
+if (!ok) return;
+if ($('msN').value !== $('msN2').value) { toast('As senhas não conferem.', 'erro'); return; }
+try { await api('POST', '/api/minha-senha', { atual: $('msA').value, nova: $('msN').value }); toast('Senha alterada.', 'ok'); } catch (e) { toast(e.message, 'erro'); }
+}
+// ===================================================================== COMPARTILHAR LINK
+const NOME_SISTEMA = 'Segurança Empresarial – Sistema de chamados de fornecedores';
+function mensagemAcesso(link, login, senha) {
+return `Olá! Seu acesso ao Sistema de chamados de fornecedores (Segurança Empresarial) está liberado.\n\nAcesse: ${link}\n` +
+(login ? `Login: ${login}\n` : '') + (senha ? `Senha provisória: ${senha}\n` : '') +
+`\n${senha || login ? 'No primeiro acesso, o sistema pedirá que você crie sua própria senha.' : 'Entre com o login e a senha provisória enviados pelo administrador. No primeiro acesso, você criará sua própria senha.'}` +
+`\n\nDica: instale como aplicativo no celular ou computador pelo botão "Instalar aplicativo" na tela de entrada.`;
+}
+async function obterLink() { try { return await api('GET', '/api/link'); } catch (e) { toast(e.message, 'erro'); return null; } }
+async function compartilharLink(opc = {}) {
+let L = await obterLink(); if (!L) return;
+if (!L.ativo) {
+await dialogo('Compartilhar link', `<p style="margin-top:0">O link público ainda não está disponível.</p><p style="color:var(--ink-2)">${esc(L.erro || 'O túnel seguro está sendo aberto — aguarde alguns segundos e tente de novo.')}</p>`, { ok: 'OK' });
+return;
+}
+const comSenha = mensagemAcesso(L.link, opc.login, opc.senha);   // só para copiar
+const semSenha = mensagemAcesso(L.link, opc.login);               // WhatsApp / e-mail
+window.__msgs = { link: L.link, comSenha, semSenha };
+await dialogo(opc.titulo || 'Compartilhar link do sistema', `
+${opc.intro ? `<p style="margin-top:0">${opc.intro}</p>` : ''}
+<div class="campo" style="margin-bottom:12px"><label>Link de acesso (internet)</label>
+<div class="senha-gerada"><input readonly value="${esc(L.link)}" onclick="this.select()" style="font-weight:600"><button type="button" class="btn" onclick="copiar(window.__msgs.link)">${ico('link')}Copiar link</button></div></div>
+<div class="campo" style="margin-bottom:12px"><label>Mensagem</label><textarea readonly rows="7" style="font-size:13px">${esc(opc.senha ? comSenha : semSenha)}</textarea></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" class="btn pri" onclick="enviarWhats()">${ico('whats')}WhatsApp</button>
+<button type="button" class="btn" onclick="enviarEmail()">${ico('mail')}E-mail</button>
+<button type="button" class="btn" onclick="copiar(window.__msgs.${opc.senha ? 'comSenha' : 'semSenha'})">${ico('copy')}Copiar mensagem</button>
+</div>
+${opc.senha ? `<p style="color:var(--ink-2);font-size:12.5px;margin:12px 0 0">Por segurança, WhatsApp e e-mail levam só o link e o login. A senha provisória vai apenas em “Copiar mensagem” — prefira enviá-la por outro canal.</p>` : ''}
+<p style="color:var(--ink-2);font-size:12.5px;margin:10px 0 0">Só entra quem tem usuário e senha cadastrados.${L.fixo ? '' : ' O link muda quando o sistema é reiniciado neste computador; nesse caso, envie o novo link.'}</p>`,
+{ ok: 'Fechar', largo: true });
+}
+// ===================================================================== AVISO DE PRAZOS
+// Chamados não concluídos com data prevista vencida ou vencendo nos próximos 8 dias.
+// A cor muda conforme o vencimento se aproxima: verde → amarelo → laranja → laranja-escuro → vermelho (vencido).
+const PZ_DIAS = 8;
+const PZ_FAIXAS = [
+{ id: 'venc', n: 'Vencido',    c: '#b22c26', bg: '#f8e6e5', tx: '#8f1f1a', ok: d => d < 0 },
+{ id: 'hoje', n: 'Vence hoje', c: '#e16845', bg: '#fbe5dc', tx: '#9c3a1c', ok: d => d === 0 },
+{ id: 'd2',   n: '1 a 2 dias', c: '#f68b1f', bg: '#fef0e1', tx: '#8f4a00', ok: d => d >= 1 && d <= 2 },
+{ id: 'd5',   n: '3 a 5 dias', c: '#e0b000', bg: '#fdf4cf', tx: '#6f5400', ok: d => d >= 3 && d <= 5 },
+{ id: 'd8',   n: '6 a 8 dias', c: '#53a363', bg: '#eaf5ec', tx: '#2d6e50', ok: d => d >= 6 && d <= PZ_DIAS }
+];
+const pzFaixa = d => PZ_FAIXAS.find(f => f.ok(d));
+const pzVars = f => `--c:${f.c};--bg:${f.bg};--tx:${f.tx}`;
+function pzTexto(d) { return d < 0 ? `Vencido há ${-d} dia${d === -1 ? '' : 's'}` : d === 0 ? 'Vence hoje' : `Vence em ${d} dia${d === 1 ? '' : 's'}`; }
+function pzChip(d) { const f = pzFaixa(d); return `<span class="pz-chip" style="${pzVars(f)}"><i></i>${pzTexto(d)}</span>`; }
+function prazosLista() {
+if (!D || !D.chamados || !pode('campos_gestao')) return [];
+return D.chamados.filter(c => !c.dataReal && c.dataPrevista && dias(D.hoje, c.dataPrevista) <= PZ_DIAS)
+.map(c => ({ c, d: dias(D.hoje, c.dataPrevista) }))
+.sort((a, b) => a.d - b.d || (a.c.unidade || '').localeCompare(b.c.unidade || ''));
+}
+function atualizarBadgePrazos() {
+const b = $('pzBadge'); if (!b) return;
+const L = prazosLista();
+// alerta piscando: vencem hoje ou nos próximos 3 dias
+const urg = L.filter(x => x.d >= 0 && x.d <= 3).length;
+$('btnPrazos').classList.toggle('pz-piscar', urg > 0);
+$('pzUrg').innerHTML = urg ? `${ico('s_warning')}${urg} vence${urg > 1 ? 'm' : ''} em até 3 dias` : '';
+$('btnPrazos').title = urg ? `Atenção: ${urg} chamado(s) vencem de hoje até 3 dias. Clique para ver.` : 'Chamados vencidos e que vencem nos próximos 8 dias';
+if (!L.length) { b.className = 'pz-badge'; b.textContent = ''; return; }
+const pior = pzFaixa(L[0].d);
+b.className = 'pz-badge on'; b.textContent = L.length; b.style.background = pior.c; b.style.color = pior.id === 'd5' ? '#3d2f00' : '#fff';
+b.title = `${L.filter(x => x.d < 0).length} vencido(s) · ${L.filter(x => x.d >= 0).length} vencendo em até ${PZ_DIAS} dias`;
+}
+function abrirPrazos(auto = false) {
+const L = prazosLista();
+const aVencer = L.filter(x => x.d >= 0).sort((a, b) => a.d - b.d), venc = L.filter(x => x.d < 0).sort((a, b) => b.d - a.d);
+if (auto && !aVencer.length && !venc.length) return;
+const resumo = PZ_FAIXAS.map(f => { const n = L.filter(x => f.ok(x.d)).length; return `<div style="${pzVars(f)}"><b>${n}</b><span>${f.n}</span></div>`; }).join('');
+const tab = lista => `<div class="tw pz-tab"><table><thead><tr><th>Prazo</th><th>Nº</th><th>Unidade</th><th>Fornecedor</th><th>Previsto</th><th>Prioridade</th><th>Responsável</th></tr></thead><tbody>${
+lista.map(({ c, d }) => `<tr style="${pzVars(pzFaixa(d))}" onclick="pzAbrir(${c.id})" title="Abrir o chamado"><td>${pzChip(d)}</td><td><b>${esc(c.numero)}</b></td><td>${esc(c.unidade)}</td><td>${esc(c.empresa)}</td><td>${fd(c.dataPrevista)}</td><td>${prio(c.prioridade)}</td><td>${esc(c.responsavel || '')}</td></tr>`).join('')}</tbody></table></div>`;
+const corpo = `<div class="pz-resumo">${resumo}</div>` +
+(aVencer.length ? `<div class="pz-sec"><b>Vencem nos próximos ${PZ_DIAS} dias</b> · ${aVencer.length} chamado(s)</div>${tab(aVencer)}` : `<div class="pz-sec">Nenhum chamado vencendo nos próximos ${PZ_DIAS} dias.</div>`) +
+(venc.length ? `<div class="pz-sec" style="color:#8f1f1a"><b>Vencidos</b> · ${venc.length} chamado(s) sem conclusão</div>${tab(venc)}` : '') +
+`<label style="display:flex;gap:8px;align-items:center;margin-top:14px;font-size:13px;color:var(--ink-2);cursor:pointer"><input type="checkbox" id="pzHoje" ${pzOcultoHoje() ? 'checked' : ''}>Não abrir este aviso automaticamente hoje</label>`;
+const p = dialogo(`Prazos dos chamados · ${int(L.length)} precisam de atenção`, corpo, { ok: 'Fechar', largo: true });
+$('dlg').querySelector('.modal').classList.add('prazos'); $('dlgN').style.display = 'none';
+p.then(() => { const chk = $('pzHoje'); pzMarcarHoje(chk && chk.checked); $('dlgN').style.display = ''; });
+}
+function pzAbrir(id) { $('dlgS').click(); setTimeout(() => abrirForm(id), 60); }
+const pzChave = () => 'prazosOcultoAte_' + (ME ? ME.login : '');
+function pzOcultoHoje() { try { return localStorage.getItem(pzChave()) === D.hoje; } catch { return false; } }
+function pzMarcarHoje(sim) { try { if (sim) localStorage.setItem(pzChave(), D.hoje); else localStorage.removeItem(pzChave()); } catch {} }
+// abre sozinho uma vez por acesso (ao entrar no sistema), se houver prazos e não estiver no modo TV
+function avisoPrazosAuto() {
+if (window.__pzMostrado || !pode('campos_gestao') || (window.TV && TV.on)) return;
+window.__pzMostrado = true;
+if (pzOcultoHoje()) return;
+if ($('dlg').classList.contains('ativo') || $('modal').classList.contains('ativo') || $('login').classList.contains('ativo')) return;
+if (prazosLista().length) setTimeout(() => abrirPrazos(true), 500);
+}
+// ===================================================================== MODO TV
+// Mostra a Visão geral em tela cheia: indicadores fixos no alto e os painéis alternando sozinhos.
+const TV_SLIDES = [['c-fat', 'c-sit'], ['c-abertos'], ['c-emp', 'c-uni'], ['c-orc', 'c-pend'], ['c-aten'], ['c-desemp']];
+var TV = { on: false, i: 0, timer: null, relogio: null, pausa: false, trava: null, mouseT: null,
+seg: 10 };
+try { TV.seg = Math.min(20, Math.max(5, +localStorage.getItem('tvSegundos') || 10)); } catch {}
+function tvSlides() {
+return TV_SLIDES.map(s => s.filter(id => { const e = $(id); return e && e.style.display !== 'none' && e.innerHTML.trim(); })).filter(s => s.length);
+}
+// altura livre abaixo dos indicadores: o painel da vez ocupa todo esse espaço
+function tvAltura() {
+const topo = $('kpis').getBoundingClientRect().bottom + window.scrollY;
+document.body.style.setProperty('--tvH', Math.max(320, innerHeight - topo - 56) + 'px');
+}
+function tvFiltroTxt() {
+return ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].map(id => { const s = $(id); return s ? (txtSel(id) || (s.options[0] ? s.options[0].text : '')) : ''; }).filter(Boolean).join(' · ');
+}
+function tvMostrar(i) {
+const S = tvSlides(); if (!S.length) return;
+TV.i = ((i % S.length) + S.length) % S.length;
+const ativos = new Set(S[TV.i]);
+document.querySelectorAll('#v-visao > .grid:not(#kpis)').forEach(g => {
+let n = 0;
+g.querySelectorAll(':scope > .card').forEach(c => { const on = ativos.has(c.id); c.classList.toggle('tv-off', !on); if (on) n++; });
+g.classList.toggle('tv-off', !n); g.classList.toggle('tv-um', n === 1);
+});
+renderVisao();   // redesenha os gráficos na largura da TV
+$('tvNome').textContent = S[TV.i].map(id => { const h = $(id).querySelector('h3'); return h ? h.textContent : ''; }).filter(Boolean).join(' · ');
+$('tvDots').innerHTML = S.map((_, k) => `<i class="${k === TV.i ? 'on' : ''}"></i>`).join('');
+$('tvFiltro').textContent = tvFiltroTxt();
+window.scrollTo(0, 0);
+tvAgendar();
+}
+function tvAgendar() {
+clearTimeout(TV.timer);
+const p = $('tvProg'); p.style.transition = 'none'; p.style.width = '0';
+if (TV.pausa || !TV.on) return;
+void p.offsetWidth; p.style.transition = `width ${TV.seg}s linear`; p.style.width = '100%';
+TV.timer = setTimeout(() => tvMostrar(TV.i + 1), TV.seg * 1000);
+tvRolarTabelas();
+}
+// tabelas maiores que a tela (ex.: Precisa de atenção) descem devagar durante o tempo do painel
+function tvRolarTabelas() {
+clearInterval(TV.rolar);
+const tws = () => document.querySelectorAll('#v-visao .card:not(.tv-off) .tw');   // busca de novo: a atualização automática recria a tabela
+tws().forEach(t => t.scrollTop = 0);
+if (TV.pausa || !TV.on) return;
+const ini = Date.now() + 1500, dur = Math.max(1500, TV.seg * 1000 - 2500);
+TV.rolar = setInterval(() => {
+const f = Math.min(1, Math.max(0, (Date.now() - ini) / dur));
+tws().forEach(t => t.scrollTop = (t.scrollHeight - t.clientHeight) * f);
+if (f >= 1 || !TV.on || TV.pausa) clearInterval(TV.rolar);
+}, 40);
+}
+function tvIr(d) { tvMostrar(TV.i + d); }
+function tvPausar() {
+TV.pausa = !TV.pausa;
+$('tvPlay').innerHTML = TV.pausa ? ico('play') + 'Continuar' : ico('pause') + 'Pausar';
+tvAgendar();
+}
+function tvTempo(v) {
+TV.seg = Math.min(20, Math.max(5, +v || 10)); try { localStorage.setItem('tvSegundos', TV.seg); } catch {}
+$('tvSegTxt').textContent = TV.seg + ' s'; tvAgendar();
+}
+function tvTelaCheia() {
+const el = document.documentElement;
+if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+async function tvManterTelaLigada() {
+try { if (TV.on && 'wakeLock' in navigator && !TV.trava) { TV.trava = await navigator.wakeLock.request('screen'); TV.trava.addEventListener('release', () => TV.trava = null); } } catch {}
+}
+function tvRelogio() {
+const d = new Date();
+$('tvHora').textContent = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+$('tvData').textContent = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+}
+function tvMouse() {
+if (!TV.on) return;
+document.body.classList.add('tv-mouse'); clearTimeout(TV.mouseT);
+TV.mouseT = setTimeout(() => { if (!$('tvCtl').matches(':hover')) document.body.classList.remove('tv-mouse'); }, 3500);
+}
+function abrirTV() {
+if (vistaAtual() !== 'visao') irPara('visao');
+TV.on = true; TV.pausa = false;
+$('tvPlay').innerHTML = ico('pause') + 'Pausar';
+$('tvSeg').value = TV.seg; $('tvSegTxt').textContent = TV.seg + ' s';
+document.body.classList.add('tv');
+tvTelaCheia(); tvManterTelaLigada();
+tvRelogio(); TV.relogio = setInterval(tvRelogio, 1000);
+tvMostrar(0); tvMouse();
+}
+function sairTV() {
+if (!TV.on) return;
+TV.on = false; clearTimeout(TV.timer); clearInterval(TV.relogio); clearTimeout(TV.mouseT);
+document.body.classList.remove('tv', 'tv-mouse');
+document.querySelectorAll('#v-visao .tv-off, #v-visao .tv-um').forEach(e => e.classList.remove('tv-off', 'tv-um'));
+if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+if (TV.trava) { TV.trava.release().catch(() => {}); TV.trava = null; }
+renderVisao();
+}
+addEventListener('mousemove', tvMouse);
+addEventListener('touchstart', tvMouse, { passive: true });
+addEventListener('keydown', e => {
+if (!TV.on || e.target.closest('input,select,textarea')) return;
+if (e.key === 'Escape') { if (!document.fullscreenElement) sairTV(); }
+else if (e.key === 'ArrowRight') tvIr(1);
+else if (e.key === 'ArrowLeft') tvIr(-1);
+else if (e.key === ' ') { e.preventDefault(); tvPausar(); }
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tvManterTelaLigada(); });
+// ===================================================================== APLICATIVO (instalar no celular / computador)
+let PEDIDO_INSTALAR = window.__bip || null;   // pedido de instalação guardado pela página de abertura
+const EH_APP = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const EH_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function atualizarBotaoInstalar() {
+const mostrar = !EH_APP() && (PEDIDO_INSTALAR || EH_IOS || window.isSecureContext);
+document.querySelectorAll('.btn-instalar').forEach(b => b.style.display = mostrar ? '' : 'none');
+}
+if ('serviceWorker' in navigator && window.isSecureContext) {
+navigator.serviceWorker.register('/sw.js').catch(() => {});   // a tela é montada pela página de abertura (já carregada)
+}
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); PEDIDO_INSTALAR = e; atualizarBotaoInstalar(); });
+addEventListener('appinstalled', () => { PEDIDO_INSTALAR = null; atualizarBotaoInstalar(); toast('Aplicativo instalado! Procure o ícone "Chamados SE".', 'ok'); });
+addEventListener('DOMContentLoaded', atualizarBotaoInstalar); setTimeout(atualizarBotaoInstalar, 300);
+async function instalarApp() {
+if (PEDIDO_INSTALAR) {
+PEDIDO_INSTALAR.prompt();
+try { await PEDIDO_INSTALAR.userChoice; } catch {}
+PEDIDO_INSTALAR = null; atualizarBotaoInstalar(); return;
+}
+const passos = EH_IOS
+? `<p style="margin-top:0"><b>iPhone / iPad (Safari)</b></p><ol style="padding-left:20px;line-height:1.7"><li>Toque no botão <b>Compartilhar</b> (quadrado com a seta para cima).</li><li>Escolha <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>. O ícone <b>Chamados SE</b> aparecerá na tela.</li></ol>`
+: `<p style="margin-top:0"><b>Celular Android (Chrome)</b></p><ol style="padding-left:20px;line-height:1.7"><li>Toque no menu <b>⋮</b> do navegador.</li><li>Escolha <b>Instalar aplicativo</b> (ou <b>Adicionar à tela inicial</b>).</li></ol>
+<p><b>Computador / notebook (Chrome ou Edge)</b></p><ol style="padding-left:20px;line-height:1.7"><li>Clique no ícone de instalar <b>⊕</b> no fim da barra de endereço, <i>ou</i> no menu <b>⋮</b> → <b>Transmitir, salvar e compartilhar</b> → <b>Instalar página como app</b> (Edge: <b>⋯</b> → <b>Aplicativos</b> → <b>Instalar este site como aplicativo</b>).</li></ol>`;
+await dialogo('Instalar aplicativo', passos + `<p style="color:var(--ink-2);font-size:12.5px;margin-bottom:0">O aplicativo abre em tela própria, com ícone, e usa o mesmo login e senha. Os dados continuam sempre atualizados.</p>`, { ok: 'Entendi', largo: true });
+}
+function enviarWhats() { window.open('https://wa.me/?text=' + encodeURIComponent(window.__msgs.semSenha), '_blank', 'noopener'); }
+function enviarEmail() { location.href = 'mailto:?subject=' + encodeURIComponent('Acesso – ' + NOME_SISTEMA) + '&body=' + encodeURIComponent(window.__msgs.semSenha); }
+// ===================================================================== USUÁRIOS E PERFIS
+async function carregarUsuarios() {
+try { USR = await api('GET', '/api/usuarios'); USR.usuarios = [].concat(USR.usuarios || []); USR.perfis = [].concat(USR.perfis || []); renderUsuarios(); }
+catch (e) { toast(e.message, 'erro'); }
+}
+function copiar(txt) {
+const ok = () => toast('Link copiado: ' + txt, 'ok');
+const alt = () => { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); let r = false; try { r = document.execCommand('copy'); } catch {} t.remove(); r ? ok() : toast('Não foi possível copiar. Selecione o link e copie manualmente.', 'erro'); };
+if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(ok, alt); else alt();
+}
+function renderRede() {
+const R = USR.rede || { ativa: false, links: [] }, P = R.publico || {};
+if (R.nuvem) {   // versão na nuvem: link fixo, sempre no ar (não depende de nenhum computador ligado)
+$('redeCard').innerHTML = `<div class="card-h"><div><h3>Link de acesso (fixo)</h3><div class="d">O sistema roda na nuvem: funciona 24 horas, de qualquer lugar (celular, notebook ou computador), mesmo com o seu notebook desligado. Só entra quem tem usuário e senha.</div></div>
+<div class="acts"><span class="pill good">${ico('s_good')}No ar</span></div></div>
+<div class="senha-gerada" style="max-width:640px"><input readonly value="${esc(P.link || location.origin)}" onclick="this.select()" style="font-weight:600"><button type="button" class="btn" onclick="copiar('${esc(P.link || location.origin)}')">${ico('link')}Copiar link</button><button type="button" class="btn pri" onclick="compartilharLink()">${ico('share')}Compartilhar</button></div>`;
+return;
+}
+const pub = `<div class="card-h"><div><h3>Link público (internet)</h3><div class="d">Funciona de qualquer lugar, para quem tiver usuário e senha. Os dados continuam neste computador. ${P.fixo ? '<b>Link fixo</b>: não muda ao reiniciar.' : '<b>Link temporário</b>: muda quando o sistema é reiniciado — para um link fixo, execute <b>Configurar link fixo (Cloudflare).bat</b> na pasta do sistema.'}</div></div>
+<div class="acts">${P.ativo ? `<span class="pill good">${ico('s_good')}No ar desde ${esc(P.desde)}</span>` : `<span class="pill warning">${ico('s_warning')}Indisponível</span>`}</div></div>
+${P.ativo ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input readonly value="${esc(P.link)}" style="flex:1;max-width:460px;font-weight:600" onclick="this.select()"><button class="btn pri" onclick="compartilharLink()">${ico('share')}Compartilhar link</button></div>`
+: `<p style="margin:0;color:var(--ink-2)">${esc(P.erro || 'Abrindo o túnel seguro... atualize esta tela em alguns segundos.')}</p>`}<hr style="border:0;border-top:1px solid var(--grid);margin:18px 0">`;
+const nomeLink = R.links[0], ipLinks = R.links.slice(1);
+$('redeCard').innerHTML = pub + (R.ativa ? `<div class="card-h"><div><h3>Link na rede local</h3><div class="d">Envie um destes links aos usuários cadastrados. Funciona em computadores da mesma rede, enquanto este computador estiver ligado com o sistema aberto.</div></div>
+<div class="acts"><span class="pill good">${ico('s_good')}Acesso pela rede liberado</span></div></div>
+<div style="display:flex;flex-direction:column;gap:8px">${R.links.map((l, i) => `<div style="display:flex;gap:8px;align-items:center"><input readonly value="${esc(l)}" style="flex:1;max-width:420px;font-weight:600" onclick="this.select()"><button class="btn" onclick="copiar('${esc(l)}')">${ico('copy')}Copiar</button><span style="color:var(--ink-2);font-size:12.5px">${i === 0 ? 'pelo nome do computador (recomendado)' : 'pelo IP — use se o nome não abrir; pode mudar se o roteador trocar o IP'}</span></div>`).join('')}</div>`
+: `<div class="card-h"><div><h3>Link na rede local (opcional)</h3><div class="d">Alternativa sem internet, para computadores da mesma rede. Ainda <b>não liberado</b> — só é necessário se você não quiser usar o link público.</div></div>
+<div class="acts"><span class="pill neutral">${ico('s_neutral')}Somente neste computador</span></div></div>
+<ol style="margin:0;padding-left:20px;color:var(--ink-2);line-height:1.7">
+<li>Feche o sistema (a janela do PowerShell “Segurança Empresarial”).</li>
+<li>Na pasta do sistema, clique com o botão direito em <b>Liberar acesso na rede (como administrador).bat</b> → <b>Executar como administrador</b>.</li>
+<li>Abra o sistema de novo pelo atalho <b>Iniciar Chamados GITEL.bat</b>. O link aparecerá aqui${nomeLink ? ` (será algo como <b>${esc(nomeLink)}</b>)` : ''}.</li>
+</ol>`);
+}
+function renderUsuarios() {
+renderRede();
+const nomePerfil = id => (USR.perfis.find(p => p.id === id) || {}).nome || '(sem perfil)';
+$('usrTab').innerHTML = `<thead><tr><th>Nome</th><th>Login</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead><tbody>${USR.usuarios.map(u => `<tr>
+<td><b>${esc(u.nome)}</b>${ME && u.id === ME.id ? ' <span class="tag">você</span>' : ''}</td><td>${esc(u.login)}</td><td>${esc(u.email || '—')}</td><td>${esc(nomePerfil(u.perfilId))}</td>
+<td>${!u.ativo ? `<span class="pill neutral">${ico('s_neutral')}Desativado</span>` : u.trocarSenha ? `<span class="pill warning">${ico('s_warning')}Aguardando 1º acesso</span>` : `<span class="pill good">${ico('s_good')}Ativo</span>`}</td>
+<td>${esc(u.ultimoAcesso || 'nunca')}</td>
+<td style="white-space:nowrap"><button class="ic" title="Editar" onclick="formUsuario(${u.id})">${ico('edit')}</button><button class="btn" style="padding:4px 9px;font-size:12px;margin-right:4px" title="Trocar a senha deste usuário" onclick="redefinirSenha(${u.id})">${ico('key')}Trocar senha</button>${ME && u.id === ME.id ? '' : `<button class="ic" title="Excluir" onclick="excluirUsuario(${u.id})">${ico('trash')}</button>`}</td></tr>`).join('')}</tbody>`;
+const grupos = [...new Set(USR.catalogo.map(c => c.g))];
+$('perfis').innerHTML = USR.perfis.map(p => { const uso = USR.usuarios.filter(u => u.perfilId === p.id).length; return `<div class="perfil">
+<h4>${esc(p.nome)}${p.sistema ? ' <span class="tag">fixo</span>' : ''}</h4><div class="d">${esc(p.descricao || '')} · ${uso} usuário(s)</div>
+<div class="perms">${p.permissoes.length ? USR.catalogo.filter(c => p.permissoes.includes(c.k)).map(c => `<span class="perm">${esc(c.n)}</span>`).join('') : '<span class="perm">Nenhuma permissão</span>'}</div>
+${p.sistema ? '' : `<div class="acts"><button class="btn peq" onclick="formPerfil('${p.id}')">${ico('edit')}Editar permissões</button><button class="btn peq" onclick="formPerfil('${p.id}', true)">${ico('copy')}Duplicar</button><button class="btn peq perigo" onclick="excluirPerfil('${p.id}')">${ico('trash')}Excluir</button></div>`}</div>`; }).join('');
+}
+function senhaAleatoria() {
+const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', v = new Uint32Array(10); crypto.getRandomValues(v);
+let s = [...v].map(x => a[x % a.length]).join(''); if (!/\d/.test(s)) s = s.slice(0, 9) + '7'; if (!/[a-z]/i.test(s)) s = 'k' + s.slice(1); return s;
+}
+async function formUsuario(id) {
+const u = id ? USR.usuarios.find(x => x.id === id) : { nome: '', login: '', email: '', perfilId: 'operador', ativo: true };
+let val = { ...u, senha: id ? '' : senhaAleatoria() };
+for (;;) {
+const ok = await dialogo(id ? 'Editar usuário' : 'Novo usuário', `
+<div class="campos" style="grid-template-columns:1fr 1fr">
+<div class="campo"><label>Nome completo</label><input id="fuNome" value="${esc(val.nome)}"></div>
+<div class="campo"><label>Login</label><input id="fuLogin" value="${esc(val.login)}" ${id ? 'disabled' : ''} placeholder="ex.: joao.silva"></div>
+<div class="campo"><label>E-mail (opcional)</label><input id="fuEmail" value="${esc(val.email || '')}"></div>
+<div class="campo"><label>Perfil de acesso</label><select id="fuPerfil">${USR.perfis.map(p => `<option value="${p.id}" ${p.id === val.perfilId ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
+${id ? `<div class="campo largo"><label class="chk" style="color:var(--ink)"><input type="checkbox" id="fuAtivo" ${val.ativo ? 'checked' : ''}> Usuário ativo (desmarque para bloquear o acesso sem excluir)</label></div>`
+: `<div class="campo largo"><label>Senha provisória (informe ao usuário; ele criará a própria senha no primeiro acesso)</label><div class="senha-gerada"><input id="fuSenha" value="${esc(val.senha)}"><button type="button" class="btn" onclick="$('fuSenha').value=senhaAleatoria()">Gerar outra</button></div></div>`}
+</div>`, { ok: id ? 'Salvar' : 'Cadastrar usuário', largo: true, foco: 'fuNome' });
+if (!ok) return;
+val = { ...val, nome: $('fuNome').value, login: $('fuLogin').value, email: $('fuEmail').value, perfilId: $('fuPerfil').value, ativo: id ? $('fuAtivo').checked : true, senha: id ? '' : $('fuSenha').value };
+try {
+if (id) await api('PUT', '/api/usuarios/' + id, val); else await api('POST', '/api/usuarios', val);
+toast(id ? 'Usuário atualizado.' : `Usuário ${val.login} cadastrado.`, 'ok');
+await carregarUsuarios(); if (ME && id === ME.id) iniciar();
+if (!id) compartilharLink({ titulo: 'Enviar acesso para ' + val.nome, intro: `Usuário <b>${esc(val.login)}</b> cadastrado. Envie o link e o login para a pessoa:`, login: val.login.trim().toLowerCase(), senha: val.senha });
+return;
+} catch (e) { toast(e.message, 'erro'); }
+}
+}
+async function redefinirSenha(id) {
+const u = USR.usuarios.find(x => x.id === id), proprio = ME && id === ME.id, nova = proprio ? '' : senhaAleatoria();
+while (true) {
+const ok = await dialogo(proprio ? 'Trocar a minha senha' : 'Trocar senha de ' + u.nome, `
+<p style="margin-top:0">${proprio ? 'Defina a sua nova senha. Você continua conectado nesta tela; outros aparelhos onde você estiver logado serão desconectados.' : `Nova senha para <b>${esc(u.nome)}</b> (login <b>${esc(u.login)}</b>). As sessões abertas dessa pessoa serão encerradas.`}</p>
+<div class="campo"><label>Nova senha (mín. 8 caracteres, com letras e números)</label><div class="senha-gerada"><input id="rsSenha" value="${nova}" autocomplete="new-password" spellcheck="false"><button type="button" class="btn" onclick="$('rsSenha').value=senhaAleatoria()">Gerar senha</button></div></div>
+${proprio ? '' : `<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer"><input type="checkbox" id="rsProv" checked style="margin-top:3px">Senha provisória — pedir para a pessoa criar uma senha própria no próximo acesso</label>`}`,
+{ ok: 'Salvar nova senha', foco: 'rsSenha' });
+if (!ok) return;
+const s = $('rsSenha').value.trim(), prov = proprio ? false : $('rsProv').checked;
+try {
+await api('POST', `/api/usuarios/${id}/senha`, { senha: s, provisoria: prov });
+toast(proprio ? 'Sua senha foi alterada.' : `Senha de ${u.login} alterada.`, 'ok'); carregarUsuarios();
+if (!proprio) compartilharLink({ titulo: 'Enviar novo acesso para ' + u.nome, intro: `Senha de <b>${esc(u.login)}</b> alterada${prov ? ' (provisória)' : ''}. Envie para a pessoa:`, login: u.login, senha: s });
+return;
+} catch (e) { toast(e.message, 'erro'); }
+}
+}
+async function excluirUsuario(id) {
+const u = USR.usuarios.find(x => x.id === id);
+if (!await dialogo('Excluir usuário', `Excluir <b>${esc(u.nome)}</b> (${esc(u.login)})?<br><br>Se for só uma ausência temporária, prefira <b>desativar</b> o usuário em Editar.`, { ok: 'Excluir', perigo: true })) return;
+try { await api('DELETE', '/api/usuarios/' + id); toast('Usuário excluído.', 'ok'); carregarUsuarios(); } catch (e) { toast(e.message, 'erro'); }
+}
+async function formPerfil(id, duplicar) {
+const base = id ? USR.perfis.find(p => p.id === id) : { nome: '', descricao: '', permissoes: ['ver_painel', 'ver_chamados'] };
+const editando = id && !duplicar;
+let val = { nome: duplicar ? base.nome + ' (cópia)' : base.nome, descricao: base.descricao || '', permissoes: [...base.permissoes] };
+const grupos = [...new Set(USR.catalogo.map(c => c.g))];
+for (;;) {
+const ok = await dialogo(editando ? 'Editar perfil' : 'Novo perfil', `
+<div class="campos" style="grid-template-columns:1fr 2fr;margin-bottom:16px">
+<div class="campo"><label>Nome do perfil</label><input id="fpNome" value="${esc(val.nome)}"></div>
+<div class="campo"><label>Descrição</label><input id="fpDesc" value="${esc(val.descricao)}" placeholder="Para que serve este perfil"></div>
+</div>
+<div class="matriz">${grupos.map(g => `<div><h5>${g}</h5>${USR.catalogo.filter(c => c.g === g).map(c => `<label><input type="checkbox" class="fpPerm" value="${c.k}" ${val.permissoes.includes(c.k) ? 'checked' : ''}><span>${esc(c.n)}</span></label>`).join('')}</div>`).join('')}</div>`,
+{ ok: editando ? 'Salvar perfil' : 'Criar perfil', largo: true, foco: 'fpNome' });
+if (!ok) return;
+val = { nome: $('fpNome').value, descricao: $('fpDesc').value, permissoes: [...document.querySelectorAll('.fpPerm:checked')].map(x => x.value) };
+try {
+if (editando) await api('PUT', '/api/perfis/' + id, val); else await api('POST', '/api/perfis', val);
+toast(editando ? 'Perfil atualizado.' : 'Perfil criado.', 'ok');
+await carregarUsuarios(); if (ME && editando && ME.perfilId === id) iniciar(); return;
+} catch (e) { toast(e.message, 'erro'); }
+}
+}
+async function excluirPerfil(id) {
+const p = USR.perfis.find(x => x.id === id);
+if (!await dialogo('Excluir perfil', `Excluir o perfil <b>${esc(p.nome)}</b>?`, { ok: 'Excluir', perigo: true })) return;
+try { await api('DELETE', '/api/perfis/' + id); toast('Perfil excluído.', 'ok'); carregarUsuarios(); } catch (e) { toast(e.message, 'erro'); }
+}
+// ===================================================================== exportação CSV
+function exportarCSV(lista, nome) {
+if (!lista.length) { toast('Nada para exportar.', 'erro'); return; }
+const fmt = (k, v) => ['valorMaterial', 'valorMaoObra', 'valorTotal'].includes(k) ? numBR(v).replace(/\./g, '') : k.startsWith('data') ? fd(v) : k === 'mesFaturamento' ? (v ? v.slice(5, 7) + '/' + v.slice(0, 4) : '') : (v ?? '');
+const q = s => { s = String(s); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const CC = csvVisiveis();
+const linhas = [CC.map(c => q(c[1])).join(';'), ...lista.map(c => CC.map(([k]) => q(fmt(k, c[k]))).join(';'))];
+const blob = new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${nome}_${D.hoje}.csv`; a.click();
+setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+toast(`${lista.length} chamado(s) exportado(s).`, 'ok');
+}
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { renderVisao(); renderFat(); }, 150); });
+pintarIcones(); prepararFiltros(); iniciar();
+</script>
+</body>
+</html>
