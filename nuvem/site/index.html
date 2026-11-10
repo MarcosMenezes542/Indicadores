@@ -1163,13 +1163,13 @@ cardChart($('c-sit'), 'Situação dos chamados', `${int(L.length)} chamados no r
 tabelaHTML([{ t: 'Situação' }, { t: 'Qtd', num: 1 }, { t: '%', num: 1 }, { t: 'Valor', num: 1 }], ORDEM_ST.map(s => { const x = L.filter(c => c.status === s); return [pill(s), x.length, pct(x.length / (L.length || 1)), money(soma(x, 'valorTotal'))]; })));
 const emp = agrupa(L, 'empresa'), uni = agrupa(L, 'unidade'), orc = agrupa(L, 'statusOrcamento', '(sem status)'), pend = agrupa(L.filter(c => c.pendencia && !c.dataReal), 'pendencia');
 const tabG = (g, nome) => tabelaHTML([{ t: nome }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], [...g].sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)]), ['Total', soma(g, 'qtd'), money(soma(g, 'valor'))]);
-cardChart($('c-emp'), 'Valor por Empresa do grupo CPFL', 'Soma dos serviços no recorte', hbarsHTML(emp, { onClick: 'verEmpresa' }), tabG(emp, 'Fornecedor'));
+cardChart($('c-emp'), 'Valor por Empresa do grupo CPFL', 'Soma dos serviços no recorte', hbarsHTML(emp, { onClick: 'verEmpresa' }), tabG(emp, 'Empresa do grupo CPFL'));
 cardChart($('c-uni'), 'Chamados por unidade', 'Quantidade de chamados no recorte', hbarsHTML(uni, { valor: 'qtd', onClick: 'verUnidade' }), tabG(uni, 'Unidade'));
 cardChart($('c-orc'), 'Status do orçamento', 'Quantidade de chamados por etapa do orçamento', hbarsHTML(orc, { valor: 'qtd', onClick: 'verOrc' }), tabG(orc, 'Status do orçamento'));
 cardChart($('c-pend'), 'Pendências em aberto', 'Chamados não concluídos com pendência registrada', hbarsHTML(pend, { valor: 'qtd', onClick: 'verPend' }), tabG(pend, 'Pendência'));
 const dp = desempenho(L);
-$('c-desemp').innerHTML = `<div class="card-h"><div><h3>Desempenho por fornecedor</h3><div class="d">Concluídos no recorte · meta de prazo ${pct(META_PRAZO)}</div></div></div>` +
-tabelaHTML([{ t: 'Fornecedor' }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atraso médio', num: 1 }, { t: 'Em andamento', num: 1 }],
+$('c-desemp').innerHTML = `<div class="card-h"><div><h3>Desempenho por Empresa do grupo CPFL</h3><div class="d">Concluídos no recorte · meta de prazo ${pct(META_PRAZO)}</div></div></div>` +
+tabelaHTML([{ t: 'Empresa do grupo CPFL' }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atraso médio', num: 1 }, { t: 'Em andamento', num: 1 }],
 dp.map(e => [`<span class="lk" onclick="verEmpresa('${esc(e.nome)}')">${esc(e.nome)}</span>`, e.conc, e.conc ? pillPct(e.taxa, pct(e.taxa)) : '—', e.conc ? e.prazo.toFixed(1) + ' d' : '—', e.atraso ? e.atraso.toFixed(1) + ' d' : '—', e.andamento + (e.atrasados ? ` <span style="color:var(--ink-2)">(${e.atrasados} atras.)</span>` : '')]));
 const aten = L.filter(c => !c.dataReal && c.dataPrevista && dias(D.hoje, c.dataPrevista) <= 3).sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevista));
 $('c-aten').innerHTML = `<div class="card-h"><div><h3>Precisa de atenção</h3><div class="d">Atrasados e vencendo nos próximos 3 dias · ${aten.length} chamado(s)</div></div></div>` +
@@ -1243,8 +1243,8 @@ ${(() => { const tA = temMes ? ptsA.filter(p => p.sel) : ptsA.filter(p => p.v); 
 <div><h3>Valor por Empresa do grupo CPFL</h3>${hbarsHTML(emp, { max: 12 })}</div>
 <div><h3>Chamados por unidade</h3>${hbarsHTML(uni, { valor: 'qtd', max: 12 })}</div>
 </div>
-<h3>Desempenho por fornecedor</h3>
-${tabelaHTML([{ t: 'Fornecedor' }, { t: 'Chamados', num: 1 }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atrasados', num: 1 }, { t: 'Valor', num: 1 }],
+<h3>Desempenho por Empresa do grupo CPFL</h3>
+${tabelaHTML([{ t: 'Empresa do grupo CPFL' }, { t: 'Chamados', num: 1 }, { t: 'Concluídos', num: 1 }, { t: 'No prazo', num: 1 }, { t: 'Prazo médio', num: 1 }, { t: 'Atrasados', num: 1 }, { t: 'Valor', num: 1 }],
 dp.map(e => [esc(e.nome), e.qtd, e.conc, e.conc ? pillPct(e.taxa, pct(e.taxa)) : '—', e.conc ? e.prazo.toFixed(1) + ' d' : '—', e.atrasados, money(e.valor)]), ['Total', L.length, I.conc.length, I.conc.length ? pct(I.taxa) : '', '', I.atr.length, money(I.total)])}
 <h3>Chamados por unidade (detalhe)</h3>
 ${tabelaHTML([{ t: 'Unidade' }, { t: 'Chamados', num: 1 }, { t: 'Atrasados', num: 1 }, { t: 'Valor', num: 1 }], uni.map(u => [esc(u.nome), u.qtd, L.filter(c => c.unidade === u.nome && c.status === 'Atrasado').length, money(u.valor)]))}
