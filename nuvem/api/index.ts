@@ -47,6 +47,7 @@ const COLUMNS: Col[] = [
   { key: "responsavel", header: "RESPONSÁVEL PELO CHAMADO", kind: "text", width: 26 },
   { key: "contatoResponsavel", header: "CONTATO DO RESPONSÁVEL", kind: "text", width: 22 },
   { key: "statusChamado", header: "STATUS DO CHAMADO (LISTA)", kind: "text", width: 22 },
+  { key: "tipo", header: "TIPO", kind: "text", width: 16 },
 ];
 const HEADER_ALIAS: Record<string, string> = {
   CHAMADOFRACTTAL: "chamadoFornecedor", NCHAMADOCPFL: "numero", CHAMADOCPFL: "numero", NUMERODOCHAMADO: "numero",
@@ -57,6 +58,15 @@ const HEADER_ALIAS: Record<string, string> = {
   RESPONSAVEL: "responsavel", RESPONSAVELDOCHAMADO: "responsavel", SOLICITANTE: "responsavel",
   CONTATO: "contatoResponsavel", CONTATODORESPONSAVELPELOCHAMADO: "contatoResponsavel", TELEFONE: "contatoResponsavel",
   STATUSDOCHAMADOCADASTRO: "statusChamado",
+  // planilha "BASE DE REGISTROS DE CHAMADOS - FORNECEDORES"
+  OSGITEL: "osFornecedor", OS: "osFornecedor", CONTATOSOLICITANTE: "contatoResponsavel",
+  ABERTURA: "dataChamado", DATADEABERTURA: "dataChamado", DATAABERTURA: "dataChamado",
+  PRAZO: "dataPrevista", PRAZODECONCLUSAO: "dataPrevista", CONCLUSAO: "dataReal", DATACONCLUSAO: "dataReal",
+  MATERIAL: "valorMaterial", MATERIALR: "valorMaterial", MATERIALRS: "valorMaterial", MAODEOBRA: "valorMaoObra", MAODEOBRAR: "valorMaoObra", MAODEOBRARS: "valorMaoObra",
+  TIPODESERVICO: "tipo", TIPODOCHAMADO: "tipo",
+  // colunas calculadas na planilha: o sistema recalcula com as mesmas regras
+  STATUS: "status", SITUACAO: "status", SITUACAOSLA: "status", MESFATURAMENTO: "mesFaturamento", MESDEFATURAMENTO: "mesFaturamento",
+  FATURAMENTO: "valorTotal", FATURAMENTOR: "valorTotal", VALORTOTAL: "valorTotal", VALORTOTALR: "valorTotal",
 };
 const CADASTRO_DEFS = [
   { key: "unidades", header: "UNIDADES", campo: "unidade" },
@@ -65,11 +75,13 @@ const CADASTRO_DEFS = [
   { key: "statusOrcamento", header: "STATUS DO ORÇAMENTO", campo: "statusOrcamento" },
   { key: "pendencias", header: "PENDÊNCIAS", campo: "pendencia" },
   { key: "statusChamado", header: "STATUS DO CHAMADO", campo: "statusChamado" },
+  { key: "tipos", header: "TIPOS", campo: "tipo" },
 ];
 const DEFAULT_PRIORIDADES = ["Urgente", "Alta", "Média", "Baixa"];
 const DEFAULT_STATUS_ORC = ["Aguardando orçamento", "Orçamento enviado", "Aprovado", "Reprovado"];
+const DEFAULT_TIPOS = ["Manutenção", "Visita técnica", "Retrofit", "Outros"];
 const STATUS_CHAMADO = ["Em aberto", "Atrasado", "Concluído", "Concluído com atraso"];
-const BULK_FIELDS = ["statusOrcamento", "statusChamado", "pendencia", "prioridade", "empresa", "unidade", "dataReal", "dataPrevista"];
+const BULK_FIELDS = ["statusOrcamento", "statusChamado", "pendencia", "prioridade", "tipo", "empresa", "unidade", "dataReal", "dataPrevista"];
 const LABELS: Record<string, string> = Object.fromEntries(COLUMNS.map((c) => [c.key, c.header]));
 
 // ------------------------------------------------------------- utilidades
@@ -153,7 +165,7 @@ const testNumeroPortal = (n: string) => /^\d+$/.test(n);
 const getProp = (b: any, k: string) => (b && typeof b === "object" ? b[k] : undefined);
 
 type Dados = { chamados: Item[]; cadastros: Record<string, string[]> };
-function buildItem(b: any, existing: Item | null, data: Dados, usuarioAtual: string): Item {
+function buildItem(b: any, existing: Item | null, data: Dados, usuarioAtual: string, avisosImport?: string[]): Item {
   const item = novoChamado();
   item.numero = clean(getProp(b, "numero"), 40);
   if (item.numero.toLowerCase() === "patrimonial") item.numero = "Patrimonial";
@@ -171,13 +183,20 @@ function buildItem(b: any, existing: Item | null, data: Dados, usuarioAtual: str
   item.valorMaoObra = parseMoney(getProp(b, "valorMaoObra"));
   if (item.valorMaterial < 0 || item.valorMaoObra < 0) throw bad("Os valores não podem ser negativos.");
   for (const k of ["dataChamado", "dataPrevista", "dataReal"]) {
-    const d = parseDateIso(getProp(b, k));
-    if (d === null) throw bad(`Data inválida em '${LABELS[k]}'.`);
+    const bruto = getProp(b, k), d = parseDateIso(bruto);
+    const anoRuim = !!d && (+d.slice(0, 4) < 1900 || +d.slice(0, 4) > 2100);
+    if (d === null || anoRuim) {
+      // na importação, só essa data fica em branco (o resto do chamado entra) e aparece um aviso
+      if (avisosImport && k !== "dataChamado") { avisosImport.push(`Data inválida em '${LABELS[k]}' (${str(bruto)}): ficou em branco, corrija o ano na planilha ou no sistema.`); item[k] = ""; continue; }
+      throw bad(`Data inválida em '${LABELS[k]}'${bruto ? ` (${str(bruto)})` : ""}.`);
+    }
     item[k] = d;
   }
   if (!item.dataChamado) throw bad("Informe a data do chamado.");
-  if (item.dataPrevista && item.dataPrevista < item.dataChamado) throw bad("A data prevista não pode ser anterior à data do chamado.");
-  if (item.dataReal && item.dataReal < item.dataChamado) throw bad("A data real de conclusão não pode ser anterior à data do chamado.");
+  // na importação, a planilha é a referência: datas fora de ordem entram como estão e aparecem como aviso para conferir
+  const problemaData = (msg: string) => { if (avisosImport) avisosImport.push(msg + " Importado como está na planilha."); else throw bad(msg); };
+  if (item.dataPrevista && item.dataPrevista < item.dataChamado) problemaData("A data prevista é anterior à data do chamado.");
+  if (item.dataReal && item.dataReal < item.dataChamado) problemaData("A data real de conclusão é anterior à data do chamado.");
   item.prioridade = clean(getProp(b, "prioridade"), 40);
   item.chamadoFornecedor = clean(getProp(b, "chamadoFornecedor"), 60);
   item.osFornecedor = clean(getProp(b, "osFornecedor"), 60);
@@ -187,6 +206,8 @@ function buildItem(b: any, existing: Item | null, data: Dados, usuarioAtual: str
   item.responsavel = clean(getProp(b, "responsavel"), 120);
   item.contatoResponsavel = clean(getProp(b, "contatoResponsavel"), 120);
   item.statusChamado = clean(getProp(b, "statusChamado"), 80);
+  // tipo: se a tela não enviar o campo, mantém o que já estava gravado
+  item.tipo = b && typeof b === "object" && "tipo" in b ? clean(getProp(b, "tipo"), 80) : (existing ? clean(existing.tipo, 80) : "");
   item.id = existing ? existing.id : 0;
   item.atualizadoEm = nowSec();
   item.criadoPor = existing ? str(existing.criadoPor) : usuarioAtual;
@@ -207,6 +228,7 @@ function ensureCadastros(data: Dados): boolean {
   const cad = data.cadastros; const antes = JSON.stringify(cad);
   if (!(cad.prioridades || []).length) cad.prioridades = [...DEFAULT_PRIORIDADES];
   if (!(cad.statusOrcamento || []).length) cad.statusOrcamento = [...DEFAULT_STATUS_ORC];
+  if (!(cad.tipos || []).length) cad.tipos = [...DEFAULT_TIPOS];
   for (const d of CADASTRO_DEFS) {
     const list: string[] = [];
     for (const v of cad[d.key] || []) if (v && !list.includes(v)) list.push(v);
@@ -450,20 +472,49 @@ function readImportCsv(linhas: any[]): Imp {
   return { aba: "CSV", colunas: Object.values(hm).map((c) => c.header), linhas: out };
 }
 const isEmptyVal = (v: unknown) => v === null || v === undefined || str(v).trim() === "";
+// chave de cada linha da planilha (para achar linhas repetidas dentro do próprio arquivo).
+// Nº só com números = número único do portal CPFL. Demais ("Patrimonial", "IE_2026_...") podem se repetir:
+// a linha é identificada por Nº + unidade + empresa + data do chamado + OS + chamado do fornecedor.
+const up = (v: unknown) => str(v).trim().toUpperCase();
+const baseKey = (d: Item) => [up(d.numero), up(d.unidade), up(d.empresa), str(parseDateIso(d.dataChamado))].join("|");
 function importKey(d: Item) {
   if (d._id) return `id:${d._id}`;
   const num = str(d.numero).trim();
   if (testNumeroPortal(num)) return `num:${num}`;
-  return ("txt:" + [num, str(d.unidade), str(d.empresa), str(parseDateIso(d.dataChamado))].join("|")).toUpperCase();
+  return "txt:" + [baseKey(d), up(d.osFornecedor), up(d.chamadoFornecedor)].join("|");
 }
-function findExistingImport(data: Dados, d: Item): { item?: Item | null; porId?: boolean; ambiguo?: number } {
-  if (d._id) { const x = data.chamados.find((c) => c.id === Number(d._id)); if (x) return { item: x, porId: true }; }
-  const num = str(d.numero).trim();
-  if (testNumeroPortal(num)) return { item: data.chamados.find((c) => str(c.numero) === num) || null };
-  const dt = parseDateIso(d.dataChamado);
-  const m = data.chamados.filter((c) => str(c.numero).toUpperCase() === num.toUpperCase() && str(c.unidade).toUpperCase() === str(d.unidade).toUpperCase() && str(c.empresa).toUpperCase() === str(d.empresa).toUpperCase() && c.dataChamado === dt);
-  if (m.length > 1) return { ambiguo: m.length };
-  return { item: m[0] || null };
+// liga cada linha da planilha a um chamado já gravado (ou a nenhum = chamado novo).
+// 1ª passada: ligações certas (ID SISTEMA, Nº do portal, ou mesma OS / chamado do fornecedor).
+// 2ª passada: linhas restantes com os chamados restantes de mesmo Nº, unidade, empresa e data (pela observação; senão, pela ordem).
+function matchImport(data: Dados, rows: { linha: number; dados: Item }[]) {
+  const res = new Map<number, { item: Item | null; porId?: boolean }>();
+  const usados = new Set<number>();
+  const porBase = new Map<string, Item[]>();
+  for (const c of data.chamados) { const k = baseKey(c); if (!porBase.has(k)) porBase.set(k, []); porBase.get(k)!.push(c); }
+  const livres = (d: Item) => (porBase.get(baseKey(d)) || []).filter((c) => !usados.has(c.id)).sort((x, y) => x.id - y.id);
+  const resto: { linha: number; dados: Item }[] = [];
+  for (const r of rows) {
+    const d = r.dados;
+    if (d._id) { const x = data.chamados.find((c) => c.id === Number(d._id)); if (x && !usados.has(x.id)) { usados.add(x.id); res.set(r.linha, { item: x, porId: true }); continue; } }
+    const num = str(d.numero).trim();
+    if (testNumeroPortal(num)) { const x = data.chamados.find((c) => str(c.numero) === num) || null; if (x) usados.add(x.id); res.set(r.linha, { item: x }); continue; }
+    let achou: Item | null = null;
+    for (const k of ["osFornecedor", "chamadoFornecedor"]) {
+      const v = up(d[k]); if (!v) continue;
+      const m = livres(d).filter((c) => up(c[k]) === v);
+      if (m.length === 1) { achou = m[0]; break; }
+    }
+    if (achou) { usados.add(achou.id); res.set(r.linha, { item: achou }); } else resto.push(r);
+  }
+  for (const r of resto) {
+    const c = livres(r.dados);
+    const obs = up(r.dados.observacao);
+    const m = obs ? c.filter((x) => up(x.observacao) === obs) : [];
+    const x = m.length === 1 ? m[0] : (c[0] || null);
+    if (x) usados.add(x.id);
+    res.set(r.linha, { item: x });
+  }
+  return res;
 }
 function planImport(data: Dados, imp: Imp, apagarVazios: boolean, usuarioAtual: string) {
   const novos: Item[] = [], atual: { old: Item; nw: Item; mudancas: string }[] = [], erros: any[] = [], avisos: string[] = [];
@@ -472,15 +523,20 @@ function planImport(data: Dados, imp: Imp, apagarVazios: boolean, usuarioAtual: 
   for (const r of imp.linhas) ult[importKey(r.dados)] = r.linha;
   let maxId = data.chamados.reduce((m, x) => Math.max(m, x.id), 0);
   const base: Dados = { chamados: [...data.chamados], cadastros: data.cadastros };
+  const validas: { linha: number; dados: Item }[] = [];
   for (const r of imp.linhas) {
     const d = r.dados;
     if (Object.keys(d).every((k) => k === "_id" || isEmptyVal(d[k]))) continue;
     const num = str(d.numero);
     if (!num) { erros.push({ linha: r.linha, numero: "", erro: 'Linha sem Nº do chamado (use o número do portal CPFL ou "Patrimonial").' }); continue; }
     const key = importKey(d);
-    if (ult[key] !== r.linha) { avisos.push(`O chamado da linha ${r.linha} (Nº ${num}) aparece de novo na linha ${ult[key]}; foi usada a linha ${ult[key]}.`); continue; }
-    const achado = findExistingImport(data, d);
-    if (achado.ambiguo) { erros.push({ linha: r.linha, numero: num, erro: `Há ${achado.ambiguo} chamados '${num}' iguais (mesma unidade, fornecedor e data). Inclua a coluna ID SISTEMA (baixe a base atual pelo sistema) para indicar qual atualizar.` }); continue; }
+    if (ult[key] !== r.linha) { avisos.push(`O chamado da linha ${r.linha} (Nº ${num}) aparece de novo na linha ${ult[key]} com os mesmos dados de identificação; foi usada a linha ${ult[key]}.`); continue; }
+    validas.push(r);
+  }
+  const ligacao = matchImport(data, validas);
+  for (const r of validas) {
+    const d = r.dados, num = str(d.numero);
+    const achado = ligacao.get(r.linha) || { item: null };
     const old = achado.item || null;
     const body: Item = old ? { ...old } : {};
     for (const k of Object.keys(d)) {
@@ -489,8 +545,9 @@ function planImport(data: Dados, imp: Imp, apagarVazios: boolean, usuarioAtual: 
       if (old && k === "numero" && !achado.porId) continue;
       body[k] = d[k];
     }
-    let nw: Item;
-    try { nw = buildItem(body, old, base, usuarioAtual); } catch (e) { erros.push({ linha: r.linha, numero: num, erro: (e as Error).message }); continue; }
+    let nw: Item; const av: string[] = [];
+    try { nw = buildItem(body, old, base, usuarioAtual, av); } catch (e) { erros.push({ linha: r.linha, numero: num, erro: (e as Error).message }); continue; }
+    for (const a of av) avisos.push(`Linha ${r.linha} (Nº ${num}, ${str(nw.unidade)}): ${a}`);
     if (old) { const chg = describeChanges(old, nw); if (chg) { nw.id = old.id; atual.push({ old, nw, mudancas: chg }); } else iguais++; }
     else { maxId++; nw.id = maxId; novos.push(nw); base.chamados.push(nw); }
   }

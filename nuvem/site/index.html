@@ -598,6 +598,7 @@ th,tfoot td{position:static}
 <label>Unidade<select id="fUnidade"></select></label>
 <label>Fornecedor<select id="fEmpresa"></select></label>
 <label>Prioridade<select id="fPrioridade"></select></label>
+<label>Tipo<select id="fTipo"></select></label>
 <label data-perm="campos_gestao">Orçamento<select id="fOrc"></select></label>
 <label data-perm="campos_gestao">Pendência<select id="fPend"></select></label>
 <label data-perm="campos_gestao">Mês faturamento<select id="fMes"></select></label>
@@ -615,6 +616,7 @@ th,tfoot td{position:static}
 <option value="statusOrcamento">Status do orçamento</option>
 <option value="pendencia">Pendência</option>
 <option value="prioridade">Prioridade</option>
+<option value="tipo">Tipo</option>
 <option value="dataPrevista">Data prevista</option>
 <option value="empresa">Fornecedor</option>
 <option value="unidade">Unidade</option>
@@ -677,6 +679,7 @@ th,tfoot td{position:static}
 <div class="campo"><label>Responsável pelo chamado</label><input name="responsavel" autocomplete="off" placeholder="Nome de quem abriu / acompanha"></div>
 <div class="campo"><label>Contato do responsável</label><input name="contatoResponsavel" autocomplete="off" inputmode="tel" placeholder="Telefone, ramal ou e-mail"></div>
 <div class="campo"><label>Prioridade</label><select name="prioridade"></select></div>
+<div class="campo"><label>Tipo</label><select name="tipo"></select></div>
 <div class="campo"><label>Fornecedor (empresa) <span class="o">*</span></label><input name="empresa" list="dlEmpresas"></div>
 <div class="campo"><label>Chamado fornecedor</label><input name="chamadoFornecedor"></div>
 <div class="campo"><label>OS fornecedor</label><input name="osFornecedor"></div>
@@ -824,7 +827,7 @@ const ORDEM_ST = ['Concluído', 'Concluído com atraso', 'Atrasado', 'Em aberto'
 const COLS = [
 { k: 'numero', t: 'Nº CPFL' }, { k: 'unidade', t: 'Unidade' }, { k: 'empresa', t: 'Fornecedor' },
 { k: 'dataChamado', t: 'Aberto em', f: 'd' }, { k: 'dataPrevista', t: 'Previsto', f: 'd' }, { k: 'dataReal', t: 'Concluído', f: 'd' },
-{ k: 'status', t: 'Situação', f: 's' }, { k: 'prioridade', t: 'Prioridade', f: 'p' }, { k: 'statusOrcamento', t: 'Orçamento' },
+{ k: 'status', t: 'Situação', f: 's' }, { k: 'prioridade', t: 'Prioridade', f: 'p' }, { k: 'tipo', t: 'Tipo' }, { k: 'statusOrcamento', t: 'Orçamento' },
 { k: 'statusChamado', t: 'Status do chamado' },
 { k: 'pendencia', t: 'Pendência', f: 'tag' }, { k: 'chamadoFornecedor', t: 'Ch. fornec.' }, { k: 'osFornecedor', t: 'OS fornec.' },
 { k: 'responsavel', t: 'Responsável' }, { k: 'contatoResponsavel', t: 'Contato' },
@@ -836,7 +839,7 @@ const CSV_COLS = [
 ['valorTotal','VALOR TOTAL DO SERVIÇO (R$)'],['dataChamado','DATA DO CHAMADO'],['dataPrevista','DATA PREVISTA DE CONCLUSÃO'],['prioridade','PRIORIDADE'],
 ['dataReal','DATA REAL DE CONCLUSÃO'],['status','STATUS DO CHAMADO'],['chamadoFornecedor','CHAMADO FORNECEDOR'],['osFornecedor','OS FORNECEDOR'],
 ['statusOrcamento','STATUS DO ORÇAMENTO'],['mesFaturamento','MÊS /ANO DE FATURAMENTO'],['pendencia','PENDÊNCIA'],['observacao','OBSERVAÇÃO'],['criadoPor','CADASTRADO POR'],['id','ID SISTEMA'],
-['responsavel','RESPONSÁVEL PELO CHAMADO'],['contatoResponsavel','CONTATO DO RESPONSÁVEL'],['statusChamado','STATUS DO CHAMADO (LISTA)']
+['responsavel','RESPONSÁVEL PELO CHAMADO'],['contatoResponsavel','CONTATO DO RESPONSÁVEL'],['statusChamado','STATUS DO CHAMADO (LISTA)'],['tipo','TIPO']
 ];
 // campos que dependem de permissão (o servidor também não envia esses dados a quem não pode ver)
 const CAMPOS_VALOR = ['valorMaterial', 'valorMaoObra', 'valorTotal', 'mesFaturamento'];
@@ -900,7 +903,7 @@ if (!el.selectedOptions.length && el.options.length) el.options[0].selected = tr
 } else if (atual !== undefined && [...el.options].some(o => o.value === atual)) el.value = atual;
 }
 // ---- filtros de múltipla escolha
-const MULTI = ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fOrc', 'fPend', 'fMes', 'fatMes', 'fatEmpresa'];
+const MULTI = ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fTipo', 'fOrc', 'fPend', 'fMes', 'fatMes', 'fatEmpresa'];
 function vals(id) { const s = $(id); return s ? [...s.selectedOptions].map(o => o.value).filter(v => v !== '') : []; }
 function setVals(id, v) {
 const s = $(id); if (!s) return;
@@ -941,7 +944,7 @@ try {
 D = await api('GET', '/api/dados');
 D.chamados = D.chamados || [];
 for (const k in D.cadastros) D.cadastros[k] = [].concat(D.cadastros[k] || []);
-for (const c of D.chamados) for (const k of ['numero','unidade','empresa','prioridade','statusOrcamento','pendencia','observacao','chamadoFornecedor','osFornecedor','dataChamado','dataPrevista','dataReal','mesFaturamento','criadoPor','atualizadoEm','responsavel','contatoResponsavel','statusChamado']) c[k] = c[k] ?? '';
+for (const c of D.chamados) for (const k of ['numero','unidade','empresa','prioridade','statusOrcamento','pendencia','observacao','chamadoFornecedor','osFornecedor','dataChamado','dataPrevista','dataReal','mesFaturamento','criadoPor','atualizadoEm','responsavel','contatoResponsavel','statusChamado','tipo']) c[k] = c[k] ?? '';
 for (const id of [...sel]) if (!D.chamados.some(c => c.id === id)) sel.delete(id);
 montarSelects(); renderTudo();
 const agora = new Date();
@@ -963,6 +966,7 @@ opts($('fStatus'), [['__pend', 'Não concluídos'], ...D.statusChamado], 'Todas'
 opts($('fUnidade'), C.unidades, 'Todas', k('fUnidade'));
 opts($('fEmpresa'), C.empresas, 'Todos', k('fEmpresa'));
 opts($('fPrioridade'), C.prioridades, 'Todas', k('fPrioridade'));
+opts($('fTipo'), C.tipos || [], 'Todos', k('fTipo'));
 opts($('fOrc'), [['__vazio', '(sem status)'], ...C.statusOrcamento], 'Todos', k('fOrc'));
 opts($('fPend'), [['__com', '(com pendência)'], ['__sem', '(sem pendência)'], ...C.pendencias], 'Todas', k('fPend'));
 opts($('fMes'), [['__sem', '(sem faturamento)'], ...mesesFat().map(m => [m, fmes(m)])], 'Todos', k('fMes'));
@@ -1256,13 +1260,13 @@ ${pend.length ? `<h3>Pendências em aberto (detalhe)</h3>${tabelaHTML([{ t: 'Pen
 <div class="rel-rod"><span>Segurança Empresarial · Sistema de chamados de fornecedores · situação calculada em ${fd(D.hoje)}</span><span>Meta de prazo: ${pct(META_PRAZO)}</span></div>`;
 }
 // ===================================================================== CHAMADOS
-const FILTROS = ['fBusca', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fOrc', 'fPend', 'fMes', 'fDe', 'fAte'];
+const FILTROS = ['fBusca', 'fOrigem', 'fStatus', 'fUnidade', 'fEmpresa', 'fPrioridade', 'fTipo', 'fOrc', 'fPend', 'fMes', 'fDe', 'fAte'];
 FILTROS.forEach(id => $(id).addEventListener(id === 'fBusca' ? 'input' : 'change', () => renderChamados()));
 function limparFiltros(sil) { FILTROS.forEach(id => $(id).value = ''); syncPesquisaveis(); if (!sil) renderChamados(); }
 function filtrados() {
 const v = id => $(id).value, q = norm(v('fBusca')).trim();
 return D.chamados.filter(c => {
-if (q && !norm([c.numero, c.unidade, c.empresa, c.chamadoFornecedor, c.osFornecedor, c.observacao, c.pendencia, c.statusOrcamento, c.criadoPor, c.responsavel, c.contatoResponsavel, c.statusChamado].join(' ')).includes(q)) return false;
+if (q && !norm([c.numero, c.unidade, c.empresa, c.chamadoFornecedor, c.osFornecedor, c.observacao, c.pendencia, c.statusOrcamento, c.criadoPor, c.responsavel, c.contatoResponsavel, c.statusChamado, c.tipo].join(' ')).includes(q)) return false;
 // cada filtro aceita várias opções: o chamado passa se combinar com QUALQUER uma delas
 const portal = /^\d+$/.test(c.numero);
 const og = vals('fOrigem'); if (og.length && !og.some(o => o === 'portal' ? portal : !portal)) return false;
@@ -1270,6 +1274,7 @@ const st = vals('fStatus'); if (st.length && !st.some(s => s === '__pend' ? !c.d
 if (!algum(vals('fUnidade'), c.unidade)) return false;
 if (!algum(vals('fEmpresa'), c.empresa)) return false;
 if (!algum(vals('fPrioridade'), c.prioridade)) return false;
+if (!algum(vals('fTipo'), c.tipo)) return false;
 const o = vals('fOrc'); if (o.length && !o.some(x => x === '__vazio' ? !c.statusOrcamento : c.statusOrcamento === x)) return false;
 const p = vals('fPend'); if (p.length && !p.some(x => x === '__com' ? !!c.pendencia : x === '__sem' ? !c.pendencia : c.pendencia === x)) return false;
 const m = vals('fMes'); if (m.length && !m.some(x => x === '__sem' ? !c.mesFaturamento : c.mesFaturamento === x)) return false;
@@ -1331,7 +1336,7 @@ atualizarLote();
 function atualizarLote() { $('lote').classList.toggle('ativo', sel.size > 0 && (pode('alterar_lote') || pode('exportar'))); $('loteQtd').textContent = sel.size + ' selecionado(s)'; if (!$('loteValorWrap').firstChild) montarLoteValor(); }
 function montarLoteValor() {
 const campo = $('loteCampo').value, C = D.cadastros;
-const listas = { statusChamado: C.statusChamado || [], statusOrcamento: C.statusOrcamento, pendencia: C.pendencias, prioridade: C.prioridades, empresa: C.empresas, unidade: C.unidades };
+const listas = { statusChamado: C.statusChamado || [], statusOrcamento: C.statusOrcamento, pendencia: C.pendencias, prioridade: C.prioridades, tipo: C.tipos || [], empresa: C.empresas, unidade: C.unidades };
 $('loteValorWrap').innerHTML = campo.startsWith('data') ? `<input type="date" id="loteValor" value="${D.hoje}">`
 : `<select id="loteValor">${campo === 'pendencia' || campo === 'statusOrcamento' || campo === 'statusChamado' ? '<option value="">(limpar campo)</option>' : ''}${(listas[campo] || []).map(v => `<option>${esc(v)}</option>`).join('')}</select>`;
 }
@@ -1363,7 +1368,7 @@ function abrirForm(id, duplicar) {
 const c = id ? D.chamados.find(x => x.id === id) : null;
 editId = c && !duplicar ? c.id : null;
 editBase = editId ? c.atualizadoEm || '' : '';
-opts(F().prioridade, D.cadastros.prioridades, '—'); opts(F().statusOrcamento, D.cadastros.statusOrcamento, '—');
+opts(F().prioridade, D.cadastros.prioridades, '—'); opts(F().tipo, D.cadastros.tipos || [], '—'); opts(F().statusOrcamento, D.cadastros.statusOrcamento, '—');
 opts(F().statusChamado, D.cadastros.statusChamado || [], (D.cadastros.statusChamado || []).length ? '—' : '— (cadastre as opções em Cadastros)');
 $('form').reset(); $('mErro').style.display = 'none';
 const base = c || { dataChamado: D.hoje, prioridade: 'Média' };
@@ -1478,7 +1483,7 @@ function limparFat() { setVals('fatMes', []); setVals('fatEmpresa', []); renderF
 function limparGlobais() { ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].forEach(id => setVals(id, [])); renderVisao(); renderRelatorio(); toast('Filtros limpos · todo o período, fornecedores e unidades.'); }
 function fatEmp(n) { setVals('fatEmpresa', n); renderFat(); }
 // ===================================================================== CADASTROS
-const CADS = [['unidades', 'Unidades', 'unidade'], ['empresas', 'Fornecedores (empresas)', 'empresa'], ['prioridades', 'Prioridades', 'prioridade'], ['statusChamado', 'Status do chamado', 'statusChamado'], ['statusOrcamento', 'Status do orçamento', 'statusOrcamento'], ['pendencias', 'Pendências', 'pendencia']];
+const CADS = [['unidades', 'Unidades', 'unidade'], ['empresas', 'Fornecedores (empresas)', 'empresa'], ['prioridades', 'Prioridades', 'prioridade'], ['tipos', 'Tipos de chamado', 'tipo'], ['statusChamado', 'Status do chamado', 'statusChamado'], ['statusOrcamento', 'Status do orçamento', 'statusOrcamento'], ['pendencias', 'Pendências', 'pendencia']];
 function renderCads() {
 $('cads').innerHTML = CADS.map(([k, t, campo]) => `<div class="card"><div class="card-h"><div><h3>${t}</h3><div class="d">${D.cadastros[k].length} item(ns) · renomear atualiza os chamados</div></div></div>
 <ul class="cad-lista">${D.cadastros[k].map((v, i) => { const uso = D.chamados.filter(c => c[campo] === v).length; return `<li><span class="n">${esc(v)}</span><small>${uso} chamado(s)</small>
