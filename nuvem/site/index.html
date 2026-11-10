@@ -492,10 +492,8 @@ th,tfoot td{position:static}
 <button data-v="faturamento" data-perm="ver_faturamento"><svg data-i="money"></svg><span>Faturamento</span></button>
 <div class="sec" data-perm="ver_chamados|ver_proprios|gerenciar_cadastros|ver_historico|gerenciar_backups">Operação</div>
 <button data-v="chamados" data-perm="ver_chamados|ver_proprios"><svg data-i="list"></svg><span>Chamados</span></button>
-<button data-v="cadastros" data-perm="gerenciar_cadastros"><svg data-i="tag"></svg><span>Cadastros</span></button>
+<button data-v="cadastros" data-perm="gerenciar_cadastros|gerenciar_usuarios"><svg data-i="tag"></svg><span>Cadastros</span></button>
 <button data-v="historico" data-perm="ver_historico|gerenciar_backups"><svg data-i="clock"></svg><span>Histórico e backups</span></button>
-<div class="sec" data-perm="gerenciar_usuarios">Administração</div>
-<button data-v="usuarios" data-perm="gerenciar_usuarios"><svg data-i="users"></svg><span>Usuários e perfis</span></button>
 </nav>
 <div class="side-foot">
 <div class="eu"><div class="av" id="euAv"></div><div class="txt"><b id="euNome"></b><small id="euPerfil"></small></div></div>
@@ -631,6 +629,17 @@ th,tfoot td{position:static}
 </section>
 <!-- ======================= CADASTROS ======================= -->
 <section class="view" id="v-cadastros">
+<div class="card" style="margin-bottom:16px" data-perm="gerenciar_usuarios">
+<div class="card-h"><div><h3>Usuários do aplicativo</h3><div class="d">Cada usuário entra com login e senha próprios. A senha definida aqui é provisória: no primeiro acesso o sistema pede que a pessoa crie a dela.</div></div>
+<div class="acts"><button class="btn pri" onclick="formUsuario()"><svg data-i="plus"></svg>Novo usuário</button></div></div>
+<div class="tw"><table id="usrTab"></table></div>
+</div>
+<div class="card" style="margin-bottom:16px" data-perm="gerenciar_usuarios">
+<div class="card-h"><div><h3>Perfis de acesso e permissões</h3><div class="d">Defina o que cada perfil pode ver e fazer. Mudanças valem imediatamente para todos os usuários do perfil.</div></div>
+<div class="acts"><button class="btn" onclick="formPerfil()"><svg data-i="plus"></svg>Novo perfil</button></div></div>
+<div class="grid perfis" id="perfis"></div>
+</div>
+<div class="card" style="margin-bottom:16px" id="redeCard" data-perm="gerenciar_usuarios"></div>
 <div class="grid cads" id="cads"></div>
 </section>
 <!-- ======================= HISTÓRICO ======================= -->
@@ -650,17 +659,6 @@ th,tfoot td{position:static}
 </section>
 <!-- ======================= USUÁRIOS E PERFIS ======================= -->
 <section class="view" id="v-usuarios">
-<div class="card" style="margin-bottom:16px" id="redeCard"></div>
-<div class="card" style="margin-bottom:16px">
-<div class="card-h"><div><h3>Usuários</h3><div class="d">Cada usuário entra com login e senha próprios. A senha definida aqui é provisória: no primeiro acesso o sistema pede que a pessoa crie a dela.</div></div>
-<div class="acts"><button class="btn pri" onclick="formUsuario()"><svg data-i="plus"></svg>Novo usuário</button></div></div>
-<div class="tw"><table id="usrTab"></table></div>
-</div>
-<div class="card">
-<div class="card-h"><div><h3>Perfis de acesso</h3><div class="d">Defina o que cada perfil pode ver e fazer. Mudanças valem imediatamente para todos os usuários do perfil.</div></div>
-<div class="acts"><button class="btn" onclick="formPerfil()"><svg data-i="plus"></svg>Novo perfil</button></div></div>
-<div class="grid perfis" id="perfis"></div>
-</div>
 </section>
 </div>
 </div>
@@ -812,7 +810,7 @@ visao: ['Visão geral', 'Indicadores de prazo, volume e faturamento'],
 relatorio: ['Relatório gerencial', 'Resumo para apresentação, impressão ou PDF'],
 faturamento: ['Faturamento', 'Valores a faturar por mês e fornecedor'],
 chamados: ['Chamados', 'Cadastro, consulta e atualização dos chamados'],
-cadastros: ['Cadastros', 'Listas de unidades, fornecedores, prioridades, orçamento e pendências'],
+cadastros: ['Cadastros', 'Usuários do aplicativo, perfis de acesso e listas (unidades, empresas, tipos, orçamento e pendências)'],
 historico: ['Histórico e backups', 'Rastreabilidade das alterações e cópias de segurança'],
 usuarios: ['Usuários e perfis', 'Quem acessa o sistema e o que cada perfil pode fazer']
 };
@@ -990,7 +988,8 @@ document.querySelectorAll('#menu button').forEach(b => b.onclick = () => irPara(
 function irPara(v) {
 if (ME && !podeAlgum(VIEW_PERM[v])) { toast('Seu perfil não tem acesso a esta área.', 'erro'); return; }
 if (v !== 'visao' && TV && TV.on) sairTV();   // clicar num indicador durante o modo TV sai dele
-if (v === 'usuarios') carregarUsuarios();
+if (v === 'usuarios') v = 'cadastros';   // usuários e perfis ficam na aba Cadastros
+if (v === 'cadastros' && pode('gerenciar_usuarios')) carregarUsuarios();
 document.querySelectorAll('#menu button').forEach(x => x.classList.toggle('ativo', x.dataset.v === v));
 document.querySelectorAll('.view').forEach(x => x.classList.toggle('ativo', x.id === 'v-' + v));
 $('tTitulo').textContent = VIEW_INFO[v][0]; $('tSub').textContent = VIEW_INFO[v][1];
@@ -1130,15 +1129,15 @@ if (TV.on) tvAltura();
 const k = TV.on ? 1.45 : 1;
 const hA = el => TV.on && !el.classList.contains('tv-off') && el.clientHeight > 200 ? Math.max(200, (el.clientHeight - 130) / k) : 250;
 const tiles = [
-{ r: 'Chamados no período', ic: 'list', v: int(L.length), s: `${money(I.total)} em serviços`, f: {} },
+{ r: 'Chamados no período', ic: 'list', v: int(L.length), s: semValores() ? 'no recorte selecionado' : `${money(I.total)} em serviços`, f: {} },
 { r: 'Cumprimento de prazo', ic: 'clock', v: I.conc.length ? pct(I.taxa) : '—', s: `${pillPct(I.taxa, I.taxa >= META_PRAZO ? 'Dentro da meta' : 'Abaixo da meta')} meta ${pct(META_PRAZO)} · ${I.ok.length} de ${I.conc.length}`, f: { fStatus: 'Concluído' } },
-{ r: 'Atrasados', ic: 'tag', v: int(I.atr.length), s: I.atr.length ? `${pill('Atrasado')} ${money(soma(I.atr, 'valorTotal'))} · até ${I.atrasoMax} dias` : `${pill('Concluído').replace('Concluído', 'Nenhum atraso')}`, f: { fStatus: 'Atrasado' } },
+{ r: 'Atrasados', ic: 'tag', v: int(I.atr.length), s: I.atr.length ? `${pill('Atrasado')} ${semValores() ? '' : money(soma(I.atr, 'valorTotal')) + ' · '}até ${I.atrasoMax} dias` : `${pill('Concluído').replace('Concluído', 'Nenhum atraso')}`, f: { fStatus: 'Atrasado' } },
 { r: 'Em andamento no prazo', ic: 'grid', v: int(I.ab.length), s: `${I.vence3} vencem em até 3 dias`, f: { fStatus: 'Em aberto' } },
-{ r: 'A faturar em ' + fmes(R.atual), ic: 'money', v: money(I.fatMes), s: `Próximo mês: ${money(I.fatProx)}`, f: { fMes: R.atual }, semPeriodo: true },
-{ r: 'Material utilizado', ic: 'box', v: money(soma(L, 'valorMaterial')), s: I.total ? `${pct(soma(L, 'valorMaterial') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
-{ r: 'Mão de obra / deslocamento', ic: 'truck', v: money(soma(L, 'valorMaoObra')), s: I.total ? `${pct(soma(L, 'valorMaoObra') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
+{ din: 1, r: 'A faturar em ' + fmes(R.atual), ic: 'money', v: money(I.fatMes), s: `Próximo mês: ${money(I.fatProx)}`, f: { fMes: R.atual }, semPeriodo: true },
+{ din: 1, r: 'Material utilizado', ic: 'box', v: money(soma(L, 'valorMaterial')), s: I.total ? `${pct(soma(L, 'valorMaterial') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
+{ din: 1, r: 'Mão de obra / deslocamento', ic: 'truck', v: money(soma(L, 'valorMaoObra')), s: I.total ? `${pct(soma(L, 'valorMaoObra') / I.total)} do valor dos serviços` : 'sem valor no recorte', f: {} },
 { r: 'Prazo médio de atendimento', ic: 'clock', v: I.conc.length ? I.prazoMed.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' dias' : '—', s: 'da abertura à conclusão', f: { fStatus: '' } }
-];
+].filter(t => !t.din || !semValores());   // quem não vê valores (ex.: Supervisor) não recebe os cartões de R$
 $('kpis').innerHTML = tiles.map((t, i) => `<div class="kpi" data-i="${i}" title="Ver chamados"><div class="rot">${ico(t.ic)}${t.r}</div><div class="val">${t.v}</div><div class="sub">${t.s}</div></div>`).join('');
 $('kpis').querySelectorAll('.kpi').forEach(el => el.onclick = () => { const t = tiles[+el.dataset.i]; const f = { ...F, ...t.f }; if (t.semPeriodo) { delete f.fDe; delete f.fAte; } verChamados(f); });
 // faturamento mensal
@@ -1164,6 +1163,8 @@ tabelaHTML([{ t: 'Situação' }, { t: 'Qtd', num: 1 }, { t: '%', num: 1 }, { t: 
 const emp = agrupa(L, 'empresa'), uni = agrupa(L, 'unidade'), orc = agrupa(L, 'statusOrcamento', '(sem status)'), pend = agrupa(L.filter(c => c.pendencia && !c.dataReal), 'pendencia');
 const tabG = (g, nome) => tabelaHTML([{ t: nome }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], [...g].sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)]), ['Total', soma(g, 'qtd'), money(soma(g, 'valor'))]);
 cardChart($('c-emp'), 'Valor por Empresa do grupo CPFL', 'Soma dos serviços no recorte', hbarsHTML(emp, { onClick: 'verEmpresa' }), tabG(emp, 'Empresa do grupo CPFL'));
+// gráficos só de valores (R$) ficam escondidos para quem não vê valores; o cartão ao lado ocupa a linha toda
+for (const id of ['c-fat', 'c-emp']) { const el = $(id); el.style.display = semValores() ? 'none' : ''; el.parentElement.style.gridTemplateColumns = semValores() ? '1fr' : ''; }
 cardChart($('c-uni'), 'Chamados por unidade', 'Quantidade de chamados no recorte', hbarsHTML(uni, { valor: 'qtd', onClick: 'verUnidade' }), tabG(uni, 'Unidade'));
 cardChart($('c-orc'), 'Status do orçamento', 'Quantidade de chamados por etapa do orçamento', hbarsHTML(orc, { valor: 'qtd', onClick: 'verOrc' }), tabG(orc, 'Status do orçamento'));
 cardChart($('c-pend'), 'Pendências em aberto', 'Chamados não concluídos com pendência registrada', hbarsHTML(pend, { valor: 'qtd', onClick: 'verPend' }), tabG(pend, 'Pendência'));
@@ -1807,7 +1808,7 @@ const ehMeu = c => !!(c && ME && String(c.criadoPor || '').endsWith('(' + ME.log
 const podeEditarC = c => pode('editar_chamado') || (pode('editar_proprios') && ehMeu(c));
 const podeConcluirC = c => podeEditarC(c) || pode('concluir_chamado');
 const VER = ['ver_painel', 'ver_relatorio', 'ver_faturamento', 'ver_chamados', 'ver_proprios'];
-const VIEW_PERM = { visao: 'ver_painel', relatorio: 'ver_relatorio', faturamento: 'ver_faturamento', chamados: 'ver_chamados|ver_proprios', cadastros: 'gerenciar_cadastros', historico: 'ver_historico|gerenciar_backups', usuarios: 'gerenciar_usuarios' };
+const VIEW_PERM = { visao: 'ver_painel', relatorio: 'ver_relatorio', faturamento: 'ver_faturamento', chamados: 'ver_chamados|ver_proprios', cadastros: 'gerenciar_cadastros|gerenciar_usuarios', historico: 'ver_historico|gerenciar_backups', usuarios: 'gerenciar_usuarios' };
 const podeAlgum = s => String(s).split('|').some(pode);
 function aplicarPermissoes(root = document) {
 root.querySelectorAll('[data-perm]').forEach(el => {
@@ -2152,7 +2153,7 @@ const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', v = new Ui
 let s = [...v].map(x => a[x % a.length]).join(''); if (!/\d/.test(s)) s = s.slice(0, 9) + '7'; if (!/[a-z]/i.test(s)) s = 'k' + s.slice(1); return s;
 }
 async function formUsuario(id) {
-const u = id ? USR.usuarios.find(x => x.id === id) : { nome: '', login: '', email: '', perfilId: 'operador', ativo: true };
+const u = id ? USR.usuarios.find(x => x.id === id) : { nome: '', login: '', email: '', perfilId: 'supervisor', ativo: true };
 let val = { ...u, senha: id ? '' : senhaAleatoria() };
 for (;;) {
 const ok = await dialogo(id ? 'Editar usuário' : 'Novo usuário', `
