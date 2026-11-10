@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/icone-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Chamados SE">
+<meta name="apple-mobile-web-app-title" content="Chamados de Manutenções">
 <title>Segurança Empresarial · Sistema de chamados de fornecedores</title>
 <style>
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:#1f2937;display:flex;min-height:100vh;align-items:center;justify-content:center}
@@ -104,6 +104,17 @@
   }).observe(form, { attributes: true, attributeFilter: ['style'] });
   form.addEventListener('submit', function () { gravar(cx.checked ? lg.value.trim() : ''); }, true);
   cx.addEventListener('change', function () { if (!cx.checked) gravar(''); });
+})();
+</script>
+<script>
+(function () { // nome do aplicativo na tela inicial do celular
+  var NOME = 'Chamados de Manutenções';
+  var m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  if (!m) { m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title'; document.head.appendChild(m); }
+  m.content = NOME;
+  var a = document.querySelector('meta[name="application-name"]');
+  if (!a) { a = document.createElement('meta'); a.name = 'application-name'; document.head.appendChild(a); }
+  a.content = NOME;
 })();
 </script>
 </template>

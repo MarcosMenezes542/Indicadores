@@ -1,6 +1,6 @@
 {
-  "name": "Segurança Empresarial · Chamados de fornecedores",
-  "short_name": "Chamados SE",
+  "name": "Chamados de Manutenções",
+  "short_name": "Chamados de Manutenções",
   "description": "Sistema de chamados de fornecedores da Segurança Empresarial",
   "lang": "pt-BR",
   "start_url": "/",
@@ -9,8 +9,21 @@
   "background_color": "#ffffff",
   "theme_color": "#0058a0",
   "icons": [
-    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icone-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
