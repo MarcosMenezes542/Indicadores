@@ -510,9 +510,9 @@ th,tfoot td{position:static}
 <div class="gfiltros" id="gfiltros">
 <select id="gPeriodo" title="Período (data do chamado)"></select>
 <select id="gMes" title="Mês (data do chamado)"></select>
-<select id="gEmpresa" title="Fornecedor"></select>
+<select id="gEmpresa" title="Empresa CPFL"></select>
 <select id="gUnidade" title="Unidade"></select>
-<button class="btn btn-limpar" onclick="limparGlobais()" title="Voltar para todo o período, todos os fornecedores e todas as unidades"><svg data-i="x"></svg>Limpar filtros</button>
+<button class="btn btn-limpar" onclick="limparGlobais()" title="Voltar para todo o período, todas as Empresas CPFL e todas as unidades"><svg data-i="x"></svg>Limpar filtros</button>
 </div>
 <button class="btn btn-prazos" id="btnPrazos" onclick="abrirPrazos()" data-perm="campos_gestao" title="Chamados vencidos e que vencem nos próximos 8 dias"><svg data-i="clock"></svg>Prazos<span class="pz-badge" id="pzBadge"></span><span class="pz-urg" id="pzUrg"></span></button>
 <button class="btn" id="btnTv" onclick="abrirTV()" title="Apresentar a Visão geral em tela cheia, alternando os painéis automaticamente"><svg data-i="tv"></svg>Modo TV</button>
@@ -567,8 +567,8 @@ th,tfoot td{position:static}
 <div class="card filtros-card" style="margin-bottom:16px">
 <div class="fbar">
 <label>Mês de faturamento<select id="fatMes"></select></label>
-<label>Fornecedor<select id="fatEmpresa"></select></label>
-<button class="btn btn-limpar nao-imprime" onclick="limparFat()" title="Voltar para todos os meses e todos os fornecedores"><svg data-i="x"></svg>Limpar filtros</button>
+<label>Empresa CPFL<select id="fatEmpresa"></select></label>
+<button class="btn btn-limpar nao-imprime" onclick="limparFat()" title="Voltar para todos os meses e todas as Empresas CPFL"><svg data-i="x"></svg>Limpar filtros</button>
 <div style="margin-left:auto;display:flex;gap:8px" class="nao-imprime" data-perm="exportar">
 <button class="btn" onclick="exportarCSV(fatLista(),'faturamento_'+(vals('fatMes').join('_') || 'todos_os_meses'))"><svg data-i="download"></svg>Exportar</button>
 <button class="btn" onclick="window.print()"><svg data-i="print"></svg>Imprimir</button>
@@ -590,7 +590,7 @@ th,tfoot td{position:static}
 <section class="view" id="v-chamados">
 <div class="card filtros-card">
 <div class="fbar">
-<label>Buscar<input type="search" id="fBusca" placeholder="Nº, fornecedor, OS, observação...  ( / )"></label>
+<label>Buscar<input type="search" id="fBusca" placeholder="Nº, empresa, OS, observação...  ( / )"></label>
 <label>Origem<select id="fOrigem"><option value="">Todas</option><option value="portal">Portal CPFL (nº)</option><option value="interno">Patrimonial / registro interno</option></select></label>
 <label data-perm="campos_gestao">Situação<select id="fStatus"></select></label>
 <label>Unidade<select id="fUnidade"></select></label>
@@ -616,7 +616,7 @@ th,tfoot td{position:static}
 <option value="prioridade">Prioridade</option>
 <option value="tipo">Tipo</option>
 <option value="dataPrevista">Data prevista</option>
-<option value="empresa">Fornecedor</option>
+<option value="empresa">Empresa CPFL</option>
 <option value="unidade">Unidade</option>
 </select>
 <span>para</span><span id="loteValorWrap"></span>
@@ -678,7 +678,7 @@ th,tfoot td{position:static}
 <div class="campo"><label>Contato do responsável</label><input name="contatoResponsavel" autocomplete="off" inputmode="tel" placeholder="Telefone, ramal ou e-mail"></div>
 <div class="campo"><label>Prioridade</label><select name="prioridade"></select></div>
 <div class="campo"><label>Tipo</label><select name="tipo"></select></div>
-<div class="campo"><label>Fornecedor (empresa) <span class="o">*</span></label><input name="empresa" list="dlEmpresas"></div>
+<div class="campo"><label>Empresa CPFL <span class="o">*</span></label><input name="empresa" list="dlEmpresas"></div>
 <div class="campo"><label>Chamado fornecedor</label><input name="chamadoFornecedor"></div>
 <div class="campo"><label>OS fornecedor</label><input name="osFornecedor"></div>
 </div></div>
@@ -722,7 +722,7 @@ th,tfoot td{position:static}
 </div>
 <ul class="passos">
 <li>A planilha precisa ter uma linha de títulos com <b>Nº CHAMADO CPFL</b> e as demais colunas (mesmos nomes da planilha GITEL; maiúsculas e acentos não importam).</li>
-<li>Chamado com Nº do portal CPFL que <b>já existe</b> é <b>atualizado</b>; Nº <b>novo</b> é <b>cadastrado</b>. Chamados que não estão no arquivo continuam no sistema.</li><li>Chamados <b>Patrimoniais</b> (Nº em texto, podem se repetir) são reconhecidos pela coluna <b>ID SISTEMA</b> — use “Baixar base atual para editar” — ou pela combinação Nº + unidade + fornecedor + data do chamado.</li>
+<li>Chamado com Nº do portal CPFL que <b>já existe</b> é <b>atualizado</b>; Nº <b>novo</b> é <b>cadastrado</b>. Chamados que não estão no arquivo continuam no sistema.</li><li>Chamados <b>Patrimoniais</b> (Nº em texto, podem se repetir) são reconhecidos pela coluna <b>ID SISTEMA</b> — use “Baixar base atual para editar” — ou pela combinação Nº + unidade + Empresa CPFL + data do chamado.</li>
 <li>Status, valor total e mês de faturamento são recalculados automaticamente. Você verá uma prévia antes de confirmar, e um backup é feito antes de gravar.</li>
 </ul>
 <label class="chk" style="margin-top:14px"><input type="checkbox" id="impApagar"><span>Células <b>vazias</b> na planilha importada <b>apagam</b> o valor no sistema<br><small style="color:var(--ink-2)">Deixe desmarcado para que células vazias mantenham o que já está cadastrado.</small></span></label>
@@ -808,7 +808,7 @@ const META_PRAZO = 0.8;
 const VIEW_INFO = {
 visao: ['Visão geral', 'Indicadores de prazo, volume e faturamento'],
 relatorio: ['Relatório gerencial', 'Resumo para apresentação, impressão ou PDF'],
-faturamento: ['Faturamento', 'Valores a faturar por mês e fornecedor'],
+faturamento: ['Faturamento', 'Valores a faturar por mês e Empresa CPFL'],
 chamados: ['Chamados', 'Cadastro, consulta e atualização dos chamados'],
 cadastros: ['Cadastros', 'Usuários do aplicativo, perfis de acesso e listas (unidades, empresas, tipos, orçamento e pendências)'],
 historico: ['Histórico e backups', 'Rastreabilidade das alterações e cópias de segurança'],
@@ -823,7 +823,7 @@ const ST = {
 };
 const ORDEM_ST = ['Concluído', 'Concluído com atraso', 'Atrasado', 'Em aberto'];
 const COLS = [
-{ k: 'numero', t: 'Nº CPFL' }, { k: 'unidade', t: 'Unidade' }, { k: 'empresa', t: 'Fornecedor' },
+{ k: 'numero', t: 'Nº CPFL' }, { k: 'unidade', t: 'Unidade' }, { k: 'empresa', t: 'Empresa CPFL' },
 { k: 'dataChamado', t: 'Aberto em', f: 'd' }, { k: 'dataPrevista', t: 'Previsto', f: 'd' }, { k: 'dataReal', t: 'Concluído', f: 'd' },
 { k: 'status', t: 'Situação', f: 's' }, { k: 'prioridade', t: 'Prioridade', f: 'p' }, { k: 'tipo', t: 'Tipo' }, { k: 'statusOrcamento', t: 'Orçamento' },
 { k: 'statusChamado', t: 'Status do chamado' },
@@ -958,7 +958,7 @@ const C = D.cadastros, k = id => MULTI.includes(id) ? vals(id) : $(id).value;
 opts($('gPeriodo'), [['', 'Todo o período'], ['12m', 'Últimos 12 meses'], ...anos().map(a => ['ano:' + a, 'Ano ' + a])], null, k('gPeriodo'));
 const mesesAb = [...new Set(D.chamados.map(c => (c.dataChamado || '').slice(0, 7)).filter(Boolean))].sort().reverse();
 opts($('gMes'), mesesAb.map(m => [m, fmesL(m)]), 'Todos os meses', k('gMes'));
-opts($('gEmpresa'), C.empresas, 'Todos os fornecedores', k('gEmpresa'));
+opts($('gEmpresa'), C.empresas, 'Todas as Empresas CPFL', k('gEmpresa'));
 opts($('gUnidade'), C.unidades, 'Todas as unidades', k('gUnidade'));
 opts($('fStatus'), [['__pend', 'Não concluídos'], ...D.statusChamado], 'Todas', k('fStatus'));
 opts($('fUnidade'), C.unidades, 'Todas', k('fUnidade'));
@@ -1174,7 +1174,7 @@ tabelaHTML([{ t: 'Empresa do grupo CPFL' }, { t: 'Concluídos', num: 1 }, { t: '
 dp.map(e => [`<span class="lk" onclick="verEmpresa('${esc(e.nome)}')">${esc(e.nome)}</span>`, e.conc, e.conc ? pillPct(e.taxa, pct(e.taxa)) : '—', e.conc ? e.prazo.toFixed(1) + ' d' : '—', e.atraso ? e.atraso.toFixed(1) + ' d' : '—', e.andamento + (e.atrasados ? ` <span style="color:var(--ink-2)">(${e.atrasados} atras.)</span>` : '')]));
 const aten = L.filter(c => !c.dataReal && c.dataPrevista && dias(D.hoje, c.dataPrevista) <= 3).sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevista));
 $('c-aten').innerHTML = `<div class="card-h"><div><h3>Precisa de atenção</h3><div class="d">Atrasados e vencendo nos próximos 3 dias · ${aten.length} chamado(s)</div></div></div>` +
-(aten.length ? `<div class="tw" style="max-height:340px"><table><thead><tr><th>Nº</th><th>Unidade</th><th>Fornecedor</th><th>Situação</th><th></th></tr></thead><tbody>${aten.map(c => { const d = dias(D.hoje, c.dataPrevista); return `<tr>
+(aten.length ? `<div class="tw" style="max-height:340px"><table><thead><tr><th>Nº</th><th>Unidade</th><th>Empresa CPFL</th><th>Situação</th><th></th></tr></thead><tbody>${aten.map(c => { const d = dias(D.hoje, c.dataPrevista); return `<tr>
 <td><span class="lk" onclick="abrirForm(${c.id})">${esc(c.numero)}</span></td><td>${esc(c.unidade)}</td><td>${esc(c.empresa)}</td>
 <td>${d < 0 ? `<span class="pill critical">${ico('s_critical')}${-d} dia(s) de atraso</span>` : `<span class="pill warning">${ico('s_warning')}${d === 0 ? 'vence hoje' : `vence em ${d} dia(s)`}</span>`}</td>
 <td>${podeConcluirC(c) ? `<button class="btn peq" onclick="concluirHoje(${c.id})">${ico('check')}Concluir</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : `<div class="vazio">${pill('Concluído').replace('Concluído', 'Tudo em dia')}<br><br>Nenhum chamado atrasado ou vencendo nos próximos 3 dias.</div>`);
@@ -1210,7 +1210,7 @@ const atrs = [...I.atr].sort((a, b) => a.dataPrevista.localeCompare(b.dataPrevis
 const pend = agrupa(L.filter(c => c.pendencia && !c.dataReal), 'pendencia').sort((a, b) => b.qtd - a.qtd);
 const melhor = dp.filter(e => e.conc >= 3)[0], pior = dp.filter(e => e.conc >= 3).slice(-1)[0];
 const maisAntigo = atrs[0];
-const filtrosTxt = [R.rotulo, R.emp.length ? 'Fornecedor: ' + R.emp.join(', ') : 'Todos os fornecedores', R.uni.length ? 'Unidade: ' + R.uni.join(', ') : 'Todas as unidades'].join(' · ');
+const filtrosTxt = [R.rotulo, R.emp.length ? 'Empresa CPFL: ' + R.emp.join(', ') : 'Todas as Empresas CPFL', R.uni.length ? 'Unidade: ' + R.uni.join(', ') : 'Todas as unidades'].join(' · ');
 const resumo = [
 `Foram registrados <b>${int(L.length)} chamados</b> no recorte, somando <b>${money(I.total)}</b> em serviços.`,
 I.conc.length ? `Dos ${I.conc.length} chamados concluídos, <b>${pct(I.taxa)} foram entregues no prazo</b> — ${I.taxa >= META_PRAZO ? 'dentro' : 'abaixo'} da meta de ${pct(META_PRAZO)}. O prazo médio de atendimento foi de ${I.prazoMed.toFixed(1).replace('.', ',')} dias.` : 'Nenhum chamado foi concluído no recorte.',
@@ -1255,7 +1255,7 @@ ${tabelaHTML([{ t: 'Unidade' }, { t: 'Chamados', num: 1 }, { t: 'Atrasados', num
 </div>
 ${stCh.length ? `<h3>Status do chamado</h3>${hbarsHTML(stCh, { valor: 'qtd', max: 12 })}` : ''}
 <h3>Chamados atrasados (${atrs.length})</h3>
-${tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Fornecedor' }, { t: 'Previsto' }, { t: 'Dias de atraso', num: 1 }, { t: 'Pendência' }, { t: 'Valor', num: 1 }],
+${tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Empresa CPFL' }, { t: 'Previsto' }, { t: 'Dias de atraso', num: 1 }, { t: 'Pendência' }, { t: 'Valor', num: 1 }],
 atrs.map(c => [esc(c.numero), esc(c.unidade), esc(c.empresa), fd(c.dataPrevista), dias(c.dataPrevista, D.hoje), esc(c.pendencia || '—'), money(c.valorTotal)]))}
 ${pend.length ? `<h3>Pendências em aberto (detalhe)</h3>${tabelaHTML([{ t: 'Pendência' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], pend.map(p => [esc(p.nome), p.qtd, money(p.valor)]))}` : ''}
 <div class="rel-rod"><span>Segurança Empresarial · Sistema de chamados de fornecedores · situação calculada em ${fd(D.hoje)}</span><span>Meta de prazo: ${pct(META_PRAZO)}</span></div>`;
@@ -1459,7 +1459,7 @@ const ant = um ? soma(D.chamados.filter(c => c.mesFaturamento === addMes(m, -1) 
 const tot = soma(L, 'valorTotal'), var_ = ant ? (tot - ant) / ant : null;
 $('fatKpis').innerHTML = [
 ['money', 'Valor a faturar', money(tot), var_ === null ? rotM : `${var_ >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(var_ * 100))}% vs ${fmes(addMes(m, -1))} (${moneyK(ant)})`],
-['list', um ? 'Chamados no mês' : ms.length ? 'Chamados nos meses' : 'Chamados (todos os meses)', int(L.length), `${new Set(L.map(c => c.empresa)).size} fornecedor(es)`],
+['list', um ? 'Chamados no mês' : ms.length ? 'Chamados nos meses' : 'Chamados (todos os meses)', int(L.length), `${new Set(L.map(c => c.empresa)).size} empresa(s) CPFL`],
 ['box', 'Material', money(soma(L, 'valorMaterial')), tot ? `${pct(soma(L, 'valorMaterial') / tot)} do valor a faturar` : 'sem valor no filtro'],
 ['truck', 'Mão de obra / deslocamento', money(soma(L, 'valorMaoObra')), tot ? `${pct(soma(L, 'valorMaoObra') / tot)} do valor a faturar` : 'sem valor no filtro'],
 ['doc', 'Conferir antes de faturar', int(orcPend + comPend), orcPend + comPend ? `${pill('Concluído com atraso').replace('Concluído com atraso', 'Atenção')} ${orcPend} orç. não aprovado · ${comPend} com pendência` : `${pill('Concluído').replace('Concluído', 'Tudo certo')}`]
@@ -1471,20 +1471,20 @@ cardChart($('c-fatmeses'), 'Faturamento por mês', 'Clique em um mês para ver o
 legSel(pts, `<span><i style="background:#0099cc"></i>Meses</span><span><i style="background:#f68b1f"></i>Maior faturamento</span>`),
 tabelaHTML([{ t: 'Mês' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], [...pts].reverse().map(p => [`<span class="lk" onclick="abrirFat('${p.k}')">${fmesL(p.k)}</span>`, D.chamados.filter(c => c.mesFaturamento === p.k && algum(emps, c.empresa)).length, money(p.v)])));
 const ge = agrupa(L, 'empresa');
-cardChart($('c-fatemp'), 'Por fornecedor', rotM, hbarsHTML(ge, { onClick: 'fatEmp' }),
-tabelaHTML([{ t: 'Fornecedor' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], ge.sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)])));
+cardChart($('c-fatemp'), 'Por Empresa CPFL', rotM, hbarsHTML(ge, { onClick: 'fatEmp' }),
+tabelaHTML([{ t: 'Empresa CPFL' }, { t: 'Chamados', num: 1 }, { t: 'Valor', num: 1 }], ge.sort((a, b) => b.valor - a.valor).map(x => [esc(x.nome), x.qtd, money(x.valor)])));
 $('fatTabSub').textContent = `${L.length} chamado(s) faturando em ${rotM}${emp ? ' · ' + emp : ''}`;
-$('fatTab').innerHTML = `<thead><tr><th>Nº CPFL</th><th>Fornecedor</th><th>Unidade</th><th>Concluído</th><th>Situação</th><th>Ch. fornec.</th><th>OS fornec.</th><th>Orçamento</th><th>Pendência</th><th class="num">Material</th><th class="num">Mão de obra</th><th class="num">Total</th></tr></thead>
+$('fatTab').innerHTML = `<thead><tr><th>Nº CPFL</th><th>Empresa CPFL</th><th>Unidade</th><th>Concluído</th><th>Situação</th><th>Ch. fornec.</th><th>OS fornec.</th><th>Orçamento</th><th>Pendência</th><th class="num">Material</th><th class="num">Mão de obra</th><th class="num">Total</th></tr></thead>
 <tbody>${L.length ? L.map(c => `<tr><td><span class="lk" onclick="abrirForm(${c.id})">${esc(c.numero)}</span></td><td>${esc(c.empresa)}</td><td>${esc(c.unidade)}</td><td>${fd(c.dataReal)}</td><td>${pill(c.status)}</td><td>${esc(c.chamadoFornecedor)}</td><td>${esc(c.osFornecedor)}</td>
 <td>${c.statusOrcamento && c.statusOrcamento !== 'Aprovado' ? `<span class="pill warning">${ico('s_warning')}${esc(c.statusOrcamento)}</span>` : esc(c.statusOrcamento)}</td><td>${c.pendencia ? `<span class="tag">${esc(c.pendencia)}</span>` : ''}</td>
 <td class="num">${numBR(c.valorMaterial)}</td><td class="num">${numBR(c.valorMaoObra)}</td><td class="num"><b>${numBR(c.valorTotal)}</b></td></tr>`).join('') : '<tr><td colspan="12" class="vazio">Nenhum chamado fatura neste mês.</td></tr>'}</tbody>
 <tfoot><tr><td colspan="9">${L.length} chamado(s)</td><td class="num">${numBR(soma(L, 'valorMaterial'))}</td><td class="num">${numBR(soma(L, 'valorMaoObra'))}</td><td class="num">${numBR(tot)}</td></tr></tfoot>`;
 }
-function limparFat() { setVals('fatMes', []); setVals('fatEmpresa', []); renderFat(); toast('Filtros do faturamento limpos · todos os meses e fornecedores.'); }
-function limparGlobais() { ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].forEach(id => setVals(id, [])); renderVisao(); renderRelatorio(); toast('Filtros limpos · todo o período, fornecedores e unidades.'); }
+function limparFat() { setVals('fatMes', []); setVals('fatEmpresa', []); renderFat(); toast('Filtros do faturamento limpos · todos os meses e Empresas CPFL.'); }
+function limparGlobais() { ['gPeriodo', 'gMes', 'gEmpresa', 'gUnidade'].forEach(id => setVals(id, [])); renderVisao(); renderRelatorio(); toast('Filtros limpos · todo o período, Empresas CPFL e unidades.'); }
 function fatEmp(n) { setVals('fatEmpresa', n); renderFat(); }
 // ===================================================================== CADASTROS
-const CADS = [['unidades', 'Unidades', 'unidade'], ['empresas', 'Fornecedores (empresas)', 'empresa'], ['prioridades', 'Prioridades', 'prioridade'], ['tipos', 'Tipos de chamado', 'tipo'], ['statusChamado', 'Status do chamado', 'statusChamado'], ['statusOrcamento', 'Status do orçamento', 'statusOrcamento'], ['pendencias', 'Pendências', 'pendencia']];
+const CADS = [['unidades', 'Unidades', 'unidade'], ['empresas', 'Empresas CPFL', 'empresa'], ['prioridades', 'Prioridades', 'prioridade'], ['tipos', 'Tipos de chamado', 'tipo'], ['statusChamado', 'Status do chamado', 'statusChamado'], ['statusOrcamento', 'Status do orçamento', 'statusOrcamento'], ['pendencias', 'Pendências', 'pendencia']];
 function renderCads() {
 $('cads').innerHTML = CADS.map(([k, t, campo]) => `<div class="card"><div class="card-h"><div><h3>${t}</h3><div class="d">${D.cadastros[k].length} item(ns) · renomear atualiza os chamados</div></div></div>
 <ul class="cad-lista">${D.cadastros[k].map((v, i) => { const uso = D.chamados.filter(c => c[campo] === v).length; return `<li><span class="n">${esc(v)}</span><small>${uso} chamado(s)</small>
@@ -1615,7 +1615,7 @@ function mostrarPrevia(aba = 'novos') {
 const P = IMP, nAlt = P.novos.length + P.atualizados.length;
 const abas = [['novos', `Novos (${P.novos.length})`], ['atualizados', `Atualizados (${P.atualizados.length})`], ['erros', `Com erro (${P.erros.length})`]];
 let corpo = '';
-if (aba === 'novos') corpo = tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Fornecedor' }, { t: 'Aberto em' }, { t: 'Situação' }, { t: 'Valor', num: 1 }], P.novos.map(n => [esc(n.numero), esc(n.unidade), esc(n.empresa), fd(n.dataChamado), pill(n.status), money(n.valorTotal)]));
+if (aba === 'novos') corpo = tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'Empresa CPFL' }, { t: 'Aberto em' }, { t: 'Situação' }, { t: 'Valor', num: 1 }], P.novos.map(n => [esc(n.numero), esc(n.unidade), esc(n.empresa), fd(n.dataChamado), pill(n.status), money(n.valorTotal)]));
 if (aba === 'atualizados') corpo = tabelaHTML([{ t: 'Nº CPFL' }, { t: 'Unidade' }, { t: 'O que muda' }], P.atualizados.map(a => [esc(a.numero), esc(a.unidade), `<div style="white-space:normal;min-width:380px;color:var(--ink-2)">${esc(a.mudancas).split(' | ').join('<br>')}</div>`]));
 if (aba === 'erros') corpo = tabelaHTML([{ t: 'Linha', num: 1 }, { t: 'Nº CPFL' }, { t: 'Problema (linha não será importada)' }], P.erros.map(e => [e.linha, esc(e.numero), `<span style="white-space:normal">${esc(e.erro)}</span>`]));
 $('impPasso2').innerHTML = `
@@ -1767,10 +1767,10 @@ const nome = (l.firstChild && l.firstChild.textContent || '').trim();
 out.push(`${nome}: ${val}`);
 });
 } else if (v === 'visao' || v === 'relatorio') {
-[['gPeriodo', 'Período'], ['gMes', 'Mês'], ['gEmpresa', 'Fornecedor'], ['gUnidade', 'Unidade']].forEach(([id, n]) => { const t = txtSel(id); if (t) out.push(`${n}: ${t}`); });
+[['gPeriodo', 'Período'], ['gMes', 'Mês'], ['gEmpresa', 'Empresa CPFL'], ['gUnidade', 'Unidade']].forEach(([id, n]) => { const t = txtSel(id); if (t) out.push(`${n}: ${t}`); });
 } else if (v === 'faturamento') {
 if (vals('fatMes').length) out.push('Mês de faturamento: ' + vals('fatMes').sort().map(fmesL).join(', '));
-const t = txtSel('fatEmpresa'); if (t) out.push('Fornecedor: ' + t);
+const t = txtSel('fatEmpresa'); if (t) out.push('Empresa CPFL: ' + t);
 }
 return out;
 }
@@ -1939,7 +1939,7 @@ const L = prazosLista();
 const aVencer = L.filter(x => x.d >= 0).sort((a, b) => a.d - b.d), venc = L.filter(x => x.d < 0).sort((a, b) => b.d - a.d);
 if (auto && !aVencer.length && !venc.length) return;
 const resumo = PZ_FAIXAS.map(f => { const n = L.filter(x => f.ok(x.d)).length; return `<div style="${pzVars(f)}"><b>${n}</b><span>${f.n}</span></div>`; }).join('');
-const tab = lista => `<div class="tw pz-tab"><table><thead><tr><th>Prazo</th><th>Nº</th><th>Unidade</th><th>Fornecedor</th><th>Previsto</th><th>Prioridade</th><th>Responsável</th></tr></thead><tbody>${
+const tab = lista => `<div class="tw pz-tab"><table><thead><tr><th>Prazo</th><th>Nº</th><th>Unidade</th><th>Empresa CPFL</th><th>Previsto</th><th>Prioridade</th><th>Responsável</th></tr></thead><tbody>${
 lista.map(({ c, d }) => `<tr style="${pzVars(pzFaixa(d))}" onclick="pzAbrir(${c.id})" title="Abrir o chamado"><td>${pzChip(d)}</td><td><b>${esc(c.numero)}</b></td><td>${esc(c.unidade)}</td><td>${esc(c.empresa)}</td><td>${fd(c.dataPrevista)}</td><td>${prio(c.prioridade)}</td><td>${esc(c.responsavel || '')}</td></tr>`).join('')}</tbody></table></div>`;
 const corpo = `<div class="pz-resumo">${resumo}</div>` +
 (aVencer.length ? `<div class="pz-sec"><b>Vencem nos próximos ${PZ_DIAS} dias</b> · ${aVencer.length} chamado(s)</div>${tab(aVencer)}` : `<div class="pz-sec">Nenhum chamado vencendo nos próximos ${PZ_DIAS} dias.</div>`) +
