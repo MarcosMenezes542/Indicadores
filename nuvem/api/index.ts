@@ -269,10 +269,22 @@ const HEADERS_OCULTOS: Record<string, string> = {};
 for (const c of COLUMNS) { if (CAMPOS_VALOR.includes(c.key)) HEADERS_OCULTOS[c.header] = "ver_valores"; else if (CAMPOS_GESTAO.includes(c.key)) HEADERS_OCULTOS[c.header] = "campos_gestao"; }
 
 type Perfil = { id: string; nome: string; sistema: boolean; descricao: string; permissoes: string[] };
-type Usuario = { id: number; nome: string; login: string; email: string; perfilId: string; ativo: boolean; salt: string; hash: string; iter: number; trocarSenha: boolean; criadoEm: string; ultimoAcesso: string };
+type Usuario = { id: number; nome: string; login: string; email: string; perfilId: string; ativo: boolean; salt: string; hash: string; iter: number; trocarSenha: boolean; criadoEm: string; ultimoAcesso: string; permissoesExtras?: string[] };
 type UDB = { perfis: Perfil[]; usuarios: Usuario[] };
 const getPerfil = (udb: UDB, id: string) => udb.perfis.find((p) => p.id === id);
-function getPerms(udb: UDB, u: Usuario) { const p = getPerfil(udb, u.perfilId); return p ? (p.sistema ? TODAS : p.permissoes || []) : []; }
+function getPerms(udb: UDB, u: Usuario) {
+  const p = getPerfil(udb, u.perfilId);
+  const base = p ? (p.sistema ? TODAS : p.permissoes || []) : [];
+  // permissões extras liberadas só para esta pessoa (somam-se às do perfil de referência, sem alterá-lo)
+  const extras = (u.permissoesExtras || []).filter((x) => TODAS.includes(x) && !base.includes(x));
+  return extras.length ? [...base, ...extras] : base;
+}
+// extras válidos para gravar: só permissões conhecidas que o perfil escolhido ainda não dá
+function limparExtras(udb: UDB, perfilId: string, lista: unknown): string[] {
+  const p = getPerfil(udb, perfilId), base = p ? (p.sistema ? TODAS : p.permissoes || []) : [];
+  return [...new Set((Array.isArray(lista) ? lista : []).map((x) => str(x)))].filter((x) => TODAS.includes(x) && !base.includes(x));
+}
+const nomesPerms = (l: string[]) => PERMISSOES.filter((p) => l.includes(p.k)).map((p) => p.n).join(", ");
 const testPerm = (udb: UDB, u: Usuario, perm: string) => getPerms(udb, u).includes(perm);
 function requirePerm(udb: UDB, u: Usuario, perms: string[]) {
   if (perms.some((p) => testPerm(udb, u, p))) return;
@@ -348,7 +360,7 @@ function cleanLogin(s: unknown) {
 }
 function userPublic(udb: UDB, u: Usuario) {
   const p = getPerfil(udb, u.perfilId);
-  return { id: u.id, nome: u.nome, login: u.login, email: u.email, perfilId: u.perfilId, perfil: p ? p.nome : "(sem perfil)", ativo: u.ativo, trocarSenha: u.trocarSenha, criadoEm: u.criadoEm, ultimoAcesso: u.ultimoAcesso };
+  return { id: u.id, nome: u.nome, login: u.login, email: u.email, perfilId: u.perfilId, perfil: p ? p.nome : "(sem perfil)", permissoesExtras: (u.permissoesExtras || []).filter((x) => TODAS.includes(x)), ativo: u.ativo, trocarSenha: u.trocarSenha, criadoEm: u.criadoEm, ultimoAcesso: u.ultimoAcesso };
 }
 const countAdmins = (udb: UDB, ignorar = -1) => udb.usuarios.filter((x) => x.ativo && x.id !== ignorar && getPerms(udb, x).includes("gerenciar_usuarios")).length;
 
@@ -702,7 +714,9 @@ async function rotear(req: Request, ctx: Ctx): Promise<Response> {
       const nome = clean(b.nome, 120); if (!nome) throw bad("Informe o nome.");
       if (!getPerfil(udb, str(b.perfilId))) throw bad("Escolha um perfil.");
       const nu: Usuario = { id: udb.usuarios.reduce((m, x) => Math.max(m, x.id), 0) + 1, nome, login, email: clean(b.email, 150), perfilId: str(b.perfilId), ativo: true, salt: "", hash: "", iter: 0, trocarSenha: true, criadoEm: nowText(), ultimoAcesso: "" };
+      const extrasNovo = limparExtras(udb, nu.perfilId, b.permissoesExtras); if (extrasNovo.length) nu.permissoesExtras = extrasNovo;
       await setSenha(nu, str(b.senha)); await saveUser(nu);
+      if (extrasNovo.length) await addHist([hist(null, "Acessos extras", `Usuário: ${nu.nome} (${nu.login}) | Liberados: ${nomesPerms(extrasNovo)}`)], usuarioAtual);
       return json(201, userPublic(udb, nu), ctx);
     }
     let m = path.match(/^\/api\/usuarios\/(\d+)(\/senha)?$/);
@@ -723,11 +737,16 @@ async function rotear(req: Request, ctx: Ctx): Promise<Response> {
         const perfilId = str(b.perfilId); if (!getPerfil(udb, perfilId)) throw bad("Escolha um perfil.");
         const ativo = !!b.ativo;
         if (alvo.id === u.id && !ativo) throw bad("Você não pode desativar o seu próprio usuário.");
-        const ant = { perfilId: alvo.perfilId, ativo: alvo.ativo };
-        Object.assign(alvo, { nome, email: clean(b.email, 150), perfilId, ativo });
+        const ant = { perfilId: alvo.perfilId, ativo: alvo.ativo, permissoesExtras: alvo.permissoesExtras };
+        const extrasAnt = limparExtras(udb, alvo.perfilId, alvo.permissoesExtras);
+        // permissoesExtras ausente no pedido (tela antiga): mantém os extras atuais
+        const extras = Array.isArray(b.permissoesExtras) ? limparExtras(udb, perfilId, b.permissoesExtras) : limparExtras(udb, perfilId, alvo.permissoesExtras);
+        Object.assign(alvo, { nome, email: clean(b.email, 150), perfilId, ativo, permissoesExtras: extras });
         if (countAdmins(udb) === 0) { Object.assign(alvo, ant); throw bad("É preciso manter pelo menos um usuário ativo com acesso a Usuários e perfis."); }
         if (!ativo) await fecharSessoesDoUsuario(alvo.id);
         await saveUser(alvo);
+        const lib = extras.filter((x) => !extrasAnt.includes(x)), ret = extrasAnt.filter((x) => !extras.includes(x));
+        if (lib.length || ret.length) await addHist([hist(null, "Acessos extras", [`Usuário: ${alvo.nome} (${alvo.login})`, lib.length ? `Liberados: ${nomesPerms(lib)}` : "", ret.length ? `Retirados: ${nomesPerms(ret)}` : ""].filter(Boolean).join(" | "))], usuarioAtual);
         return json(200, userPublic(udb, alvo), ctx);
       }
       if (method === "DELETE") {
