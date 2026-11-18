@@ -1,0 +1,23 @@
+{
+  "name": "palco-cifras",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Palco - cifras que rolam sozinhas, com ativação por código",
+  "scripts": {
+    "servir": "npx --yes http-server www -p 8080 -c-1",
+    "sync": "npx cap sync android",
+    "apk": "npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/device": "^8.0.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

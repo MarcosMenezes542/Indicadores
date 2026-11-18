@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Palco</string>
+    <string name="title_activity_main">Palco</string>
+    <string name="package_name">br.com.palco.cifras</string>
+    <string name="custom_url_scheme">br.com.palco.cifras</string>
+</resources>

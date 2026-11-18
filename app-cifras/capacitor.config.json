@@ -1,0 +1,11 @@
+{
+  "appId": "br.com.palco.cifras",
+  "appName": "Palco",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b0d12"
+  },
+  "plugins": {
+    "SystemBars": { "insetsHandling": "css", "style": "DARK" }
+  }
+}

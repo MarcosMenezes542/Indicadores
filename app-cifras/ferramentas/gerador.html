@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Palco · Gerador de ativação</title>
+<style>
+  :root { --fundo:#0b0d12; --sup:#141821; --sup2:#1b2030; --borda:rgba(255,255,255,.08); --texto:#eef0f6; --suave:#9ba3b4;
+    --grad:linear-gradient(135deg,#8b5cf6,#22d3ee); --mono:ui-monospace,'Roboto Mono',Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fundo); color:var(--texto); font:16px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:28px 16px 60px; display:grid; gap:16px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  header .logo { width:48px; height:48px; border-radius:14px; background:var(--grad); display:grid; place-items:center; font-weight:800; font-size:22px; }
+  h1 { margin:0; font-size:22px; } header p { margin:0; color:var(--suave); font-size:14px; }
+  section { background:var(--sup); border:1px solid var(--borda); border-radius:20px; padding:18px; display:grid; gap:12px; }
+  h2 { margin:0; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--suave); }
+  p { margin:0; } .suave { color:var(--suave); font-size:14px; }
+  button { font:inherit; font-weight:600; border:1px solid var(--borda); background:var(--sup2); color:var(--texto); min-height:44px; padding:0 16px; border-radius:12px; cursor:pointer; }
+  button.primario { background:var(--grad); border:0; color:#fff; }
+  button.whats { background:#1fa855; border:0; color:#fff; }
+  .botoes { display:flex; flex-wrap:wrap; gap:8px; } .botoes button { flex:1 1 140px; }
+  input, textarea { width:100%; font:inherit; color:var(--texto); background:var(--fundo); border:1px solid var(--borda); border-radius:12px; padding:12px; outline:0; }
+  input:focus, textarea:focus { border-color:#8b5cf6; }
+  input.codigo { font:700 22px var(--mono); text-align:center; letter-spacing:.08em; text-transform:uppercase; }
+  .caixa { font:13px/1.5 var(--mono); word-break:break-all; background:var(--fundo); border:1px dashed rgba(139,92,246,.5); border-radius:12px; padding:12px; user-select:all; }
+  .resultado { font-size:16px; color:#c4b5fd; }
+  .status { padding:10px 12px; border-radius:12px; font-size:14px; }
+  .status.ok { background:rgba(52,211,153,.12); color:#6ee7b7; }
+  .status.nao { background:rgba(251,191,36,.1); color:#fbbf24; }
+  .status.teste { background:rgba(248,113,113,.1); color:#fca5a5; }
+  ol { margin:0; padding-left:20px; color:var(--suave); font-size:14px; display:grid; gap:6px; } ol b, ol code { color:var(--texto); }
+  table { width:100%; border-collapse:collapse; font-size:14px; } td, th { text-align:left; padding:8px 6px; border-top:1px solid var(--borda); }
+  th { color:var(--suave); font-weight:600; } td code { font-family:var(--mono); }
+  [hidden] { display:none !important; }
+  #aviso { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#262c3d; padding:10px 16px; border-radius:12px; opacity:0; transition:.25s; pointer-events:none; }
+  #aviso.mostrar { opacity:1; }
+</style>
+</head>
+<body>
+<main>
+  <header><div class="logo">P</div><div><h1>Gerador de ativação</h1><p>Uso exclusivo do vendedor. Não envie este arquivo para clientes.</p></div></header>
+
+  <section>
+    <h2>1. Sua chave</h2>
+    <div id="status-chave" class="status nao">Nenhuma chave carregada.</div>
+    <div class="botoes">
+      <button id="criar" class="primario">Criar minha chave</button>
+      <button id="abrir">Abrir arquivo de chave</button>
+      <button id="teste">Usar chave de teste</button>
+    </div>
+    <input type="file" id="arquivo" accept=".json,application/json" hidden />
+    <div id="area-publica" hidden>
+      <p class="suave">Chave pública (vai dentro do app, no arquivo <code>www/js/config.js</code>, em <code>chavePublica</code>):</p>
+      <div class="caixa" id="publica"></div>
+      <div class="botoes">
+        <button id="copiar-publica">Copiar chave pública</button>
+        <button id="baixar">Baixar cópia de segurança</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="area-ativar">
+    <h2>2. Ativar um cliente</h2>
+    <input id="cliente" placeholder="Nome do cliente (opcional, só para seu controle)" />
+    <input id="aparelho" class="codigo" placeholder="XXXX-XXXX-XXXX" maxlength="20" autocomplete="off" />
+    <button id="gerar" class="primario">Gerar código de ativação</button>
+    <div id="area-resultado" hidden>
+      <div class="caixa resultado" id="resultado"></div>
+      <div class="botoes">
+        <button id="copiar-resultado">Copiar código</button>
+        <button id="whats" class="whats">Enviar pelo WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ativações feitas</h2>
+    <div id="historico" class="suave">Nenhuma ainda.</div>
+  </section>
+
+  <section>
+    <h2>Como usar</h2>
+    <ol>
+      <li>Clique em <b>Criar minha chave</b> (só uma vez na vida) e depois em <b>Baixar cópia de segurança</b>. Guarde esse arquivo em lugar seguro (pendrive, Google Drive particular). <b>Se perder, não conseguirá ativar novos clientes.</b></li>
+      <li>Copie a <b>chave pública</b> e cole em <code>www/js/config.js</code>, no campo <code>chavePublica</code>. Mude <code>chaveDeTeste</code> para <code>false</code> e gere o app de novo.</li>
+      <li>Quando um cliente pagar, ele te envia o código do aparelho. Cole no campo acima, clique em <b>Gerar</b> e devolva o código de ativação.</li>
+    </ol>
+  </section>
+</main>
+<div id="aviso"></div>
+
+<script>
+const ALFABETO = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const CHAVE_TESTE = {"kty":"EC","crv":"P-256","x":"v3PFBjtXLXF5stLPTboGwizu0SWjnYcAFVqh4Opf0qk","y":"KA7NXmqCQcUzlDwl9TIzrR9edWVaDWKVFmNsyXjlswQ","d":"IHYPTnxjk0Bti460JlenH92shsF4_CktyazWOVeRB10"};
+const $ = (id) => document.getElementById(id);
+let jwk = null, chavePrivada = null, ultimo = null;
+
+function base32(bytes) {
+  let bits = 0, valor = 0, s = '';
+  for (const b of bytes) { valor = (valor << 8) | b; bits += 8; while (bits >= 5) { s += ALFABETO[(valor >>> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) s += ALFABETO[(valor << (5 - bits)) & 31];
+  return s;
+}
+const normalizar = (t) => String(t || '').toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1').replace(/[^0-9A-HJKMNP-TV-Z]/g, '');
+const agrupar = (t, n) => (t.match(new RegExp(`.{1,${n}}`, 'g')) || []).join('-');
+const b64url = (b) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const deB64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+function publicaDe(j) { const x = deB64url(j.x), y = deB64url(j.y); const r = new Uint8Array(65); r[0] = 4; r.set(x, 1); r.set(y, 33); return b64url(r); }
+function aviso(t) { const a = $('aviso'); a.textContent = t; a.className = 'mostrar'; clearTimeout(aviso.t); aviso.t = setTimeout(() => a.className = '', 2200); }
+async function copiar(t) { try { await navigator.clipboard.writeText(t); aviso('Copiado'); } catch { prompt('Copie:', t); } }
+
+async function carregar(j, salvar = true) {
+  chavePrivada = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: j.x, y: j.y, d: j.d }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  jwk = { kty: 'EC', crv: 'P-256', x: j.x, y: j.y, d: j.d };
+  if (salvar) localStorage.setItem('palco.gerador.chave', JSON.stringify(jwk));
+  const ehTeste = j.d === CHAVE_TESTE.d;
+  $('status-chave').className = 'status ' + (ehTeste ? 'teste' : 'ok');
+  $('status-chave').textContent = ehTeste ? 'Chave de TESTE carregada. Não use para vender.' : 'Sua chave está carregada e pronta.';
+  $('publica').textContent = publicaDe(jwk);
+  $('area-publica').hidden = false;
+  $('baixar').hidden = ehTeste;
+}
+
+$('criar').onclick = async () => {
+  if (jwk && jwk.d !== CHAVE_TESTE.d && !confirm('Você já tem uma chave. Criar outra fará os apps feitos com a chave antiga deixarem de aceitar seus novos códigos. Continuar?')) return;
+  const par = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  await carregar(await crypto.subtle.exportKey('jwk', par.privateKey));
+  aviso('Chave criada! Agora baixe a cópia de segurança.');
+};
+$('teste').onclick = () => carregar(CHAVE_TESTE).then(() => aviso('Chave de teste carregada'));
+$('abrir').onclick = () => $('arquivo').click();
+$('arquivo').onchange = async (e) => {
+  try { const d = JSON.parse(await e.target.files[0].text()); await carregar(d.privada || d); aviso('Chave carregada'); }
+  catch { aviso('Arquivo de chave inválido'); }
+  e.target.value = '';
+};
+$('baixar').onclick = () => {
+  const conteudo = JSON.stringify({ app: 'palco', tipo: 'chave-privada', aviso: 'NAO COMPARTILHE ESTE ARQUIVO', criadoEm: new Date().toISOString(), publica: publicaDe(jwk), privada: jwk }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }));
+  a.download = 'palco-CHAVE-PRIVADA.json';
+  a.click();
+};
+$('copiar-publica').onclick = () => copiar($('publica').textContent);
+
+$('gerar').onclick = async () => {
+  if (!chavePrivada) return aviso('Carregue ou crie sua chave primeiro');
+  const aparelho = normalizar($('aparelho').value);
+  if (aparelho.length !== 12) return aviso('O código do aparelho tem 12 caracteres');
+  const msg = new TextEncoder().encode('PALCO-ATIVACAO|' + aparelho);
+  const assinatura = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, chavePrivada, msg));
+  const codigo = agrupar(base32(assinatura), 5);
+  ultimo = { codigo, aparelho: agrupar(aparelho, 4), cliente: $('cliente').value.trim(), data: new Date().toLocaleString('pt-BR') };
+  $('resultado').textContent = codigo;
+  $('area-resultado').hidden = false;
+  const hist = JSON.parse(localStorage.getItem('palco.gerador.historico') || '[]');
+  hist.unshift({ aparelho: ultimo.aparelho, cliente: ultimo.cliente, data: ultimo.data });
+  localStorage.setItem('palco.gerador.historico', JSON.stringify(hist.slice(0, 500)));
+  mostrarHistorico();
+};
+$('copiar-resultado').onclick = () => copiar(ultimo.codigo);
+$('whats').onclick = () => {
+  const t = `Obrigado pela compra! 🎶\nSeu código de ativação:\n\n${ultimo.codigo}\n\nAbra o app, toque em "Ativar", cole o código e confirme.`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+};
+$('aparelho').addEventListener('input', (e) => { const n = normalizar(e.target.value).slice(0, 12); e.target.value = agrupar(n, 4); });
+
+function mostrarHistorico() {
+  const h = JSON.parse(localStorage.getItem('palco.gerador.historico') || '[]');
+  if (!h.length) return;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  $('historico').innerHTML = '<table><tr><th>Data</th><th>Cliente</th><th>Aparelho</th></tr>' +
+    h.map((i) => `<tr><td>${esc(i.data)}</td><td>${esc(i.cliente || '-')}</td><td><code>${esc(i.aparelho)}</code></td></tr>`).join('') + '</table>';
+}
+
+const salva = localStorage.getItem('palco.gerador.chave');
+if (salva) carregar(JSON.parse(salva), false);
+mostrarHistorico();
+</script>
+</body>
+</html>
