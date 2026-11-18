@@ -1,14 +1,16 @@
 import { CONFIG } from './config.js';
 import { listarMusicas, obterMusica, salvarMusica, excluirMusica, importarMusicas, novoId } from './db.js';
 import { analisar, desenhar, linhasDeLetra, transporAcorde, preferirBemol, ehAcorde } from './cifra.js';
-import { estaAtivado, ativar, codigoDoAparelho } from './licenca.js';
+import {
+  lerLicenca, ativar, codigoDoAparelho, tempoRestante, formatarData, NOMES_TIPO,
+} from './licenca.js';
 import { SeguidorDeVoz } from './voz.js';
 import {
   manterTelaLigada, copiarTexto, lerAreaDeTransferencia, compartilharArquivo, abrirLinkExterno,
 } from './nativo.js';
 
 const app = document.getElementById('app');
-const estado = { ativado: false };
+const estado = { ativado: false, licenca: null };
 let limparTela = null;
 
 // ---------------------------------------------------------------- ícones
@@ -78,6 +80,52 @@ async function podeAdicionar() {
   return total < CONFIG.limiteTeste;
 }
 
+/** Sem licença ativa, só as primeiras músicas cadastradas ficam liberadas. */
+function idsLiberados(musicas) {
+  if (estado.ativado) return null; // todas
+  const ordem = [...musicas].sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+  return new Set(ordem.slice(0, CONFIG.limiteTeste).map((m) => m.id));
+}
+
+async function musicaLiberada(id) {
+  const liberados = idsLiberados(await listarMusicas());
+  return !liberados || liberados.has(id);
+}
+
+const nomeTipo = (t) => NOMES_TIPO[t] || 'Licença';
+
+/** Faixa no topo da biblioteca com a situação da licença. */
+function faixaLicenca(restante) {
+  const l = estado.licenca;
+  const faixa = (titulo, texto, classe = '') => `
+    <button class="faixa-teste ${classe}" data-ir="#/ativar">
+      <span class="faixa-icone">${I.cadeado}</span>
+      <span><strong>${titulo}</strong><small>${texto}</small></span>
+    </button>`;
+  if (l.ativo) {
+    if (!l.expira) return '';
+    const faltaMs = l.expira - Date.now();
+    if (l.tipo === 'teste') {
+      return faixa(`Teste: termina em ${tempoRestante(l.expira)}`, 'Gostou? Toque aqui para comprar.', 'aviso-teste');
+    }
+    if (faltaMs < 5 * 86400000) {
+      return faixa(`Seu plano ${nomeTipo(l.tipo).toLowerCase()} vence em ${tempoRestante(l.expira)}`, 'Toque para renovar e não perder o acesso.', 'aviso-teste');
+    }
+    return '';
+  }
+  if (l.relogioAlterado) {
+    return faixa('Data do celular incorreta', 'Ative a data e hora automáticas nas configurações do celular.', 'alerta-faixa');
+  }
+  const limite = restante > 0
+    ? `Você ainda pode adicionar ${restante} ${restante === 1 ? 'música' : 'músicas'}`
+    : 'Limite de músicas atingido';
+  if (l.vencido) {
+    return faixa(`${l.tipo === 'teste' ? 'Seu teste terminou' : 'Seu acesso venceu'} em ${formatarData(l.expira)}`,
+      'Suas músicas continuam salvas. Toque para renovar.', 'alerta-faixa');
+  }
+  return faixa('Versão de teste', `${limite}. Toque para ativar.`);
+}
+
 // ---------------------------------------------------------------- rotas
 async function rotear() {
   if (limparTela) {
@@ -112,11 +160,7 @@ async function telaBiblioteca() {
       </div>
       <button class="icone-btn" data-ir="#/ajustes" aria-label="Ajustes">${I.ajustes}</button>
     </header>
-    ${estado.ativado ? '' : `
-      <button class="faixa-teste" data-ir="#/ativar">
-        <span class="faixa-icone">${I.cadeado}</span>
-        <span><strong>Versão de teste</strong><small>${restante > 0 ? `Você ainda pode adicionar ${restante} ${restante === 1 ? 'música' : 'músicas'}` : 'Limite de músicas atingido'}. Toque para ativar.</small></span>
-      </button>`}
+    ${faixaLicenca(restante)}
     <label class="busca">${I.busca}<input type="search" id="busca" placeholder="Buscar música ou artista" autocomplete="off" /></label>
     <main class="lista" id="lista"></main>
     <button class="fab" id="nova">${I.mais}<span>Nova música</span></button>`;
@@ -134,7 +178,12 @@ async function telaBiblioteca() {
       lista.innerHTML = `<div class="vazio pequeno"><p>Nada encontrado para “${esc(filtro)}”.</p></div>`;
       return;
     }
-    lista.innerHTML = itens.map((m) => `
+    const liberados = idsLiberados(musicas);
+    lista.innerHTML = itens.map((m) => liberados && !liberados.has(m.id) ? `
+      <button class="cartao bloqueado" data-ir="#/ativar">
+        <span class="avatar" style="--h:${matiz(m.titulo)}">${I.cadeado}</span>
+        <span class="info"><strong>${esc(m.titulo)}</strong><small>Ative o app para abrir esta música</small></span>
+      </button>` : `
       <button class="cartao" data-ir="#/tocar/${m.id}">
         <span class="avatar" style="--h:${matiz(m.titulo)}">${esc(m.titulo.trim()[0] || '♪').toUpperCase()}</span>
         <span class="info"><strong>${esc(m.titulo)}</strong><small>${esc(m.artista || 'Artista não informado')}</small></span>
@@ -157,6 +206,7 @@ async function telaEditor(id) {
   const musica = id ? await obterMusica(id) : null;
   if (id && !musica) return location.replace('#/');
   if (!id && !(await podeAdicionar())) return location.replace('#/ativar');
+  if (id && !(await musicaLiberada(id))) return location.replace('#/ativar');
 
   app.innerHTML = `
     ${cabecalho(musica ? 'Editar música' : 'Nova música', {
@@ -226,6 +276,7 @@ e a letra logo abaixo">${esc(musica?.cifra)}</textarea>
 async function telaPlayer(id) {
   const musica = await obterMusica(id);
   if (!musica) return location.replace('#/');
+  if (!(await musicaLiberada(id))) return location.replace('#/ativar');
   const linhas = analisar(musica.cifra);
   const cfg = { velocidade: musica.velocidade ?? 5, semitons: musica.semitons ?? 0, fonte: musica.fonte ?? 18 };
 
@@ -401,6 +452,28 @@ async function telaPlayer(id) {
 }
 
 // ---------------------------------------------------------------- ajustes
+function painelLicenca(total) {
+  const l = estado.licenca;
+  const status = (ok, titulo, texto) =>
+    `<div class="status ${ok ? 'ok' : ''}">${ok ? I.ok : I.cadeado}<div><strong>${titulo}</strong><small>${texto}</small></div></div>`;
+  const info = (rotulo, valor) => `<div class="linha-info"><span>${rotulo}</span><b>${valor}</b></div>`;
+  if (l.ativo) {
+    if (!l.expira) return status(true, 'Ativado neste aparelho', 'Licença vitalícia. Obrigado pela compra!');
+    return status(true, `${nomeTipo(l.tipo)}: ativo`, `Termina em ${tempoRestante(l.expira)}`) +
+      info('Válido até', formatarData(l.expira)) +
+      `<button class="btn ${l.tipo === 'teste' ? 'primario' : ''}" data-ir="#/ativar">${l.tipo === 'teste' ? 'Comprar' : 'Renovar'}</button>`;
+  }
+  if (l.relogioAlterado) {
+    return status(false, 'Data do celular incorreta', 'Ative a data e hora automáticas e abra o app de novo.');
+  }
+  if (l.vencido) {
+    return status(false, `${nomeTipo(l.tipo)}: vencido`, `Venceu em ${formatarData(l.expira)}`) +
+      `<button class="btn primario" data-ir="#/ativar">Renovar</button>`;
+  }
+  return status(false, 'Versão de teste', `${total} de ${CONFIG.limiteTeste} músicas usadas`) +
+    '<button class="btn primario" data-ir="#/ativar">Ativar agora</button>';
+}
+
 async function telaAjustes() {
   const codigo = await codigoDoAparelho();
   const total = (await listarMusicas()).length;
@@ -409,10 +482,7 @@ async function telaAjustes() {
     <main class="ajustes">
       <section class="painel">
         <h2>Licença</h2>
-        ${estado.ativado
-          ? `<div class="status ok">${I.ok}<div><strong>Ativado neste aparelho</strong><small>Obrigado pela compra!</small></div></div>`
-          : `<div class="status">${I.cadeado}<div><strong>Versão de teste</strong><small>${total} de ${CONFIG.limiteTeste} músicas usadas</small></div></div>
-             <button class="btn primario" data-ir="#/ativar">Ativar agora</button>`}
+        ${painelLicenca(total)}
         <div class="linha-info"><span>Código do aparelho</span><code>${codigo}</code></div>
         ${CONFIG.chaveDeTeste ? '<p class="alerta">Este aplicativo está usando a <b>chave de teste</b>. Troque pela sua chave definitiva antes de vender (veja o LEIAME).</p>' : ''}
       </section>
@@ -434,7 +504,7 @@ async function telaAjustes() {
           <li><b>Tela cheia:</b> toque na cifra para esconder os controles.</li>
         </ul>
       </section>
-      <p class="versao">${esc(CONFIG.nomeApp)} · versão 1.0</p>
+      <p class="versao">${esc(CONFIG.nomeApp)} · versão 1.1</p>
     </main>`;
 
   document.getElementById('exportar').addEventListener('click', async () => {
@@ -473,16 +543,22 @@ async function telaAjustes() {
 // ---------------------------------------------------------------- ativação
 async function telaAtivacao() {
   const codigo = await codigoDoAparelho();
-  const obrigatorio = CONFIG.limiteTeste === 0;
-  if (estado.ativado) return location.replace('#/ajustes');
+  const l = estado.licenca;
+  const obrigatorio = CONFIG.limiteTeste === 0 && !l.ativo;
+  // Vitalício já ativo não precisa desta tela; teste e planos podem renovar.
+  if (l.ativo && !l.expira) return location.replace('#/ajustes');
+  const renovar = l.tipo && l.tipo !== 'teste';
+  const situacao = l.ativo
+    ? `${nomeTipo(l.tipo)} ativo até <b>${formatarData(l.expira)}</b>.`
+    : l.vencido ? `${l.tipo === 'teste' ? 'Seu teste terminou' : 'Seu acesso venceu'} em <b>${formatarData(l.expira)}</b>.` : '';
 
   app.innerHTML = `
-    ${obrigatorio ? '' : cabecalho('Ativação')}
+    ${obrigatorio ? '' : cabecalho(renovar ? 'Renovação' : 'Ativação')}
     <main class="ativacao">
       <div class="heroi">
         <img src="img/icone.svg" alt="" />
-        <h1>Ative o ${esc(CONFIG.nomeApp)}</h1>
-        <p>Libere músicas ilimitadas neste aparelho. A ativação é feita uma única vez.</p>
+        <h1>${renovar ? 'Renove seu acesso' : `Ative o ${esc(CONFIG.nomeApp)}`}</h1>
+        <p>${situacao ? situacao + ' ' : ''}Envie o código abaixo ao vendedor e cole o código que receber.</p>
       </div>
 
       <section class="passo">
@@ -509,7 +585,8 @@ async function telaAtivacao() {
     aviso((await copiarTexto(codigo)) ? 'Código copiado' : 'Não foi possível copiar', 'ok');
   });
   document.getElementById('whats').addEventListener('click', () => {
-    const texto = `Olá! Quero ativar o ${CONFIG.nomeApp}.\nCódigo do meu aparelho: ${codigo}`;
+    const acao = renovar ? 'renovar meu acesso ao' : l.tipo === 'teste' ? 'comprar o' : 'ativar o';
+    const texto = `Olá! Quero ${acao} ${CONFIG.nomeApp}.\nCódigo do meu aparelho: ${codigo}`;
     abrirLinkExterno(`https://wa.me/${CONFIG.whatsappVendedor}?text=${encodeURIComponent(texto)}`);
   });
   const campo = document.getElementById('cod-ativacao');
@@ -529,11 +606,16 @@ async function telaAtivacao() {
     }
     botao.disabled = true;
     botao.textContent = 'Verificando…';
-    const ok = await ativar(campo.value);
-    if (ok) {
-      estado.ativado = true;
+    const r = await ativar(campo.value);
+    if (r.ok) {
+      estado.licenca = r.licenca;
+      estado.ativado = r.licenca.ativo;
+      const nova = r.licenca;
+      const detalhe = nova.expira
+        ? `${nomeTipo(nova.tipo)} válido até <b>${formatarData(nova.expira)}</b>.`
+        : 'Licença vitalícia. Obrigado pela compra!';
       app.innerHTML = `<main class="sucesso"><div class="selo">${I.ok}</div><h1>Tudo pronto!</h1>
-        <p>O ${esc(CONFIG.nomeApp)} foi ativado neste aparelho.</p>
+        <p>O ${esc(CONFIG.nomeApp)} foi ativado neste aparelho.<br>${detalhe}</p>
         <button class="btn primario grande" id="comecar">Começar</button></main>`;
       document.getElementById('comecar').addEventListener('click', () => location.replace('#/'));
     } else {
@@ -541,7 +623,11 @@ async function telaAtivacao() {
       botao.textContent = 'Ativar';
       campo.classList.add('invalido');
       setTimeout(() => campo.classList.remove('invalido'), 600);
-      aviso('Código inválido para este aparelho', 'erro');
+      aviso({
+        invalido: 'Código inválido para este aparelho',
+        vencido: 'Este código já venceu. Peça um novo ao vendedor.',
+        relogio: 'A data do celular está incorreta. Ative a data e hora automáticas.',
+      }[r.motivo], 'erro');
     }
   });
 }
@@ -569,8 +655,22 @@ Edite ou apague esta música
 D                   G
 E cadastre as suas depois`;
 
+async function atualizarLicenca() {
+  estado.licenca = await lerLicenca();
+  estado.ativado = estado.licenca.ativo;
+}
+
 async function iniciar() {
-  estado.ativado = await estaAtivado();
+  await atualizarLicenca();
+  // Confere a validade a cada minuto (para testes curtos, de horas).
+  setInterval(async () => {
+    const antes = estado.ativado;
+    await atualizarLicenca();
+    if (antes && !estado.ativado) {
+      aviso(estado.licenca.tipo === 'teste' ? 'Seu teste terminou' : 'Seu acesso venceu', 'erro');
+      if (!location.hash.startsWith('#/tocar')) rotear();
+    }
+  }, 60000);
   if (!localStorage.getItem('palco.exemplo')) {
     localStorage.setItem('palco.exemplo', '1');
     if (!(await listarMusicas()).length) {

@@ -267,3 +267,10 @@ h1, h2, p { margin: 0; }
 @keyframes surgir { from { transform: scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .campo-colar textarea::placeholder { font-family: system-ui, sans-serif; word-break: normal; color: var(--apagado); }
+.faixa-teste.aviso-teste { background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(139, 92, 246, 0.12)); border-color: rgba(34, 211, 238, 0.4); }
+.faixa-teste.alerta-faixa { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.4); }
+.faixa-teste.alerta-faixa .faixa-icone { background: #b91c1c; }
+.cartao.bloqueado { opacity: .55; }
+.cartao.bloqueado .avatar { background: var(--superficie-2); color: var(--suave); }
+.cartao.bloqueado .avatar svg { width: 20px; height: 20px; }
+.linha-info b { font-weight: 600; color: var(--texto); }

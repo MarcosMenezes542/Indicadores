@@ -13,6 +13,7 @@ Aplicativo Android para músicos. A cifra rola sozinha ou acompanha a voz de que
 - **Tela sempre ligada** enquanto a cifra está aberta
 - **Backup:** exportar e importar as músicas por arquivo
 - **Versão de teste:** limite de músicas até a ativação
+- **Códigos com prazo:** teste (tempo livre), mensal, anual ou vitalício
 
 ## Estrutura
 
@@ -30,6 +31,25 @@ Aplicativo Android para músicos. A cifra rola sozinha ou acompanha a voz de que
 2. O cliente paga (Pix, por exemplo) e manda esse código pelo WhatsApp. Há um botão pronto para isso.
 3. Você abre o `gerador.html` no computador ou no celular, cola o código e clica em **Gerar**.
 4. Você devolve o código de ativação e o cliente cola no app. Pronto.
+
+### Tipos de código e prazos
+No gerador, escolha o **tipo** e o **prazo**:
+
+| Tipo | Para que serve | Prazo |
+|---|---|---|
+| **Teste** | A pessoa experimentar antes de comprar | Você decide: minutos, horas, dias ou até uma data e hora |
+| **Mensal** | Mensalidade | 30 dias (pode alterar) |
+| **Anual** | Plano anual | 365 dias (pode alterar) |
+| **Vitalício** | Compra única | Sem prazo |
+
+- Com código ativo, o app fica **completo**, sem limite de músicas.
+- **Perto do vencimento**, o app avisa: teste sempre, planos nos últimos 5 dias. O botão "Comprar" ou "Renovar" abre o seu WhatsApp.
+- **Quando vence**, o app volta para a versão limitada. **As músicas não são apagadas**, mas só as primeiras (até o limite de teste) podem ser abertas. Basta colar um novo código para liberar tudo de novo.
+- **Mensalidade:** a cada pagamento, use o botão **Renovar** no histórico do gerador e envie o novo código. Se a pessoa não pagar, o acesso termina sozinho.
+- **Pix não confirmado:** envie um código de teste curto (por exemplo, 1 dia) e o definitivo quando o pagamento cair.
+- **Relógio do celular:** se a pessoa atrasar a data do celular para esticar o prazo, o app percebe e bloqueia até a data ser corrigida.
+- O gerador avisa se aquele aparelho **já recebeu um teste** antes.
+- Códigos gerados na versão anterior continuam valendo como **vitalícios**.
 
 O código de ativação é uma **assinatura digital**: só a sua chave privada consegue criá-lo, e ele só vale para aquele aparelho. Se alguém copiar o app para outro celular, o código não funciona lá.
 
