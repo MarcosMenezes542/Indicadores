@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rota de Entregas · Gerador de ativação</title>
+<style>
+  :root { --fundo:#0b0d12; --sup:#141821; --sup2:#1b2030; --borda:rgba(255,255,255,.08); --texto:#eef0f6; --suave:#9ba3b4;
+    --grad:linear-gradient(135deg,#8b5cf6,#22d3ee); --mono:ui-monospace,'Roboto Mono',Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fundo); color:var(--texto); font:16px/1.45 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:28px 16px 60px; display:grid; gap:16px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  header .logo { width:48px; height:48px; border-radius:14px; background:var(--grad); display:grid; place-items:center; font-weight:800; font-size:22px; }
+  h1 { margin:0; font-size:22px; } header p { margin:0; color:var(--suave); font-size:14px; }
+  section { background:var(--sup); border:1px solid var(--borda); border-radius:20px; padding:18px; display:grid; gap:12px; }
+  h2 { margin:0; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--suave); }
+  p { margin:0; } .suave { color:var(--suave); font-size:14px; }
+  button { font:inherit; font-weight:600; border:1px solid var(--borda); background:var(--sup2); color:var(--texto); min-height:44px; padding:0 16px; border-radius:12px; cursor:pointer; }
+  button.primario { background:var(--grad); border:0; color:#fff; }
+  button.whats { background:#1fa855; border:0; color:#fff; }
+  .botoes { display:flex; flex-wrap:wrap; gap:8px; } .botoes button { flex:1 1 140px; }
+  input, textarea { width:100%; font:inherit; color:var(--texto); background:var(--fundo); border:1px solid var(--borda); border-radius:12px; padding:12px; outline:0; }
+  input:focus, textarea:focus { border-color:#8b5cf6; }
+  input.codigo { font:700 22px var(--mono); text-align:center; letter-spacing:.08em; text-transform:uppercase; }
+  .caixa { font:13px/1.5 var(--mono); word-break:break-all; background:var(--fundo); border:1px dashed rgba(139,92,246,.5); border-radius:12px; padding:12px; user-select:all; }
+  .resultado { font-size:16px; color:#c4b5fd; }
+  .status { padding:10px 12px; border-radius:12px; font-size:14px; }
+  .status.ok { background:rgba(52,211,153,.12); color:#6ee7b7; }
+  .status.nao { background:rgba(251,191,36,.1); color:#fbbf24; }
+  .status.teste { background:rgba(248,113,113,.1); color:#fca5a5; }
+  ol { margin:0; padding-left:20px; color:var(--suave); font-size:14px; display:grid; gap:6px; } ol b, ol code { color:var(--texto); }
+  table { width:100%; border-collapse:collapse; font-size:14px; } td, th { text-align:left; padding:8px 6px; border-top:1px solid var(--borda); }
+  th { color:var(--suave); font-weight:600; } td code { font-family:var(--mono); }
+  [hidden] { display:none !important; }
+  .tipos { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .tipos button { padding:0 6px; }
+  .tipos button.sel { background:var(--grad); border-color:transparent; color:#fff; }
+  .prazo { display:grid; gap:10px; background:var(--fundo); border:1px solid var(--borda); border-radius:14px; padding:12px; }
+  .modo { display:flex; gap:16px; font-size:14px; color:var(--suave); } .modo label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .linha { display:flex; gap:8px; } .linha input { flex:1; } select { font:inherit; color:var(--texto); background:var(--sup2); border:1px solid var(--borda); border-radius:12px; padding:0 12px; }
+  .validade { font-size:15px; } .validade b { color:#67e8f9; }
+  .rapidos { display:flex; flex-wrap:wrap; gap:6px; } .rapidos button { min-height:34px; padding:0 12px; font-size:14px; border-radius:999px; }
+  .tag { font-size:12px; padding:2px 8px; border-radius:999px; background:var(--sup2); white-space:nowrap; }
+  .tag.ativo { background:rgba(52,211,153,.15); color:#6ee7b7; } .tag.vencido { background:rgba(248,113,113,.12); color:#fca5a5; }
+  td button { min-height:30px; padding:0 10px; font-size:13px; }
+  .tabela { overflow-x:auto; }
+  input[type=radio] { width:auto; margin:0; accent-color:#8b5cf6; }
+  .modo label { white-space:nowrap; }
+  td small { font-size:12px; }
+  #aviso { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#262c3d; padding:10px 16px; border-radius:12px; opacity:0; transition:.25s; pointer-events:none; }
+  #aviso.mostrar { opacity:1; }
+</style>
+</head>
+<body>
+<main>
+  <header><div class="logo">P</div><div><h1>Gerador de ativação</h1><p>Uso exclusivo do vendedor. Não envie este arquivo para clientes.</p></div></header>
+
+  <section>
+    <h2>1. Sua chave</h2>
+    <div id="status-chave" class="status nao">Nenhuma chave carregada.</div>
+    <div class="botoes">
+      <button id="criar" class="primario">Criar minha chave</button>
+      <button id="abrir">Abrir arquivo de chave</button>
+      <button id="teste">Usar chave de teste</button>
+    </div>
+    <input type="file" id="arquivo" accept=".json,application/json" hidden />
+    <div id="area-publica" hidden>
+      <p class="suave">Chave pública (vai dentro do app, no arquivo <code>www/js/config.js</code>, em <code>chavePublica</code>):</p>
+      <div class="caixa" id="publica"></div>
+      <div class="botoes">
+        <button id="copiar-publica">Copiar chave pública</button>
+        <button id="baixar">Baixar cópia de segurança</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="area-ativar">
+    <h2>2. Ativar um cliente</h2>
+    <input id="cliente" placeholder="Nome do cliente (opcional, só para seu controle)" />
+    <input id="aparelho" class="codigo" placeholder="XXXX-XXXX-XXXX" maxlength="20" autocomplete="off" />
+    <div class="tipos" id="tipos">
+      <button data-tipo="teste" class="sel">Teste</button>
+      <button data-tipo="mensal">Mensal</button>
+      <button data-tipo="anual">Anual</button>
+      <button data-tipo="vitalicio">Vitalício</button>
+    </div>
+    <div class="prazo" id="prazo">
+      <div class="modo">
+        <label><input type="radio" name="modo" value="duracao" checked /> Por tempo</label>
+        <label><input type="radio" name="modo" value="data" /> Até data e hora</label>
+      </div>
+      <div class="linha" id="area-duracao">
+        <input type="number" id="qtd" min="1" value="1" inputmode="numeric" />
+        <select id="unidade">
+          <option value="60000">minutos</option>
+          <option value="3600000">horas</option>
+          <option value="86400000" selected>dias</option>
+        </select>
+      </div>
+      <div class="rapidos" id="rapidos">
+        <button data-q="3" data-u="3600000">3 horas</button>
+        <button data-q="1" data-u="86400000">1 dia</button>
+        <button data-q="3" data-u="86400000">3 dias</button>
+        <button data-q="7" data-u="86400000">7 dias</button>
+      </div>
+      <input type="datetime-local" id="ate" hidden />
+      <div class="validade" id="validade"></div>
+    </div>
+    <button id="gerar" class="primario">Gerar código de ativação</button>
+    <div id="area-resultado" hidden>
+      <div class="caixa resultado" id="resultado"></div>
+      <div class="botoes">
+        <button id="copiar-resultado">Copiar código</button>
+        <button id="whats" class="whats">Enviar pelo WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ativações feitas</h2>
+    <div id="historico" class="suave tabela">Nenhuma ainda.</div>
+  </section>
+
+  <section>
+    <h2>Como usar</h2>
+    <ol>
+      <li>Clique em <b>Criar minha chave</b> (só uma vez na vida) e depois em <b>Baixar cópia de segurança</b>. Guarde esse arquivo em lugar seguro (pendrive, Google Drive particular). <b>Se perder, não conseguirá ativar novos clientes.</b></li>
+      <li>Copie a <b>chave pública</b> e cole em <code>www/js/config.js</code>, no campo <code>chavePublica</code>. Mude <code>chaveDeTeste</code> para <code>false</code> e gere o app de novo.</li>
+      <li>Quando um cliente pagar, ele te envia o código do aparelho. Cole no campo acima, escolha o tipo e o prazo, clique em <b>Gerar</b> e devolva o código de ativação.</li>
+      <li><b>Teste antes de comprar:</b> escolha <b>Teste</b> e o tempo que quiser (minutos, horas, dias ou até uma data). Quando vencer, o app volta à versão limitada, sem apagar as entregas cadastradas.</li>
+      <li><b>Mensalidade:</b> a cada pagamento, gere um novo código <b>Mensal</b>. Use o botão <b>Renovar</b> no histórico. Se a pessoa não pagar, o acesso acaba sozinho no vencimento.</li>
+    </ol>
+  </section>
+</main>
+<div id="aviso"></div>
+
+<script>
+const ALFABETO = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const CHAVE_TESTE = {"kty":"EC","crv":"P-256","x":"nfsgORFY3wQNxgB-pLRuZwfO3-fuRSwIftat3fccoBc","y":"Cpfqvz0s2qvMyOEacn3AbDAkCv7k2ux__TrZ8SOHPx0","d":"_tM5ulXOLgMBSbvo7NgxjHBxSAMoU3ORkDwxHdYsd_8"};
+const $ = (id) => document.getElementById(id);
+let jwk = null, chavePrivada = null, ultimo = null;
+
+function base32(bytes) {
+  let bits = 0, valor = 0, s = '';
+  for (const b of bytes) { valor = (valor << 8) | b; bits += 8; while (bits >= 5) { s += ALFABETO[(valor >>> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) s += ALFABETO[(valor << (5 - bits)) & 31];
+  return s;
+}
+const normalizar = (t) => String(t || '').toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1').replace(/[^0-9A-HJKMNP-TV-Z]/g, '');
+const agrupar = (t, n) => (t.match(new RegExp(`.{1,${n}}`, 'g')) || []).join('-');
+const b64url = (b) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const deB64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+function publicaDe(j) { const x = deB64url(j.x), y = deB64url(j.y); const r = new Uint8Array(65); r[0] = 4; r.set(x, 1); r.set(y, 33); return b64url(r); }
+function aviso(t) { const a = $('aviso'); a.textContent = t; a.className = 'mostrar'; clearTimeout(aviso.t); aviso.t = setTimeout(() => a.className = '', 2200); }
+async function copiar(t) { try { await navigator.clipboard.writeText(t); aviso('Copiado'); } catch { prompt('Copie:', t); } }
+
+async function carregar(j, salvar = true) {
+  chavePrivada = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: j.x, y: j.y, d: j.d }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  jwk = { kty: 'EC', crv: 'P-256', x: j.x, y: j.y, d: j.d };
+  if (salvar) localStorage.setItem('rota.gerador.chave', JSON.stringify(jwk));
+  const ehTeste = j.d === CHAVE_TESTE.d;
+  $('status-chave').className = 'status ' + (ehTeste ? 'teste' : 'ok');
+  $('status-chave').textContent = ehTeste ? 'Chave de TESTE carregada. Não use para vender.' : 'Sua chave está carregada e pronta.';
+  $('publica').textContent = publicaDe(jwk);
+  $('area-publica').hidden = false;
+  $('baixar').hidden = ehTeste;
+}
+
+$('criar').onclick = async () => {
+  if (jwk && jwk.d !== CHAVE_TESTE.d && !confirm('Você já tem uma chave. Criar outra fará os apps feitos com a chave antiga deixarem de aceitar seus novos códigos. Continuar?')) return;
+  const par = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  await carregar(await crypto.subtle.exportKey('jwk', par.privateKey));
+  aviso('Chave criada! Agora baixe a cópia de segurança.');
+};
+$('teste').onclick = () => carregar(CHAVE_TESTE).then(() => aviso('Chave de teste carregada'));
+$('abrir').onclick = () => $('arquivo').click();
+$('arquivo').onchange = async (e) => {
+  try { const d = JSON.parse(await e.target.files[0].text()); await carregar(d.privada || d); aviso('Chave carregada'); }
+  catch { aviso('Arquivo de chave inválido'); }
+  e.target.value = '';
+};
+$('baixar').onclick = () => {
+  const conteudo = JSON.stringify({ app: 'rota-de-entregas', tipo: 'chave-privada', aviso: 'NAO COMPARTILHE ESTE ARQUIVO', criadoEm: new Date().toISOString(), publica: publicaDe(jwk), privada: jwk }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([conteudo], { type: 'application/json' }));
+  a.download = 'rota-CHAVE-PRIVADA.json';
+  a.click();
+};
+$('copiar-publica').onclick = () => copiar($('publica').textContent);
+
+const TIPO_NUM = { vitalicio: 0, teste: 1, mensal: 2, anual: 3 };
+const NOME_TIPO = { vitalicio: 'Vitalício', teste: 'Teste', mensal: 'Mensal', anual: 'Anual' };
+const PADRAO = { teste: [1, 86400000], mensal: [30, 86400000], anual: [365, 86400000] };
+let tipo = 'teste';
+const fmt = (ms) => new Date(ms).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const modo = () => document.querySelector('input[name=modo]:checked').value;
+
+function escolherTipo(t) {
+  tipo = t;
+  document.querySelectorAll('#tipos button').forEach((b) => b.classList.toggle('sel', b.dataset.tipo === t));
+  $('prazo').hidden = t === 'vitalicio';
+  $('rapidos').hidden = t !== 'teste';
+  if (PADRAO[t]) { $('qtd').value = PADRAO[t][0]; $('unidade').value = PADRAO[t][1]; }
+  atualizarValidade();
+}
+
+/** Data de vencimento em ms (null = sem prazo). */
+function calcularValidade() {
+  if (tipo === 'vitalicio') return null;
+  if (modo() === 'data') { const v = $('ate').value; return v ? new Date(v).getTime() : NaN; }
+  const q = Number($('qtd').value);
+  return q > 0 ? Date.now() + q * Number($('unidade').value) : NaN;
+}
+
+function atualizarValidade() {
+  $('area-duracao').hidden = modo() !== 'duracao';
+  $('ate').hidden = modo() !== 'data';
+  const v = calcularValidade();
+  $('validade').innerHTML = v === null ? '' : isNaN(v) ? 'Informe o prazo.' : v <= Date.now() ? 'Essa data já passou.' : `Válido até <b>${fmt(v)}</b>`;
+}
+
+$('tipos').onclick = (e) => { const b = e.target.closest('button'); if (b) escolherTipo(b.dataset.tipo); };
+$('rapidos').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; document.querySelector('input[value=duracao]').checked = true; $('qtd').value = b.dataset.q; $('unidade').value = b.dataset.u; atualizarValidade(); };
+document.querySelectorAll('input[name=modo]').forEach((r) => (r.onchange = () => {
+  if (modo() === 'data' && !$('ate').value) {
+    const d = new Date(Date.now() + 86400000); d.setSeconds(0, 0);
+    $('ate').value = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+  atualizarValidade();
+}));
+['qtd', 'unidade', 'ate'].forEach((id) => $(id).addEventListener('input', atualizarValidade));
+setInterval(atualizarValidade, 30000);
+
+const historico = () => JSON.parse(localStorage.getItem('rota.gerador.historico') || '[]');
+
+$('gerar').onclick = async () => {
+  if (!chavePrivada) return aviso('Carregue ou crie sua chave primeiro');
+  const aparelho = normalizar($('aparelho').value);
+  if (aparelho.length !== 12) return aviso('O código do aparelho tem 12 caracteres');
+  const expira = calcularValidade();
+  if (expira !== null && (isNaN(expira) || expira <= Date.now())) return aviso('Escolha um prazo válido');
+  const aparelhoFmt = agrupar(aparelho, 4);
+  if (tipo === 'teste' && historico().some((h) => h.aparelho === aparelhoFmt && h.tipo === 'teste') &&
+      !confirm('Este aparelho já recebeu um código de teste. Gerar outro mesmo assim?')) return;
+
+  const cabecalho = new Uint8Array(6);
+  cabecalho[0] = 2;
+  cabecalho[1] = TIPO_NUM[tipo];
+  new DataView(cabecalho.buffer).setUint32(2, expira === null ? 0 : Math.ceil(expira / 60000));
+  const texto = new TextEncoder().encode('ROTA-ATIVACAO-V2|' + aparelho + '|');
+  const msg = new Uint8Array(texto.length + 6); msg.set(texto); msg.set(cabecalho, texto.length);
+  const assinatura = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, chavePrivada, msg));
+  const tudo = new Uint8Array(70); tudo.set(cabecalho); tudo.set(assinatura, 6);
+  const codigo = agrupar(base32(tudo), 5);
+  const expiraReal = expira === null ? null : Math.ceil(expira / 60000) * 60000;
+
+  ultimo = { codigo, aparelho: aparelhoFmt, cliente: $('cliente').value.trim(), tipo, expira: expiraReal };
+  $('resultado').textContent = codigo;
+  $('area-resultado').hidden = false;
+  const hist = historico();
+  hist.unshift({ aparelho: aparelhoFmt, cliente: ultimo.cliente, tipo, expira: expiraReal, criado: Date.now() });
+  localStorage.setItem('rota.gerador.historico', JSON.stringify(hist.slice(0, 1000)));
+  mostrarHistorico();
+};
+$('copiar-resultado').onclick = () => copiar(ultimo.codigo);
+$('whats').onclick = () => {
+  const prazo = ultimo.expira ? `\nVálido até: ${fmt(ultimo.expira)}` : '\nLicença vitalícia.';
+  const abertura = ultimo.tipo === 'teste' ? 'Aqui está seu código de TESTE! 🎶' : 'Obrigado pela compra! 🎶';
+  const t = `${abertura}\nSeu código de ativação (${NOME_TIPO[ultimo.tipo]}):\n\n${ultimo.codigo}\n${prazo}\n\nAbra o app, toque em "Ativar", cole o código e confirme.`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+};
+$('aparelho').addEventListener('input', (e) => { const n = normalizar(e.target.value).slice(0, 12); e.target.value = agrupar(n, 4); });
+
+function mostrarHistorico() {
+  const h = historico();
+  if (!h.length) return;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const situacao = (i) => !i.expira ? '<span class="tag ativo">Sem prazo</span>'
+    : i.expira > Date.now() ? `<span class="tag ativo">Até ${fmt(i.expira)}</span>` : `<span class="tag vencido">Venceu ${fmt(i.expira)}</span>`;
+  $('historico').innerHTML = '<table><tr><th>Cliente</th><th>Aparelho</th><th>Tipo</th><th>Situação</th><th></th></tr>' +
+    h.map((i, n) => `<tr><td>${esc(i.cliente || '-')}<br><small class="suave">${i.criado ? fmt(i.criado) : esc(i.data || '')}</small></td>
+      <td><code>${esc(i.aparelho)}</code></td><td>${NOME_TIPO[i.tipo] || 'Vitalício'}</td><td>${situacao(i)}</td>
+      <td><button data-renovar="${n}">Renovar</button></td></tr>`).join('') + '</table>';
+}
+$('historico').onclick = (e) => {
+  const b = e.target.closest('[data-renovar]');
+  if (!b) return;
+  const i = historico()[b.dataset.renovar];
+  $('cliente').value = i.cliente || '';
+  $('aparelho').value = i.aparelho;
+  escolherTipo(i.tipo === 'teste' || !i.tipo ? 'mensal' : i.tipo);
+  $('area-ativar').scrollIntoView({ behavior: 'smooth' });
+};
+escolherTipo('teste');
+
+const salva = localStorage.getItem('rota.gerador.chave');
+if (salva) carregar(JSON.parse(salva), false);
+mostrarHistorico();
+</script>
+</body>
+</html>

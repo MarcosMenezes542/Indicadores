@@ -1,0 +1,11 @@
+{
+  "appId": "br.com.rotadeentregas.app",
+  "appName": "Rota de Entregas",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b1730"
+  },
+  "plugins": {
+    "SystemBars": { "insetsHandling": "css", "style": "DARK" }
+  }
+}
