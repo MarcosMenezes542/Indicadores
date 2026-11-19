@@ -83,19 +83,23 @@ chaveDeTeste: false,
 whatsappVendedor: '5511999998888', // seu número (opcional)
 ```
 
-### 3. Assinatura do APK
-Pode usar **a mesma assinatura (`.jks`) do Palco**. Se os segredos do Palco já estiverem cadastrados no GitHub, o APK deste app sai assinado com ela, sem fazer nada.
-
-Para uma assinatura própria, crie no GitHub (*Settings › Secrets and variables › Actions*):
+### 3. Assinatura oficial do APK
+A assinatura oficial (`rota-venda.jks`) foi criada e entregue ao dono do app, junto com a senha. **Ela não fica no GitHub.** Para usá-la, cadastre em *Settings › Secrets and variables › Actions*:
 
 | Segredo | Valor |
 |---|---|
-| `ROTA_KEYSTORE_BASE64` | conteúdo do `.jks` em base64 (`base64 -w0 rota-venda.jks`) |
-| `ROTA_KEYSTORE_SENHA` | senha do keystore |
-| `ROTA_KEY_ALIAS` | alias da chave |
-| `ROTA_KEY_SENHA` | senha da chave |
+| `ROTA_KEYSTORE_BASE64` | conteúdo do arquivo `ROTA_KEYSTORE_BASE64.txt` |
+| `ROTA_KEYSTORE_SENHA` | senha (arquivo `senha.txt`) |
+| `ROTA_KEY_ALIAS` | `rota` |
+| `ROTA_KEY_SENHA` | a mesma senha |
 
-**Use sempre a mesma assinatura:** sem ela você não consegue lançar atualizações por cima da versão instalada.
+Com os segredos cadastrados, o GitHub gera a **versão final** (não de teste): o APK do link de download e o pacote `.aab` da Play Store. **Use sempre a mesma assinatura.** Sem ela, você não consegue lançar atualizações por cima da versão instalada.
+
+### Aviso de "app suspeito" (Play Protect)
+O Android avisa ao instalar apps novos baixados fora da Play Store. Para reduzir o aviso:
+1. Use a versão final, com a assinatura oficial (acima).
+2. Peça a revisão do app ao Google: https://developers.google.com/android/play-protect/warning-dev-guidance (botão "File a Play Protect appeal": informe o nome do pacote `br.com.rotadeentregas.app` e o link do APK).
+3. **Para acabar com o aviso de vez, publique na Play Store.** Veja `play-store/LISTAGEM-PLAY-STORE.md`.
 
 ### 4. Gere o APK
 **Pelo GitHub (automático):** a cada alteração em `app-rotas/`, o GitHub gera o APK. Ele aparece em *Actions › App Rota de Entregas (Android) › (última execução) › Artifacts*. Sem segredos de assinatura, sai um APK de **teste** (debug), assinado com a chave fixa `android/app/assinatura-teste.keystore`. Ela é pública e serve só para as versões de teste instalarem por cima umas das outras. **Não use para vender:** quem for vender deve trocar para a assinatura própria (a mudança exige desinstalar a versão de teste uma vez).

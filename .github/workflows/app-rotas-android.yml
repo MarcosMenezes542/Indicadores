@@ -62,7 +62,8 @@ jobs:
         run: |
           chmod +x gradlew
           if [ "${{ steps.assinatura.outputs.tipo }}" = "release" ]; then
-            ./gradlew assembleRelease --no-daemon
+            # APK (link de download) e AAB (pacote para a Play Store)
+            ./gradlew assembleRelease bundleRelease --no-daemon
           else
             ./gradlew assembleDebug --no-daemon
           fi
@@ -71,6 +72,13 @@ jobs:
         with:
           name: rota-de-entregas-${{ steps.assinatura.outputs.tipo }}
           path: app-rotas/android/app/build/outputs/apk/**/*.apk
+
+      - name: Guardar pacote da Play Store (.aab)
+        if: steps.assinatura.outputs.tipo == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rota-de-entregas-play-store-aab
+          path: app-rotas/android/app/build/outputs/bundle/release/*.aab
 
       # Link fixo e público para baixar direto no celular:
       # https://github.com/<dono>/<repositório>/releases/download/rota-de-entregas/Rota-de-Entregas.apk
