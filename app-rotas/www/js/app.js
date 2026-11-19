@@ -6,8 +6,8 @@ import {
   lerLicenca, ativar, codigoDoAparelho, tempoRestante, formatarData, NOMES_TIPO,
 } from './licenca.js';
 import {
-  temCoord, minhaPosicao, posicaoConhecida, acompanharPosicao, buscarEndereco, enderecoDaPosicao, lerCoordenadas,
-  otimizar, distanciaKm, distanciaTotal, formatarDistancia, trajetoPelasRuas, linkWaze, linkGoogleMaps,
+  temCoord, minhaPosicao, posicaoAgora, posicaoConhecida, acompanharPosicao, buscarEndereco, enderecoDaPosicao, lerCoordenadas,
+  otimizarPelasRuas, distanciaKm, distanciaTotal, formatarDistancia, trajetoPelasRuas, linkWaze, linkGoogleMaps,
 } from './rota.js';
 import {
   manterTelaLigada, copiarTexto, lerAreaDeTransferencia, compartilharArquivo, abrirLinkExterno,
@@ -209,7 +209,8 @@ async function telaInicio() {
       </div>
       <div class="acoes-inicio">
         ${pendentes.length
-          ? `<button class="btn laranja grande" id="iniciar">${I.caminhao} ${andamento ? 'Continuar rota' : 'Iniciar rota'}</button>`
+          ? `<button class="btn laranja grande" id="melhor-rota">${I.alvo} Gerar melhor rota a partir daqui</button>
+             ${andamento ? `<button class="btn grande" id="iniciar">${I.caminhao} Continuar rota</button>` : ''}`
           : `<button class="btn grande" data-ir="#/rota">${I.ok} Ver resumo da rota</button>`}
       </div>
       <h2 class="titulo-secao">${andamento ? 'Sequência das entregas' : 'Entregas cadastradas'}</h2>` : ''}
@@ -220,7 +221,7 @@ async function telaInicio() {
           <span class="info"><strong>${esc(nomeDe(p))}</strong><small>${esc(p.nome ? p.endereco : p.obs) || '&nbsp;'}</small>${etiquetaParada(p, atualId)}</span>
         </button>`).join('') : `
         <div class="vazio">${I.caminhao}<h2>Monte sua rota</h2>
-          <p>Toque em <b>Nova entrega</b> e cadastre o nome do cliente e o endereço.<br>Depois toque em <b>Iniciar rota</b>: o app calcula a melhor sequência a partir de onde você está.</p></div>`}
+          <p>Toque em <b>Nova entrega</b> e cadastre o nome do cliente e o endereço.<br>Depois toque em <b>Gerar melhor rota a partir daqui</b>: o app calcula a sequência mais rápida pelas ruas, saindo de onde você está.</p></div>`}
     </main>
     <button class="fab" id="nova">${I.mais}<span>Nova entrega</span></button>`;
 
@@ -231,33 +232,50 @@ async function telaInicio() {
       ir('#/ativar');
     }
   });
-  document.getElementById('iniciar')?.addEventListener('click', async (e) => {
+  document.getElementById('iniciar')?.addEventListener('click', () => ir('#/rota'));
+  document.getElementById('melhor-rota')?.addEventListener('click', async (e) => {
     if (!estado.ativado && paradas.length > CONFIG.limiteTeste) {
       aviso('Ative o app para usar rotas com mais entregas');
       return ir('#/ativar');
     }
-    if (andamento) return ir('#/rota');
-    const b = e.currentTarget;
-    b.disabled = true;
-    b.textContent = 'Calculando a melhor rota…';
-    await calcularRota();
-    marcarEmRota(true);
-    ir('#/rota');
+    if (await gerarMelhorRota(e.currentTarget)) ir('#/rota');
   });
 }
 
 /**
- * Reorganiza as entregas pendentes na melhor sequência, saindo da posição atual
- * do celular (ou da primeira entrega, se o GPS não responder).
+ * Reorganiza as entregas pendentes na melhor sequência, saindo da posição
+ * informada (pelas ruas, quando há internet).
  */
-async function calcularRota({ posicao } = {}) {
+async function calcularRota(origem) {
   const paradas = await listarParadas();
   const pendentes = paradas.filter((p) => p.status === 'pendente');
-  const origem = posicao !== undefined ? posicao : await minhaPosicao();
-  const ordem = otimizar(pendentes, origem);
+  const { ordem, pelasRuas } = await otimizarPelasRuas(pendentes, origem);
   ordem.forEach((p, i) => (p.ordem = i));
   await salvarParadas(ordem);
-  return { origem, ordem };
+  return { ordem, pelasRuas };
+}
+
+/**
+ * Botão "Gerar melhor rota a partir daqui": pega a posição atual do celular
+ * e refaz a sequência. Retorna true se a rota foi gerada.
+ */
+async function gerarMelhorRota(botao) {
+  const textoOriginal = botao.innerHTML;
+  botao.disabled = true;
+  botao.textContent = 'Localizando você…';
+  const pos = await posicaoAgora();
+  if (!pos) {
+    botao.disabled = false;
+    botao.innerHTML = textoOriginal;
+    const ok = confirm('Não foi possível pegar sua localização.\n\nLigue o GPS (Localização) e permita o acesso ao app.\n\nQuer montar a rota mesmo assim, sem considerar onde você está?');
+    if (!ok) return false;
+    botao.disabled = true;
+  }
+  botao.textContent = 'Calculando a melhor rota…';
+  const { pelasRuas } = await calcularRota(pos);
+  marcarEmRota(true);
+  if (pos) aviso(pelasRuas ? 'Melhor rota gerada a partir de onde você está' : 'Rota gerada a partir de onde você está (sem internet: distância em linha reta)', 'ok');
+  return true;
 }
 
 // ---------------------------------------------------------------- cadastro de entrega
@@ -491,7 +509,7 @@ async function telaRota() {
         <button class="btn verde" id="entregue">${I.ok} Entrega concluída</button>
         <button class="btn contorno-vermelho" id="nao">Não entregue</button>
       </div>
-      <button class="btn contorno recalcular" id="recalcular">Recalcular daqui</button>
+      <button class="btn contorno recalcular" id="recalcular">${I.alvo} Recalcular daqui</button>
 
       ${proxima ? `<p class="depois">Depois: <b>${esc(nomeDe(proxima))}</b></p>` : '<p class="depois">Esta é a <b>última entrega</b> da rota.</p>'}
 
@@ -598,14 +616,7 @@ async function telaRota() {
     if (motivo) concluir('nao', motivo);
   });
   document.getElementById('recalcular').addEventListener('click', async (e) => {
-    const b = e.currentTarget;
-    b.disabled = true;
-    b.textContent = 'Recalculando…';
-    const pos = await minhaPosicao({ tempo: 12000, recente: 0 });
-    if (!pos) aviso('GPS indisponível: rota calculada a partir da próxima entrega');
-    await calcularRota({ posicao: pos });
-    if (pos) aviso('Rota recalculada a partir de onde você está', 'ok');
-    rotear();
+    if (await gerarMelhorRota(e.currentTarget)) rotear();
   });
 
   app.querySelector('.sequencia').addEventListener('click', async (e) => {
@@ -728,7 +739,7 @@ async function telaAjustes() {
       <section class="painel">
         <h2>Dicas</h2>
         <ul class="dicas">
-          <li><b>Melhor sequência:</b> cadastre as entregas e toque em <b>Iniciar rota</b>. O app ordena a partir de onde você está.</li>
+          <li><b>Melhor rota:</b> cadastre as entregas e toque em <b>Gerar melhor rota a partir daqui</b>. O app usa o tempo de viagem pelas ruas, saindo de onde você está.</li>
           <li><b>Recalcular daqui:</b> mudou o caminho? Toque e a ordem das entregas restantes é refeita.</li>
           <li><b>Pular entrega:</b> na sequência, toque na seta laranja para fazer aquela entrega agora.</li>
           <li><b>Navegação:</b> os botões Waze e Google Maps abrem o trajeto até o cliente.</li>

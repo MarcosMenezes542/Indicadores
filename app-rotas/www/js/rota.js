@@ -26,13 +26,26 @@ export function formatarDistancia(km) {
 let ultimaPosicao = null;
 export const posicaoConhecida = () => ultimaPosicao;
 
+/**
+ * Posição atual para montar a rota: usa a do GPS em andamento se for recente
+ * (até 20 s); senão pede uma nova. Se o GPS demorar, aceita a última conhecida
+ * de até 2 minutos atrás.
+ */
+export async function posicaoAgora() {
+  const u = ultimaPosicao;
+  if (u && Date.now() - u.em < 20000) return u;
+  const nova = await minhaPosicao({ tempo: 12000, recente: 0 });
+  if (nova) return nova;
+  return u && Date.now() - u.em < 120000 ? u : null;
+}
+
 /** Posição atual do celular, ou null se não for possível (sem permissão, GPS desligado...). */
 export function minhaPosicao({ tempo = 10000, recente = 60000 } = {}) {
   return new Promise((resolve) => {
     if (!('geolocation' in navigator)) return resolve(null);
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        ultimaPosicao = { lat: p.coords.latitude, lon: p.coords.longitude, precisao: p.coords.accuracy };
+        ultimaPosicao = { lat: p.coords.latitude, lon: p.coords.longitude, precisao: p.coords.accuracy, em: Date.now() };
         resolve(ultimaPosicao);
       },
       () => resolve(null),
@@ -46,7 +59,7 @@ export function acompanharPosicao(aoMudar) {
   if (!('geolocation' in navigator)) return () => {};
   const id = navigator.geolocation.watchPosition(
     (p) => {
-      ultimaPosicao = { lat: p.coords.latitude, lon: p.coords.longitude, precisao: p.coords.accuracy };
+      ultimaPosicao = { lat: p.coords.latitude, lon: p.coords.longitude, precisao: p.coords.accuracy, em: Date.now() };
       aoMudar(ultimaPosicao);
     },
     () => {},
@@ -150,56 +163,98 @@ export async function enderecoDaPosicao(pos) {
 // ---------------------------------------------------------------- melhor sequência
 
 /**
- * Ordena as paradas para percorrer a menor distância, saindo da origem.
- * Vizinho mais próximo + melhoria 2-opt (rota aberta, sem voltar ao início).
- * Paradas sem localização ficam no fim, na ordem em que foram cadastradas.
+ * Melhor ordem para visitar os pontos 1..n-1 saindo do ponto 0 (rota aberta,
+ * sem voltar ao início). custo(i, j) = custo de ir de i até j.
+ * Vizinho mais próximo seguido de melhoria 2-opt (desfaz cruzamentos).
+ * Retorna os índices na ordem de visita (sem o 0).
  */
-export function otimizar(paradas, origem) {
-  const com = paradas.filter(temCoord);
-  const sem = paradas.filter((p) => !temCoord(p));
-  if (com.length < 2 && !origem) return [...com, ...sem];
-
-  const inicio = origem && temCoord(origem) ? origem : null;
-  const restantes = [...com];
-  const ordem = [];
-  let atual = inicio || restantes.shift();
-  if (!inicio) ordem.push(atual);
-  while (restantes.length) {
-    let melhor = 0;
-    let melhorD = Infinity;
-    restantes.forEach((p, i) => {
-      const d = distanciaKm(atual, p);
-      if (d < melhorD) {
-        melhorD = d;
-        melhor = i;
+function melhorOrdem(n, custo) {
+  const faltam = new Set(Array.from({ length: n - 1 }, (_, i) => i + 1));
+  const caminho = [0];
+  let atual = 0;
+  while (faltam.size) {
+    let melhor = -1;
+    let melhorC = Infinity;
+    for (const j of faltam) {
+      const c = custo(atual, j);
+      if (c < melhorC) {
+        melhorC = c;
+        melhor = j;
       }
-    });
-    atual = restantes.splice(melhor, 1)[0];
-    ordem.push(atual);
+    }
+    faltam.delete(melhor);
+    caminho.push(melhor);
+    atual = melhor;
   }
-
-  // 2-opt: desfaz cruzamentos do caminho.
-  const pontos = inicio ? [inicio, ...ordem] : ordem;
-  const fixo = inicio ? 1 : 0;
-  const d = (a, b) => distanciaKm(pontos[a], pontos[b]);
+  const total = (c) => {
+    let t = 0;
+    for (let i = 1; i < c.length; i++) t += custo(c[i - 1], c[i]);
+    return t;
+  };
+  let melhorTotal = total(caminho);
   let melhorou = true;
   let voltas = 0;
   while (melhorou && voltas++ < 60) {
     melhorou = false;
-    for (let i = fixo; i < pontos.length - 1; i++) {
-      for (let k = i + 1; k < pontos.length; k++) {
-        const temDepois = k + 1 < pontos.length;
-        const antes = (i > 0 ? d(i - 1, i) : 0) + (temDepois ? d(k, k + 1) : 0);
-        const depois = (i > 0 ? d(i - 1, k) : 0) + (temDepois ? d(i, k + 1) : 0);
-        if (depois + 1e-9 < antes) {
-          const trecho = pontos.slice(i, k + 1).reverse();
-          pontos.splice(i, trecho.length, ...trecho);
+    for (let i = 1; i < caminho.length - 1; i++) {
+      for (let k = i + 1; k < caminho.length; k++) {
+        const teste = [...caminho.slice(0, i), ...caminho.slice(i, k + 1).reverse(), ...caminho.slice(k + 1)];
+        const t = total(teste);
+        if (t + 1e-9 < melhorTotal) {
+          caminho.splice(0, caminho.length, ...teste);
+          melhorTotal = t;
           melhorou = true;
         }
       }
     }
   }
-  return [...(inicio ? pontos.slice(1) : pontos), ...sem];
+  return caminho.slice(1);
+}
+
+/**
+ * Ordena as paradas pela distância em linha reta, saindo da origem (funciona sem internet).
+ * Paradas sem localização ficam no fim, na ordem em que foram cadastradas.
+ */
+export function otimizar(paradas, origem) {
+  const com = paradas.filter(temCoord);
+  const sem = paradas.filter((p) => !temCoord(p));
+  if (!com.length) return sem;
+  // Sem origem: começa pela entrega mais "da ponta" (a mais longe do centro do grupo).
+  let inicio = origem && temCoord(origem) ? origem : null;
+  if (!inicio) {
+    const centro = { lat: com.reduce((s, p) => s + p.lat, 0) / com.length, lon: com.reduce((s, p) => s + p.lon, 0) / com.length };
+    inicio = com.reduce((a, p) => (distanciaKm(centro, p) > distanciaKm(centro, a) ? p : a), com[0]);
+  }
+  const pontos = [inicio, ...com];
+  const ordem = melhorOrdem(pontos.length, (i, j) => distanciaKm(pontos[i], pontos[j]));
+  return [...ordem.map((i) => pontos[i]), ...sem];
+}
+
+/**
+ * Melhor sequência PELAS RUAS, saindo da posição atual: usa o tempo real de
+ * viagem entre cada par de pontos (OSRM). Sem internet, usa a linha reta.
+ * Retorna { ordem, pelasRuas: true|false }.
+ */
+export async function otimizarPelasRuas(paradas, origem) {
+  const com = paradas.filter(temCoord);
+  const sem = paradas.filter((p) => !temCoord(p));
+  if (!origem || !temCoord(origem) || com.length < 2 || com.length > 90) {
+    return { ordem: otimizar(paradas, origem), pelasRuas: false };
+  }
+  const pontos = [origem, ...com];
+  try {
+    const coords = pontos.map((p) => `${p.lon.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
+    const dados = await buscarJson(`https://router.project-osrm.org/table/v1/driving/${coords}?annotations=duration`, 15000);
+    const m = dados.durations;
+    if (!m || m.length !== pontos.length) throw new Error('matriz incompleta');
+    // Trecho sem caminho pelas ruas (ilha, ponto no meio do mato): usa a linha reta como estimativa.
+    const custo = (i, j) => (Number.isFinite(m[i][j]) ? m[i][j] : distanciaKm(pontos[i], pontos[j]) * 120);
+    const ordem = melhorOrdem(pontos.length, custo);
+    return { ordem: [...ordem.map((i) => pontos[i]), ...sem], pelasRuas: true };
+  } catch (e) {
+    console.warn('Tempo pelas ruas indisponível, usando linha reta', e);
+    return { ordem: otimizar(paradas, origem), pelasRuas: false };
+  }
 }
 
 /** Distância total (linha reta) de um caminho. */

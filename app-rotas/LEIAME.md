@@ -6,7 +6,7 @@ Aplicativo Android para entregadores. A pessoa cadastra as entregas (cliente e e
 
 - **Cadastro de entregas:** nome do cliente, endereço com sugestões enquanto digita, telefone e observação
 - **Localização exata:** escolha o endereço da lista, toque no mapa para ajustar, use a localização atual ou cole coordenadas (`-22.85, -47.13`)
-- **Melhor sequência:** ao tocar em **Iniciar rota**, o app ordena as entregas a partir da posição do celular
+- **Gerar melhor rota a partir daqui:** o app pega a posição atual do celular e ordena as entregas pelo **tempo de viagem pelas ruas** (sem internet, usa a distância em linha reta)
 - **Tela da rota:** mapa com o trajeto e as paradas numeradas, "Parada X de N", barra de progresso, **Waze** e **Google Maps**
 - **Entrega concluída / Não entregue**, com o motivo (cliente ausente, endereço não encontrado...)
 - **Recalcular daqui:** refaz a ordem das entregas restantes a partir de onde o entregador está
@@ -26,9 +26,10 @@ Aplicativo Android para entregadores. A pessoa cadastra as entregas (cliente e e
 | Sugestões de endereço | Não aparecem: marque o ponto tocando no mapa ou cole coordenadas |
 | Mapa | Mostra só as partes já vistas antes |
 | Linha do trajeto pelas ruas | Vira uma linha tracejada (reta) |
+| Melhor rota pelas ruas | Usa a distância em linha reta |
 | Waze e Google Maps | Funcionam como sem o app |
 
-Os serviços usados são gratuitos e não pedem cadastro: **OpenStreetMap** (Photon e Nominatim) para endereços, **OSRM** para o trajeto e **Esri** para o mapa. São servidores públicos, adequados para uso moderado. Se o número de clientes crescer muito, vale contratar um serviço pago de mapas.
+Os serviços usados são gratuitos e não pedem cadastro: **OpenStreetMap** (Photon e Nominatim) para endereços, **OSRM** para o trajeto e o tempo entre as entregas e **Esri** para o mapa. São servidores públicos, adequados para uso moderado. Se o número de clientes crescer muito, vale contratar um serviço pago de mapas.
 
 ## Estrutura
 
@@ -115,6 +116,6 @@ No navegador, o Chrome pede permissão de localização. A ativação também fu
 ## Limitações (seja transparente com o cliente)
 - **Cada celular tem as próprias entregas.** Não há painel central para o dono acompanhar os entregadores em tempo real.
 - **Trocar de celular ou formatar** gera outro código de aparelho. Basta gerar um novo código de ativação para o cliente.
-- A **melhor sequência** é calculada pela distância em linha reta entre os pontos, um método rápido que funciona offline. Em cidades com rios, rodovias ou ruas de mão única, a ordem pode não ser a perfeita. Nesses casos, use a seta laranja ou **Recalcular daqui**.
+- A **melhor rota** usa o tempo de viagem pelas ruas, sem considerar o trânsito do momento. Sem internet, ela usa a distância em linha reta e pode não sair perfeita. Nesses casos, use a seta laranja ou **Recalcular daqui** quando a internet voltar.
 - As sugestões de endereço vêm do OpenStreetMap, que tem menos pontos que o Google. Se um endereço não aparecer, toque no mapa para marcar o local.
 - Nenhuma proteção é 100%. Alguém com conhecimento técnico pode modificar o APK, mas o compartilhamento comum (mandar o app pelo WhatsApp) fica bloqueado.
