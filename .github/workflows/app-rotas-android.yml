@@ -9,6 +9,10 @@ on:
       - '.github/workflows/app-rotas-android.yml'
   workflow_dispatch:
 
+# Permite publicar o APK na página de downloads (Releases) do repositório.
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -67,3 +71,20 @@ jobs:
         with:
           name: rota-de-entregas-${{ steps.assinatura.outputs.tipo }}
           path: app-rotas/android/app/build/outputs/apk/**/*.apk
+
+      # Link fixo e público para baixar direto no celular:
+      # https://github.com/<dono>/<repositório>/releases/download/rota-de-entregas/Rota-de-Entregas.apk
+      - name: Publicar APK para download
+        working-directory: app-rotas
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=$(find android/app/build/outputs/apk -name '*.apk' | head -1)
+          cp "$APK" Rota-de-Entregas.apk
+          if gh release view rota-de-entregas >/dev/null 2>&1; then
+            gh release upload rota-de-entregas Rota-de-Entregas.apk --clobber
+          else
+            gh release create rota-de-entregas Rota-de-Entregas.apk --target "$GITHUB_SHA" \
+              --title "Rota de Entregas (Android)" \
+              --notes "Baixe o arquivo Rota-de-Entregas.apk no celular e toque nele para instalar. Este arquivo é atualizado a cada nova versão."
+          fi
