@@ -98,7 +98,7 @@ Para uma assinatura própria, crie no GitHub (*Settings › Secrets and variable
 **Use sempre a mesma assinatura:** sem ela você não consegue lançar atualizações por cima da versão instalada.
 
 ### 4. Gere o APK
-**Pelo GitHub (automático):** a cada alteração em `app-rotas/`, o GitHub gera o APK. Ele aparece em *Actions › App Rota de Entregas (Android) › (última execução) › Artifacts*. Sem segredos de assinatura, sai um APK de **teste** (debug).
+**Pelo GitHub (automático):** a cada alteração em `app-rotas/`, o GitHub gera o APK. Ele aparece em *Actions › App Rota de Entregas (Android) › (última execução) › Artifacts*. Sem segredos de assinatura, sai um APK de **teste** (debug), assinado com a chave fixa `android/app/assinatura-teste.keystore`. Ela é pública e serve só para as versões de teste instalarem por cima umas das outras. **Não use para vender:** quem for vender deve trocar para a assinatura própria (a mudança exige desinstalar a versão de teste uma vez).
 
 **No computador:** com Node.js, Java 21 e Android Studio instalados:
 ```bash

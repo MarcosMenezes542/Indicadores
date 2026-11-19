@@ -8,7 +8,7 @@ export const CONFIG = {
   nomeApp: 'Rota de Entregas',
 
   // Versão exibida em Ajustes
-  versao: '1.1',
+  versao: '1.2',
 
   // Chave PÚBLICA de ativação (gerada no arquivo ferramentas/gerador.html).
   // A chave pública pode ficar aqui sem problema: ela só CONFERE códigos,

@@ -2,6 +2,7 @@ node_modules/
 android/keystore.properties
 *.jks
 *.keystore
+!android/app/assinatura-teste.keystore
 *CHAVE-PRIVADA*.json
 android/app/build/
 android/build/

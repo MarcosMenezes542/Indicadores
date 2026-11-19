@@ -7,8 +7,8 @@ android {
         applicationId "br.com.rotadeentregas.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1"
+        versionCode 3
+        versionName "1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -25,6 +25,15 @@ android {
     def temAssinatura = cfg('ROTA_KEYSTORE') != null
 
     signingConfigs {
+        // Assinatura FIXA para o APK de teste (debug). Sem ela, cada APK gerado
+        // pelo GitHub sai com uma assinatura diferente e o Android não deixa
+        // instalar a versão nova por cima da antiga. Não serve para vender.
+        debug {
+            storeFile file('assinatura-teste.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
         if (temAssinatura) {
             venda {
                 storeFile file(cfg('ROTA_KEYSTORE'))
