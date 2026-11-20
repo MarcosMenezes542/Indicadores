@@ -4,15 +4,28 @@
 // Configuração
 // ---------------------------------------------------------------------------
 const API = "https://www.abibliadigital.com.br/api";
-const VERSION = "nvi";
-const CACHE_PREFIX = "nvi:ch:";
+// Versões disponíveis na API ABíbliaDigital
+const VERSIONS = [
+  { id: "nvi", short: "NVI", name: "Nova Versão Internacional", lang: "Português" },
+  { id: "ra", short: "ARA", name: "Almeida Revista e Atualizada", lang: "Português" },
+  { id: "acf", short: "ACF", name: "Almeida Corrigida Fiel", lang: "Português" },
+  { id: "kjv", short: "KJV", name: "King James Version", lang: "Inglês" },
+  { id: "bbe", short: "BBE", name: "Bible in Basic English", lang: "Inglês" },
+  { id: "rvr", short: "RVR", name: "Reina Valera 1960", lang: "Espanhol" },
+  { id: "apee", short: "APEE", name: "La Bible de l'Épée", lang: "Francês" },
+];
+const CACHE_PREFIX = "nvi:ch:"; // chaves: nvi:ch:<versão>:<livro>:<capítulo>
 const LS = {
   pos: "nvi:pos",
   marks: "nvi:marks",
   font: "nvi:font",
   theme: "nvi:theme",
   token: "nvi:token",
+  version: "nvi:version",
 };
+let VERSION = localStorage.getItem(LS.version) || "nvi";
+if (!VERSIONS.some((v) => v.id === VERSION)) VERSION = "nvi";
+const currentVersion = () => VERSIONS.find((v) => v.id === VERSION);
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -79,7 +92,7 @@ async function apiRequest(path, options = {}) {
 }
 
 async function getChapter(abbrev, chapter) {
-  const key = `${CACHE_PREFIX}${abbrev}:${chapter}`;
+  const key = `${CACHE_PREFIX}${VERSION}:${abbrev}:${chapter}`;
   const cached = readJSON(key, null);
   if (cached) return cached;
 
@@ -119,7 +132,8 @@ function savePosition() {
 
 function updateHeader() {
   $("#current-ref").textContent = `${book().name} ${state.chapter}`;
-  document.title = `${book().name} ${state.chapter} – Bíblia NVI`;
+  document.title = `${book().name} ${state.chapter} (${currentVersion().short}) – Bíblia Sagrada`;
+  $("#btn-version").textContent = currentVersion().short;
   const isFirst = state.bookIndex === 0 && state.chapter === 1;
   const isLast = state.bookIndex === BOOKS.length - 1 && state.chapter === book().chapters;
   $("#btn-prev").disabled = isFirst;
@@ -130,7 +144,7 @@ function renderStatus(html) {
   $("#content").innerHTML = `<div class="status">${html}</div>`;
 }
 
-function renderChapter(highlightVerse) {
+function renderChapter(highlightVerse, { flash = true } = {}) {
   const b = book();
   const parts = state.verses.map((v) => {
     const m = getMark(v.n);
@@ -140,19 +154,20 @@ function renderChapter(highlightVerse) {
   });
   $("#content").innerHTML = `
     <h1 class="chapter-heading">${escapeHtml(b.name)} ${state.chapter}</h1>
-    <p class="chapter-sub">Nova Versão Internacional</p>
+    <p class="chapter-sub">${escapeHtml(currentVersion().name)} (${currentVersion().short})</p>
     <div class="verses">${parts.join("")}</div>`;
 
   if (highlightVerse) {
     const el = document.getElementById(`v${highlightVerse}`);
     if (el) {
-      el.scrollIntoView({ block: "center" });
-      el.classList.add("flash");
+      el.scrollIntoView({ block: flash ? "center" : "start" });
+      if (flash) el.classList.add("flash");
+      else window.scrollBy(0, -70); // compensa a barra superior
     }
   }
 }
 
-async function openChapter(bookIndex, chapter, verse, { pushHash = true } = {}) {
+async function openChapter(bookIndex, chapter, verse, { pushHash = true, flash = true } = {}) {
   bookIndex = Math.max(0, Math.min(BOOKS.length - 1, bookIndex));
   chapter = Math.max(1, Math.min(BOOKS[bookIndex].chapters, chapter));
   state.bookIndex = bookIndex;
@@ -168,13 +183,13 @@ async function openChapter(bookIndex, chapter, verse, { pushHash = true } = {}) 
   renderStatus(`<div class="spinner"></div>Carregando ${escapeHtml(refLabel(book(), chapter))}…`);
   if (!verse) window.scrollTo(0, 0);
 
-  const requested = `${bookIndex}:${chapter}`;
+  const requested = `${VERSION}:${bookIndex}:${chapter}`;
   openChapter._last = requested;
   try {
     const verses = await getChapter(book().abbrev, chapter);
     if (openChapter._last !== requested) return; // usuário já navegou para outro capítulo
     state.verses = verses;
-    renderChapter(verse);
+    renderChapter(verse, { flash });
   } catch (err) {
     if (openChapter._last !== requested) return;
     renderStatus(`<p>${escapeHtml(err.message)}</p><button class="btn" id="retry">Tentar novamente</button>`);
@@ -229,6 +244,36 @@ function parseHash() {
 // ---------------------------------------------------------------------------
 // Painéis
 // ---------------------------------------------------------------------------
+// Versões
+function renderVersionList() {
+  let lastLang = "";
+  $("#version-list").innerHTML = VERSIONS.map((v) => {
+    const head = v.lang !== lastLang ? `<h3 class="version-lang">${escapeHtml(v.lang)}</h3>` : "";
+    lastLang = v.lang;
+    return `${head}<button class="version-item ${v.id === VERSION ? "current" : ""}" data-version="${v.id}">
+        <span class="version-short">${escapeHtml(v.short)}</span>
+        <span class="version-name">${escapeHtml(v.name)}</span>
+        ${v.id === VERSION ? '<span class="check">✓</span>' : ""}
+      </button>`;
+  }).join("");
+}
+
+function setVersion(id) {
+  if (!VERSIONS.some((v) => v.id === id)) return;
+  VERSION = id;
+  localStorage.setItem(LS.version, id);
+  closePanels();
+  toast(`Versão: ${currentVersion().name}`);
+  const top = state.verses.length ? firstVisibleVerse() : null;
+  openChapter(state.bookIndex, state.chapter, top && top > 1 ? top : null, { flash: false });
+}
+
+// Número do primeiro versículo visível, para manter o ponto de leitura ao trocar de versão
+function firstVisibleVerse() {
+  const el = $$(".verse").find((e) => e.getBoundingClientRect().bottom > 70);
+  return el ? +el.dataset.v : null;
+}
+
 function openPanel(id) {
   $$(".panel").forEach((p) => (p.hidden = p.id !== id));
   $("#backdrop").hidden = false;
@@ -397,7 +442,7 @@ function closeVerseMenu() {
 }
 function selectedVerseText() {
   const v = state.verses.find((x) => x.n === state.selected);
-  return v ? `“${v.t}” — ${refLabel(book(), state.chapter, v.n)} (NVI)` : "";
+  return v ? `“${v.t}” — ${refLabel(book(), state.chapter, v.n)} (${currentVersion().short})` : "";
 }
 function rerenderKeepingScroll() {
   const y = window.scrollY;
@@ -416,6 +461,12 @@ function bindEvents() {
   $("#btn-search").onclick = () => { openPanel("panel-search"); $("#search-input").focus(); };
   $("#btn-favs").onclick = () => { renderFavs(); openPanel("panel-favs"); };
   $("#btn-settings").onclick = () => { updateCacheInfo(); openPanel("panel-settings"); };
+  $("#btn-version").onclick = () => { renderVersionList(); openPanel("panel-version"); };
+  $("#settings-version").onclick = () => { renderVersionList(); openPanel("panel-version"); };
+  $("#version-list").onclick = (e) => {
+    const btn = e.target.closest("[data-version]");
+    if (btn) setVersion(btn.dataset.version);
+  };
   $("#btn-prev").onclick = () => goRelative(-1);
   $("#btn-next").onclick = () => goRelative(1);
   $("#backdrop").onclick = closePanels;

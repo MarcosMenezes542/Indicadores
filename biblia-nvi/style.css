@@ -181,3 +181,27 @@ a { color: var(--accent); }
   z-index: 40; background: #222; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px;
 }
 [hidden] { display: none !important; }
+
+/* Seletor de versões */
+.version-btn {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); color: inherit;
+  border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 700; letter-spacing: .5px;
+  margin-right: 4px; align-self: center;
+}
+.version-btn:hover { background: rgba(255,255,255,.25); }
+.version-lang { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 18px 0 6px; }
+.version-item {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 12px; margin-bottom: 6px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.version-item:hover { border-color: var(--accent); }
+.version-item.current { border: 2px solid var(--accent); }
+.version-short {
+  min-width: 52px; text-align: center; font-weight: 800; font-size: 13px; padding: 4px 6px;
+  border-radius: 6px; background: var(--accent); color: var(--accent-fg);
+}
+.version-name { flex: 1; }
+.version-item .check { color: var(--accent); font-weight: 800; }
+
+.title-btn { min-width: 0; }

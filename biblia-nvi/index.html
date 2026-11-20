@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#5b3a1e" />
-  <meta name="description" content="Bíblia Sagrada – Nova Versão Internacional (NVI)" />
-  <title>Bíblia Sagrada NVI</title>
+  <meta name="description" content="Bíblia Sagrada – NVI, ARA, ACF e outras versões" />
+  <title>Bíblia Sagrada</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
@@ -15,9 +15,10 @@
   <header class="topbar">
     <button class="icon-btn" id="btn-books" title="Livros" aria-label="Escolher livro">☰</button>
     <button class="title-btn" id="btn-title" aria-label="Escolher livro e capítulo">
-      <span id="current-ref">Bíblia NVI</span> <span class="caret">▾</span>
+      <span id="current-ref">Bíblia Sagrada</span> <span class="caret">▾</span>
     </button>
     <div class="topbar-actions">
+      <button class="version-btn" id="btn-version" title="Trocar versão" aria-label="Trocar versão da Bíblia">NVI</button>
       <button class="icon-btn" id="btn-search" title="Buscar" aria-label="Buscar">🔍</button>
       <button class="icon-btn" id="btn-favs" title="Favoritos" aria-label="Favoritos">★</button>
       <button class="icon-btn" id="btn-settings" title="Configurações" aria-label="Configurações">⚙</button>
@@ -75,11 +76,25 @@
     <div id="favs-list"></div>
   </aside>
 
+  <!-- Versões -->
+  <aside id="panel-version" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Versão da Bíblia</h2>
+      <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <div id="version-list" class="version-list"></div>
+    <p class="hint">Suas marcações, favoritos e anotações continuam valendo em todas as versões.</p>
+  </aside>
+
   <!-- Configurações -->
   <aside id="panel-settings" class="panel" hidden>
     <div class="panel-head">
       <h2>Configurações</h2>
       <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <div class="setting">
+      <label>Versão da Bíblia</label>
+      <button class="btn small" id="settings-version">Trocar versão…</button>
     </div>
     <div class="setting">
       <label>Tamanho da letra</label>
@@ -110,8 +125,9 @@
       <p class="hint" id="cache-info"></p>
       <button class="btn small danger" id="clear-cache">Limpar capítulos salvos</button>
     </div>
-    <p class="hint credits">Texto bíblico: Nova Versão Internacional (NVI) © Biblica, Inc. Conteúdo obtido via API
-      ABíbliaDigital. Os capítulos lidos ficam guardados no aparelho para leitura offline.</p>
+    <p class="hint credits">Textos bíblicos obtidos via API ABíbliaDigital. Nova Versão Internacional (NVI) © Biblica, Inc.;
+      Almeida Revista e Atualizada (ARA) © Sociedade Bíblica do Brasil; demais versões pertencem aos seus
+      respectivos detentores. Os capítulos lidos ficam guardados no aparelho para leitura offline.</p>
   </aside>
 
   <!-- Menu de ações do versículo -->

@@ -1,5 +1,5 @@
 // Service worker: guarda os arquivos do app para abrir mesmo sem internet.
-const CACHE = "biblia-nvi-v1";
+const CACHE = "biblia-nvi-v2";
 const SHELL = ["./", "index.html", "style.css", "app.js", "books.js", "manifest.json", "icons/icon.svg"];
 
 self.addEventListener("install", (e) => {
