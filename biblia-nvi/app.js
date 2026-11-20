@@ -3,16 +3,25 @@
 // ---------------------------------------------------------------------------
 // Configuração
 // ---------------------------------------------------------------------------
-const API = "https://www.abibliadigital.com.br/api";
-// Versões disponíveis na API ABíbliaDigital
+const API = "https://bolls.life"; // usado só quando o app é aberto como arquivo local
+// Versões disponíveis no serviço bolls.life (código do serviço em "id").
+// A NVI não está disponível: a Biblica, detentora dos direitos, proibiu sua distribuição gratuita.
 const VERSIONS = [
-  { id: "nvi", short: "NVI", name: "Nova Versão Internacional", lang: "Português" },
-  { id: "ra", short: "ARA", name: "Almeida Revista e Atualizada", lang: "Português" },
-  { id: "acf", short: "ACF", name: "Almeida Corrigida Fiel", lang: "Português" },
-  { id: "kjv", short: "KJV", name: "King James Version", lang: "Inglês" },
-  { id: "bbe", short: "BBE", name: "Bible in Basic English", lang: "Inglês" },
-  { id: "rvr", short: "RVR", name: "Reina Valera 1960", lang: "Espanhol" },
-  { id: "apee", short: "APEE", name: "La Bible de l'Épée", lang: "Francês" },
+  { id: "NAA", short: "NAA", name: "Nova Almeida Atualizada", lang: "Português" },
+  { id: "ARA", short: "ARA", name: "Almeida Revista e Atualizada", lang: "Português" },
+  { id: "ARC09", short: "ARC", name: "Almeida Revista e Corrigida", lang: "Português" },
+  { id: "ACF11", short: "ACF", name: "Almeida Corrigida Fiel", lang: "Português" },
+  { id: "NVT", short: "NVT", name: "Nova Versão Transformadora", lang: "Português" },
+  { id: "NTLH", short: "NTLH", name: "Nova Tradução na Linguagem de Hoje", lang: "Português" },
+  { id: "KJA", short: "KJA", name: "King James Atualizada", lang: "Português" },
+  { id: "ALM21", short: "A21", name: "Almeida Século 21", lang: "Português" },
+  { id: "NBV07", short: "NBV", name: "Nova Bíblia Viva", lang: "Português" },
+  { id: "VFL", short: "VFL", name: "Versão Fácil de Ler", lang: "Português" },
+  { id: "TB10", short: "TB", name: "Tradução Brasileira", lang: "Português" },
+  { id: "KJV", short: "KJV", name: "King James Version", lang: "Inglês" },
+  { id: "WEB", short: "WEB", name: "World English Bible", lang: "Inglês" },
+  { id: "RV1960", short: "RVR", name: "Reina-Valera 1960", lang: "Espanhol" },
+  { id: "FRLSG", short: "LSG", name: "Louis Segond 1910", lang: "Francês" },
 ];
 const CACHE_PREFIX = "nvi:ch:"; // chaves: nvi:ch:<versão>:<livro>:<capítulo>
 const LS = {
@@ -20,11 +29,10 @@ const LS = {
   marks: "nvi:marks",
   font: "nvi:font",
   theme: "nvi:theme",
-  token: "nvi:token",
   version: "nvi:version",
 };
-let VERSION = localStorage.getItem(LS.version) || "nvi";
-if (!VERSIONS.some((v) => v.id === VERSION)) VERSION = "nvi";
+let VERSION = localStorage.getItem(LS.version) || "NAA";
+if (!VERSIONS.some((v) => v.id === VERSION)) VERSION = "NAA"; // ex.: quem tinha "nvi" salvo
 const currentVersion = () => VERSIONS.find((v) => v.id === VERSION);
 
 const $ = (sel) => document.querySelector(sel);
@@ -66,36 +74,33 @@ const refLabel = (b, c, v) => `${b.name} ${c}${v ? ":" + v : ""}`;
 // ---------------------------------------------------------------------------
 // API e cache offline
 // ---------------------------------------------------------------------------
-function authHeaders() {
-  const token = localStorage.getItem(LS.token);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiRequest(path, options = {}) {
+async function apiRequest(path, params = {}) {
+  // Publicado na web: usa o intermediário do próprio site (/api/biblia), que evita bloqueios de CORS.
+  // Aberto como arquivo local: chama o serviço diretamente.
+  const qs = new URLSearchParams(params);
+  const url = location.protocol.startsWith("http")
+    ? `api/biblia?${new URLSearchParams({ path, ...params })}`
+    : API + path + (qs.toString() ? "?" + qs : "");
   let res;
   try {
-    const headers = { ...authHeaders(), ...(options.headers || {}) };
-    if (options.body) headers["Content-Type"] = "application/json";
-    // Publicado na web: usa o intermediário do próprio site (/api/biblia), que evita bloqueios de CORS.
-    // Aberto como arquivo local: chama a API diretamente.
-    const url = location.protocol.startsWith("http")
-      ? `api/biblia?path=${encodeURIComponent(path)}`
-      : API + path;
-    res = await fetch(url, { ...options, headers });
+    res = await fetch(url);
   } catch {
     throw new Error(navigator.onLine === false ? "Sem conexão com a internet." : "Não foi possível conectar ao servidor da Bíblia. Tente novamente.");
   }
-  if (res.status === 502 || res.status === 503 || res.status === 504) {
-    throw new Error("O serviço que fornece o texto bíblico (ABíbliaDigital) está fora do ar no momento. Tente novamente mais tarde.");
-  }
-  if (res.status === 429) {
-    throw new Error("Limite de consultas da API atingido. Aguarde um pouco ou adicione um token gratuito nas Configurações.");
-  }
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("Token da API inválido. Verifique nas Configurações.");
-  }
+  if (res.status === 429) throw new Error("Muitas consultas em pouco tempo. Aguarde um instante e tente novamente.");
+  if (res.status >= 500) throw new Error("O serviço que fornece o texto bíblico está fora do ar no momento. Tente novamente mais tarde.");
   if (!res.ok) throw new Error(`Erro ao carregar (HTTP ${res.status}).`);
   return res.json();
+}
+
+// Remove marcações do texto (números de Strong, notas, quebras de linha) e decodifica entidades HTML.
+function cleanText(html) {
+  const s = String(html)
+    .replace(/<S>\s*\d+\s*<\/S>/gi, "")
+    .replace(/<sup>[\s\S]*?<\/sup>/gi, "")
+    .replace(/<br\s*\/?>/gi, " ");
+  const doc = new DOMParser().parseFromString(s, "text/html");
+  return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
 }
 
 async function getChapter(abbrev, chapter) {
@@ -103,9 +108,12 @@ async function getChapter(abbrev, chapter) {
   const cached = readJSON(key, null);
   if (cached) return cached;
 
-  const data = await apiRequest(`/verses/${VERSION}/${encodeURIComponent(abbrev)}/${chapter}`);
-  const verses = (data.verses || []).map((v) => ({ n: v.number, t: v.text }));
-  if (!verses.length) throw new Error("Capítulo não encontrado.");
+  const bookNumber = BOOKS.findIndex((b) => b.abbrev === abbrev) + 1;
+  const data = await apiRequest(`/get-text/${VERSION}/${bookNumber}/${chapter}/`);
+  const verses = (Array.isArray(data) ? data : [])
+    .map((v) => ({ n: v.verse, t: cleanText(v.text) }))
+    .filter((v) => v.t);
+  if (!verses.length) throw new Error("Este capítulo não está disponível nesta versão.");
   if (!writeJSON(key, verses)) {
     // Armazenamento cheio: remove metade dos capítulos salvos e tenta de novo.
     const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX));
@@ -356,26 +364,24 @@ async function doSearch(query) {
   }
   out.innerHTML = `<div class="status"><div class="spinner"></div>Buscando…</div>`;
   try {
-    const data = await apiRequest("/verses/search", {
-      method: "POST",
-      body: JSON.stringify({ version: VERSION, search: query.trim() }),
+    const data = await apiRequest(`/v2/find/${VERSION}`, {
+      search: query.trim(), match_case: "false", match_whole: "false", limit: "200",
     });
-    const verses = data.verses || [];
+    const verses = Array.isArray(data) ? data : data.results || [];
     if (!verses.length) {
       out.innerHTML = `<p class="hint">Nenhum resultado para “${escapeHtml(query)}”.</p>`;
       return;
     }
     const re = new RegExp(`(${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     out.innerHTML =
-      `<p class="hint">${data.occurrence ?? verses.length} ocorrência(s)</p>` +
+      `<p class="hint">${data.total ?? verses.length} versículo(s)${(data.total ?? 0) > verses.length ? ` — mostrando os primeiros ${verses.length}` : ""}</p>` +
       verses
         .map((v) => {
-          const abbrev = v.book?.abbrev?.pt;
-          const bi = BOOKS.findIndex((b) => b.abbrev === abbrev);
-          const name = bi >= 0 ? BOOKS[bi].name : v.book?.name || "";
-          const text = escapeHtml(v.text).replace(re, "<mark>$1</mark>");
-          return `<button class="result" data-book="${bi}" data-chapter="${v.chapter}" data-verse="${v.number}">
-              <strong>${escapeHtml(name)} ${v.chapter}:${v.number}</strong><span>${text}</span></button>`;
+          const bi = v.book - 1;
+          if (!BOOKS[bi]) return "";
+          const text = escapeHtml(cleanText(v.text)).replace(re, "<mark>$1</mark>");
+          return `<button class="result" data-book="${bi}" data-chapter="${v.chapter}" data-verse="${v.verse}">
+              <strong>${escapeHtml(BOOKS[bi].name)} ${v.chapter}:${v.verse}</strong><span>${text}</span></button>`;
         })
         .join("");
   } catch (err) {
@@ -561,12 +567,6 @@ function bindEvents() {
   $("#font-dec").onclick = () => applyFont(parseInt(localStorage.getItem(LS.font) || 18, 10) - 1);
   $("#font-inc").onclick = () => applyFont(parseInt(localStorage.getItem(LS.font) || 18, 10) + 1);
   $$("[data-theme-set]").forEach((b) => (b.onclick = () => applyTheme(b.dataset.themeSet)));
-  $("#token-input").value = localStorage.getItem(LS.token) || "";
-  $("#token-save").onclick = () => {
-    const t = $("#token-input").value.trim();
-    if (t) localStorage.setItem(LS.token, t); else localStorage.removeItem(LS.token);
-    toast(t ? "Token salvo" : "Token removido");
-  };
   $("#clear-cache").onclick = () => {
     Object.keys(localStorage).filter((k) => k.startsWith(CACHE_PREFIX)).forEach((k) => localStorage.removeItem(k));
     updateCacheInfo();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#5b3a1e" />
-  <meta name="description" content="Bíblia Sagrada – NVI, ARA, ACF e outras versões" />
+  <meta name="description" content="Bíblia Sagrada – NAA, ARA, ACF, NVT e outras versões" />
   <title>Bíblia Sagrada</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
@@ -18,7 +18,7 @@
       <span id="current-ref">Bíblia Sagrada</span> <span class="caret">▾</span>
     </button>
     <div class="topbar-actions">
-      <button class="version-btn" id="btn-version" title="Trocar versão" aria-label="Trocar versão da Bíblia">NVI</button>
+      <button class="version-btn" id="btn-version" title="Trocar versão" aria-label="Trocar versão da Bíblia">NAA</button>
       <button class="icon-btn" id="btn-search" title="Buscar" aria-label="Buscar">🔍</button>
       <button class="icon-btn" id="btn-favs" title="Favoritos" aria-label="Favoritos">★</button>
       <button class="icon-btn" id="btn-settings" title="Configurações" aria-label="Configurações">⚙</button>
@@ -113,21 +113,13 @@
       </div>
     </div>
     <div class="setting">
-      <label for="token-input">Token da API ABíbliaDigital (opcional)</label>
-      <input id="token-input" class="input" type="password" placeholder="Cole seu token aqui" autocomplete="off" />
-      <p class="hint">Sem token, a API limita o número de consultas por hora. Crie um token gratuito em
-        <a href="https://www.abibliadigital.com.br" target="_blank" rel="noopener">abibliadigital.com.br</a>.
-        O token fica salvo somente neste aparelho.</p>
-      <button class="btn small" id="token-save">Salvar token</button>
-    </div>
-    <div class="setting">
       <label>Dados offline</label>
       <p class="hint" id="cache-info"></p>
       <button class="btn small danger" id="clear-cache">Limpar capítulos salvos</button>
     </div>
-    <p class="hint credits">Textos bíblicos obtidos via API ABíbliaDigital. Nova Versão Internacional (NVI) © Biblica, Inc.;
-      Almeida Revista e Atualizada (ARA) © Sociedade Bíblica do Brasil; demais versões pertencem aos seus
-      respectivos detentores. Os capítulos lidos ficam guardados no aparelho para leitura offline.</p>
+    <p class="hint credits">Textos bíblicos fornecidos pelo serviço bolls.life; cada versão pertence aos seus
+      respectivos detentores. A NVI não está disponível porque a Biblica, detentora dos direitos, não permite
+      sua distribuição gratuita. Os capítulos lidos ficam guardados no aparelho para leitura offline.</p>
   </aside>
 
   <!-- Menu de ações do versículo -->
