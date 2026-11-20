@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b3a1e" />
+  <meta name="description" content="Bíblia Sagrada – Nova Versão Internacional (NVI)" />
+  <title>Bíblia Sagrada NVI</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="btn-books" title="Livros" aria-label="Escolher livro">☰</button>
+    <button class="title-btn" id="btn-title" aria-label="Escolher livro e capítulo">
+      <span id="current-ref">Bíblia NVI</span> <span class="caret">▾</span>
+    </button>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btn-search" title="Buscar" aria-label="Buscar">🔍</button>
+      <button class="icon-btn" id="btn-favs" title="Favoritos" aria-label="Favoritos">★</button>
+      <button class="icon-btn" id="btn-settings" title="Configurações" aria-label="Configurações">⚙</button>
+    </div>
+  </header>
+
+  <main id="reader" class="reader" tabindex="-1">
+    <div id="content"></div>
+  </main>
+
+  <nav class="chapter-nav">
+    <button id="btn-prev" class="nav-btn">‹ Anterior</button>
+    <button id="btn-next" class="nav-btn">Próximo ›</button>
+  </nav>
+
+  <!-- Painel lateral: seleção de livro/capítulo -->
+  <aside id="panel-books" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Livros</h2>
+      <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-testament="AT">Antigo Testamento</button>
+      <button class="tab" data-testament="NT">Novo Testamento</button>
+    </div>
+    <input id="book-filter" class="input" type="search" placeholder="Filtrar livros…" />
+    <ul id="book-list" class="book-list"></ul>
+    <div id="chapter-picker" hidden>
+      <button class="link-btn" id="back-to-books">‹ Voltar aos livros</button>
+      <h3 id="chapter-picker-title"></h3>
+      <div id="chapter-grid" class="chapter-grid"></div>
+    </div>
+  </aside>
+
+  <!-- Busca -->
+  <aside id="panel-search" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Buscar na Bíblia</h2>
+      <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <form id="search-form" class="search-form">
+      <input id="search-input" class="input" type="search" placeholder="Palavra ou referência (ex.: amor, Jo 3:16)" required />
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+    <p class="hint">Dica: digite uma referência como <em>Sl 23</em> ou <em>Rm 8:28</em> para ir direto.</p>
+    <div id="search-results"></div>
+  </aside>
+
+  <!-- Favoritos -->
+  <aside id="panel-favs" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Favoritos e anotações</h2>
+      <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <div id="favs-list"></div>
+  </aside>
+
+  <!-- Configurações -->
+  <aside id="panel-settings" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Configurações</h2>
+      <button class="icon-btn close" data-close aria-label="Fechar">✕</button>
+    </div>
+    <div class="setting">
+      <label>Tamanho da letra</label>
+      <div class="row">
+        <button class="btn small" id="font-dec">A−</button>
+        <span id="font-size-label">18px</span>
+        <button class="btn small" id="font-inc">A+</button>
+      </div>
+    </div>
+    <div class="setting">
+      <label>Tema</label>
+      <div class="row">
+        <button class="btn small" data-theme-set="light">Claro</button>
+        <button class="btn small" data-theme-set="sepia">Sépia</button>
+        <button class="btn small" data-theme-set="dark">Escuro</button>
+      </div>
+    </div>
+    <div class="setting">
+      <label for="token-input">Token da API ABíbliaDigital (opcional)</label>
+      <input id="token-input" class="input" type="password" placeholder="Cole seu token aqui" autocomplete="off" />
+      <p class="hint">Sem token, a API limita o número de consultas por hora. Crie um token gratuito em
+        <a href="https://www.abibliadigital.com.br" target="_blank" rel="noopener">abibliadigital.com.br</a>.
+        O token fica salvo somente neste aparelho.</p>
+      <button class="btn small" id="token-save">Salvar token</button>
+    </div>
+    <div class="setting">
+      <label>Dados offline</label>
+      <p class="hint" id="cache-info"></p>
+      <button class="btn small danger" id="clear-cache">Limpar capítulos salvos</button>
+    </div>
+    <p class="hint credits">Texto bíblico: Nova Versão Internacional (NVI) © Biblica, Inc. Conteúdo obtido via API
+      ABíbliaDigital. Os capítulos lidos ficam guardados no aparelho para leitura offline.</p>
+  </aside>
+
+  <!-- Menu de ações do versículo -->
+  <div id="verse-menu" class="verse-menu" hidden>
+    <div class="verse-menu-head"><div class="verse-menu-ref" id="verse-menu-ref"></div><button class="icon-btn" id="vm-close" aria-label="Fechar">✕</button></div>
+    <div class="verse-menu-colors">
+      <button class="swatch" data-color="yellow" aria-label="Marcar amarelo"></button>
+      <button class="swatch" data-color="green" aria-label="Marcar verde"></button>
+      <button class="swatch" data-color="blue" aria-label="Marcar azul"></button>
+      <button class="swatch" data-color="pink" aria-label="Marcar rosa"></button>
+      <button class="swatch none" data-color="" aria-label="Remover marcação">⊘</button>
+    </div>
+    <div class="verse-menu-actions">
+      <button class="btn small" id="vm-fav">★ Favoritar</button>
+      <button class="btn small" id="vm-note">✎ Anotar</button>
+      <button class="btn small" id="vm-copy">⧉ Copiar</button>
+      <button class="btn small" id="vm-share">↗ Compartilhar</button>
+    </div>
+  </div>
+
+  <div id="backdrop" class="backdrop" hidden></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="books.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

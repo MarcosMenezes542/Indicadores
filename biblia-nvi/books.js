@@ -1,0 +1,20 @@
+// Lista dos 66 livros (abreviações usadas pela API ABíbliaDigital) e número de capítulos.
+const BOOKS = [
+  ["gn","Gênesis",50,"AT"],["ex","Êxodo",40,"AT"],["lv","Levítico",27,"AT"],["nm","Números",36,"AT"],
+  ["dt","Deuteronômio",34,"AT"],["js","Josué",24,"AT"],["jz","Juízes",21,"AT"],["rt","Rute",4,"AT"],
+  ["1sm","1 Samuel",31,"AT"],["2sm","2 Samuel",24,"AT"],["1rs","1 Reis",22,"AT"],["2rs","2 Reis",25,"AT"],
+  ["1cr","1 Crônicas",29,"AT"],["2cr","2 Crônicas",36,"AT"],["ed","Esdras",10,"AT"],["ne","Neemias",13,"AT"],
+  ["et","Ester",10,"AT"],["jó","Jó",42,"AT"],["sl","Salmos",150,"AT"],["pv","Provérbios",31,"AT"],
+  ["ec","Eclesiastes",12,"AT"],["ct","Cânticos",8,"AT"],["is","Isaías",66,"AT"],["jr","Jeremias",52,"AT"],
+  ["lm","Lamentações",5,"AT"],["ez","Ezequiel",48,"AT"],["dn","Daniel",12,"AT"],["os","Oseias",14,"AT"],
+  ["jl","Joel",3,"AT"],["am","Amós",9,"AT"],["ob","Obadias",1,"AT"],["jn","Jonas",4,"AT"],
+  ["mq","Miqueias",7,"AT"],["na","Naum",3,"AT"],["hc","Habacuque",3,"AT"],["sf","Sofonias",3,"AT"],
+  ["ag","Ageu",2,"AT"],["zc","Zacarias",14,"AT"],["ml","Malaquias",4,"AT"],
+  ["mt","Mateus",28,"NT"],["mc","Marcos",16,"NT"],["lc","Lucas",24,"NT"],["jo","João",21,"NT"],
+  ["atos","Atos",28,"NT"],["rm","Romanos",16,"NT"],["1co","1 Coríntios",16,"NT"],["2co","2 Coríntios",13,"NT"],
+  ["gl","Gálatas",6,"NT"],["ef","Efésios",6,"NT"],["fp","Filipenses",4,"NT"],["cl","Colossenses",4,"NT"],
+  ["1ts","1 Tessalonicenses",5,"NT"],["2ts","2 Tessalonicenses",3,"NT"],["1tm","1 Timóteo",6,"NT"],
+  ["2tm","2 Timóteo",4,"NT"],["tt","Tito",3,"NT"],["fm","Filemom",1,"NT"],["hb","Hebreus",13,"NT"],
+  ["tg","Tiago",5,"NT"],["1pe","1 Pedro",5,"NT"],["2pe","2 Pedro",3,"NT"],["1jo","1 João",5,"NT"],
+  ["2jo","2 João",1,"NT"],["3jo","3 João",1,"NT"],["jd","Judas",1,"NT"],["ap","Apocalipse",22,"NT"],
+].map(([abbrev, name, chapters, testament]) => ({ abbrev, name, chapters, testament }));
