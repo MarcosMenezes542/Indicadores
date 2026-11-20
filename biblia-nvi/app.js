@@ -74,12 +74,19 @@ function authHeaders() {
 async function apiRequest(path, options = {}) {
   let res;
   try {
-    res = await fetch(API + path, {
-      ...options,
-      headers: { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) },
-    });
+    const headers = { ...authHeaders(), ...(options.headers || {}) };
+    if (options.body) headers["Content-Type"] = "application/json";
+    // Publicado na web: usa o intermediário do próprio site (/api/biblia), que evita bloqueios de CORS.
+    // Aberto como arquivo local: chama a API diretamente.
+    const url = location.protocol.startsWith("http")
+      ? `api/biblia?path=${encodeURIComponent(path)}`
+      : API + path;
+    res = await fetch(url, { ...options, headers });
   } catch {
-    throw new Error("Sem conexão com a internet.");
+    throw new Error(navigator.onLine === false ? "Sem conexão com a internet." : "Não foi possível conectar ao servidor da Bíblia. Tente novamente.");
+  }
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    throw new Error("O serviço que fornece o texto bíblico (ABíbliaDigital) está fora do ar no momento. Tente novamente mais tarde.");
   }
   if (res.status === 429) {
     throw new Error("Limite de consultas da API atingido. Aguarde um pouco ou adicione um token gratuito nas Configurações.");

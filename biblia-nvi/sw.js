@@ -1,5 +1,5 @@
 // Service worker: guarda os arquivos do app para abrir mesmo sem internet.
-const CACHE = "biblia-nvi-v2";
+const CACHE = "biblia-nvi-v3";
 const SHELL = ["./", "index.html", "style.css", "app.js", "books.js", "manifest.json", "icons/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -13,7 +13,7 @@ self.addEventListener("activate", (e) => {
 });
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.origin !== location.origin) return; // API: direto na rede
+  if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.includes("/api/")) return; // API: direto na rede
   e.respondWith(
     fetch(e.request)
       .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })
